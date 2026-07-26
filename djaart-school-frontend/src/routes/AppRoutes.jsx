@@ -3,8 +3,16 @@ import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
 import LoginPage from '../features/auth/LoginPage'
 import ResetPasswordPage from '../features/auth/ResetPasswordPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
+import AnneesAcademiquesPage from '../features/parametrage/annees/AnneesAcademiquesPage'
+import ClassesPage from '../features/parametrage/classes/ClassesPage'
+import EtablissementsPage from '../features/parametrage/etablissements/EtablissementsPage'
+import FilieresPage from '../features/parametrage/filieres/FilieresPage'
+import MatieresPage from '../features/parametrage/matieres/MatieresPage'
+import NiveauxPage from '../features/parametrage/niveaux/NiveauxPage'
 import UsersListPage from '../features/users/UsersListPage'
 import ProtectedRoute from './ProtectedRoute'
+
+const ADMIN_ROLES = ['super_admin', 'admin_etablissement']
 
 export default function AppRoutes() {
   return (
@@ -17,8 +25,14 @@ export default function AppRoutes() {
         <Route path="/dashboard" element={<DashboardPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={['super_admin', 'admin_etablissement']} />}>
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} />}>
         <Route path="/users" element={<UsersListPage />} />
+        <Route path="/parametrage/etablissements" element={<EtablissementsPage />} />
+        <Route path="/parametrage/annees-academiques" element={<AnneesAcademiquesPage />} />
+        <Route path="/parametrage/filieres" element={<FilieresPage />} />
+        <Route path="/parametrage/filieres/:filiereId/niveaux" element={<NiveauxPage />} />
+        <Route path="/parametrage/classes" element={<ClassesPage />} />
+        <Route path="/parametrage/matieres" element={<MatieresPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
