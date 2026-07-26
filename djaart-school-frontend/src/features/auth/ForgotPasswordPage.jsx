@@ -1,30 +1,26 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import logo from '../../assets/logo.png'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
-import useAuth from '../../hooks/useAuth'
-import useToast from '../../hooks/useToast'
+import * as authApi from '../../api/authApi'
 
-export default function LoginPage() {
-  const { login } = useAuth()
-  const { showToast } = useToast()
-  const navigate = useNavigate()
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
+    setMessage('')
     setLoading(true)
     try {
-      await login(email, password)
-      showToast('Connexion réussie', 'success')
-      navigate('/dashboard')
-    } catch {
-      setError('Identifiants incorrects.')
+      const { data } = await authApi.forgotPassword(email)
+      setMessage(data.message)
+    } catch (err) {
+      setError(err.response?.data?.message ?? "Une erreur est survenue.")
     } finally {
       setLoading(false)
     }
@@ -46,20 +42,13 @@ export default function LoginPage() {
             onChange={(event) => setEmail(event.target.value)}
             required
           />
-          <Input
-            id="password"
-            type="password"
-            label="Mot de passe"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
+          {message && <p className="text-sm text-brand-teal">{message}</p>}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <Button type="submit" loading={loading} className="w-full justify-center">
-            Se connecter
+            Envoyer le lien de réinitialisation
           </Button>
-          <Link to="/forgot-password" className="text-center text-sm text-brand-blue hover:underline">
-            Mot de passe oublié ?
+          <Link to="/login" className="text-center text-sm text-brand-blue hover:underline">
+            Retour à la connexion
           </Link>
         </form>
       </div>

@@ -8,4 +8,17 @@ export const login = async (email, password) => {
 
 export const logout = () => axiosClient.post('/api/logout')
 
-export const fetchMe = () => axiosClient.get('/api/me')
+export const fetchMe = async () => {
+  const { data } = await axiosClient.get('/api/me')
+  return data
+}
+
+export const forgotPassword = async (email) => {
+  await ensureCsrfCookie()
+  return axiosClient.post('/api/forgot-password', { email })
+}
+
+export const resetPassword = async ({ token, email, password, password_confirmation }) => {
+  await ensureCsrfCookie()
+  return axiosClient.post('/api/reset-password', { token, email, password, password_confirmation })
+}
