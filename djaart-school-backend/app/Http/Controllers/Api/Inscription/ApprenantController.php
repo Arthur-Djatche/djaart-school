@@ -38,4 +38,50 @@ class ApprenantController extends Controller
 
         return $this->success(new ApprenantResource($apprenant));
     }
+
+    public function echeancier(Apprenant $apprenant)
+    {
+        $this->authorize('view', $apprenant);
+
+        $inscriptions = $apprenant->inscriptions()
+            ->where('statut', '!=', 'annulee')
+            ->with(['classe', 'anneeAcademique', 'fraisScolarite.tranches', 'paiements'])
+            ->get();
+
+        $data = $inscriptions->map(function ($inscription) {
+            $paiementsParTranche = $inscription->paiements->groupBy('tranche_id');
+
+            return [
+                'id' => $inscription->id,
+                'statut' => $inscription->statut,
+                'type_inscription' => $inscription->type_inscription,
+                'classe' => ['id' => $inscription->classe->id, 'libelle' => $inscription->classe->libelle],
+                'annee_academique' => ['id' => $inscription->anneeAcademique->id, 'libelle' => $inscription->anneeAcademique->libelle],
+                'tranches' => $inscription->fraisScolarite->tranches->map(function ($tranche) use ($paiementsParTranche) {
+                    $montantPaye = (float) ($paiementsParTranche->get($tranche->id, collect())->sum('montant'));
+                    $solde = round($tranche->montant - $montantPaye, 2);
+                    $statut = $solde <= 0
+                        ? 'payee'
+                        : ($montantPaye > 0
+                            ? 'partielle'
+                            : ($tranche->date_echeance->isPast() ? 'en_retard' : 'en_attente'));
+
+                    return [
+                        'id' => $tranche->id,
+                        'numero' => $tranche->numero,
+                        'montant' => $tranche->montant,
+                        'date_echeance' => $tranche->date_echeance->toDateString(),
+                        'montant_paye' => $montantPaye,
+                        'solde' => $solde,
+                        'statut' => $statut,
+                    ];
+                }),
+            ];
+        });
+
+        return $this->success([
+            'apprenant' => new ApprenantResource($apprenant),
+            'inscriptions' => $data,
+        ]);
+    }
 }

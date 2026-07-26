@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AnneeAcademique;
 use App\Models\FraisScolarite;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class FraisScolariteService
 {
@@ -29,6 +30,12 @@ class FraisScolariteService
 
     public function replaceTranches(FraisScolarite $fraisScolarite, array $data): FraisScolarite
     {
+        if ($fraisScolarite->tranches()->whereHas('paiements')->exists()) {
+            throw ValidationException::withMessages([
+                'montant_total' => 'Cette grille a déjà des paiements enregistrés : elle ne peut plus être modifiée (protection des données financières).',
+            ]);
+        }
+
         return DB::transaction(function () use ($fraisScolarite, $data) {
             $tranches = $this->resolveTranches($data + [
                 'etablissement_id' => $fraisScolarite->etablissement_id,

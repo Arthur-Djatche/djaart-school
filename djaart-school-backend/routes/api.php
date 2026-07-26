@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\UserController;
 use App\Http\Controllers\Api\Finance\FraisScolariteController;
+use App\Http\Controllers\Api\Finance\PaiementController;
+use App\Http\Controllers\Api\Finance\RecuController;
 use App\Http\Controllers\Api\Inscription\ApprenantController;
 use App\Http\Controllers\Api\Inscription\InscriptionController;
 use App\Http\Controllers\Api\Parametrage\AnneeAcademiqueController;
@@ -45,18 +47,27 @@ Route::middleware('auth:sanctum')->group(function () {
             ->parameters(['frais-scolarite' => 'fraisScolarite']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|secretaire')->group(function () {
-        // Lecture seule : necessaire a la secretaire pour le formulaire d'inscription
-        // (choix de la classe + apercu de l'echeancier des frais), sans lui donner
-        // les droits de creation/modification reserves aux admins.
+    Route::middleware('role:super_admin|admin_etablissement|secretaire|comptable')->group(function () {
+        // Lecture seule : necessaire a la secretaire (inscription) et au comptable
+        // (caisse) pour choisir une classe / consulter la grille de frais, sans
+        // leur donner les droits de creation/modification reserves aux admins.
         Route::get('/classes', [ClasseController::class, 'index']);
         Route::get('/frais-scolarite', [FraisScolariteController::class, 'index']);
 
         Route::get('/apprenants', [ApprenantController::class, 'index']);
         Route::get('/apprenants/{apprenant}', [ApprenantController::class, 'show']);
+        Route::get('/apprenants/{apprenant}/echeancier', [ApprenantController::class, 'echeancier']);
+    });
 
+    Route::middleware('role:super_admin|admin_etablissement|secretaire')->group(function () {
         Route::get('/inscriptions', [InscriptionController::class, 'index']);
         Route::post('/inscriptions', [InscriptionController::class, 'store']);
         Route::post('/inscriptions/{inscription}/annuler', [InscriptionController::class, 'cancel']);
+    });
+
+    Route::middleware('role:super_admin|admin_etablissement|comptable')->group(function () {
+        Route::get('/paiements', [PaiementController::class, 'index']);
+        Route::post('/paiements', [PaiementController::class, 'store']);
+        Route::get('/recus/{recu}/telecharger', [RecuController::class, 'telecharger']);
     });
 });

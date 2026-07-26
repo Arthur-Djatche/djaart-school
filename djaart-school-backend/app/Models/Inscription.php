@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToEtablissement;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Inscription extends Model
 {
@@ -47,5 +48,10 @@ class Inscription extends Model
     public function fraisScolarite(): BelongsTo
     {
         return $this->belongsTo(FraisScolarite::class);
+    }
+
+    public function paiements(): HasMany
+    {
+        return $this->hasMany(Paiement::class);
     }
 }

@@ -12,7 +12,7 @@ class ApprenantPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable']);
     }
 
     public function view(User $user, Apprenant $apprenant): bool

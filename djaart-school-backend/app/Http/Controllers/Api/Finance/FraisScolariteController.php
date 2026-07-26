@@ -10,6 +10,7 @@ use App\Http\Resources\FraisScolariteResource;
 use App\Models\FraisScolarite;
 use App\Services\FraisScolariteService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class FraisScolariteController extends Controller
 {
@@ -58,6 +59,12 @@ class FraisScolariteController extends Controller
     public function destroy(FraisScolarite $fraisScolarite)
     {
         $this->authorize('delete', $fraisScolarite);
+
+        if ($fraisScolarite->tranches()->whereHas('paiements')->exists()) {
+            throw ValidationException::withMessages([
+                'id' => 'Cette grille a déjà des paiements enregistrés : elle ne peut plus être supprimée (protection des données financières).',
+            ]);
+        }
 
         $fraisScolarite->delete();
 
