@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\UserController;
+use App\Http\Controllers\Api\Finance\FraisScolariteController;
 use App\Http\Controllers\Api\Parametrage\AnneeAcademiqueController;
 use App\Http\Controllers\Api\Parametrage\ClasseController;
 use App\Http\Controllers\Api\Parametrage\EtablissementController;
@@ -37,5 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/niveaux', [NiveauController::class, 'store']);
         Route::put('/niveaux/{niveau}', [NiveauController::class, 'update']);
         Route::delete('/niveaux/{niveau}', [NiveauController::class, 'destroy']);
+
+        Route::apiResource('frais-scolarite', FraisScolariteController::class)->except('show')
+            ->parameters(['frais-scolarite' => 'fraisScolarite']);
     });
 });
