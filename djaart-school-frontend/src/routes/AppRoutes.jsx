@@ -3,6 +3,7 @@ import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
 import LoginPage from '../features/auth/LoginPage'
 import ResetPasswordPage from '../features/auth/ResetPasswordPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
+import CaissePage from '../features/finance/caisse/CaissePage'
 import FraisScolaritePage from '../features/finance/fraisScolarite/FraisScolaritePage'
 import InscriptionsListPage from '../features/inscriptions/InscriptionsListPage'
 import AnneesAcademiquesPage from '../features/parametrage/annees/AnneesAcademiquesPage'
@@ -16,6 +17,7 @@ import ProtectedRoute from './ProtectedRoute'
 
 const ADMIN_ROLES = ['super_admin', 'admin_etablissement']
 const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
+const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
 
 export default function AppRoutes() {
   return (
@@ -41,6 +43,10 @@ export default function AppRoutes() {
         <Route path="/parametrage/classes" element={<ClassesPage />} />
         <Route path="/parametrage/matieres" element={<MatieresPage />} />
         <Route path="/finance/frais-scolarite" element={<FraisScolaritePage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={FINANCE_ROLES} />}>
+        <Route path="/finance/caisse" element={<CaissePage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

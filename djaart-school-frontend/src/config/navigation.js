@@ -1,5 +1,6 @@
 const PARAMETRAGE_ROLES = ['super_admin', 'admin_etablissement']
 const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
+const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
 
 export const NAVIGATION = [
   { label: 'Tableau de bord', to: '/dashboard', roles: null },
@@ -17,14 +18,21 @@ export const NAVIGATION = [
   },
   {
     label: 'Finance',
-    roles: PARAMETRAGE_ROLES,
+    roles: FINANCE_ROLES,
     children: [
-      { label: 'Frais de scolarité', to: '/finance/frais-scolarite' },
+      { label: 'Frais de scolarité', to: '/finance/frais-scolarite', roles: PARAMETRAGE_ROLES },
+      { label: 'Caisse', to: '/finance/caisse', roles: FINANCE_ROLES },
     ],
   },
   { label: 'Comptes utilisateurs', to: '/users', roles: ['super_admin', 'admin_etablissement'] },
 ]
 
-export function navigationForRoles(roles = []) {
-  return NAVIGATION.filter((item) => !item.roles || item.roles.some((role) => roles.includes(role)))
+function allowed(roles, userRoles) {
+  return !roles || roles.some((role) => userRoles.includes(role))
+}
+
+export function navigationForRoles(userRoles = []) {
+  return NAVIGATION.filter((item) => allowed(item.roles, userRoles))
+    .map((item) => (item.children ? { ...item, children: item.children.filter((child) => allowed(child.roles, userRoles)) } : item))
+    .filter((item) => !item.children || item.children.length > 0)
 }
