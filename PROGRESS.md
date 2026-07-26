@@ -97,5 +97,25 @@
 | Admin Établissement | admin.universite@djaart.school | password | Université Démo DJAART (LMD) |
 | Admin Établissement | admin.centreformation@djaart.school | password | Centre de Formation Démo DJAART |
 
+## Phase 3 — Frais de scolarité et tranches
+- Statut : **terminée**
+
+### Réalisé
+- Backend :
+  - Modèles `FraisScolarite` (unique par couple `Niveau`+`AnneeAcademique`, conforme à l'UML) et `Tranche`, tous deux avec le trait `BelongsToEtablissement`.
+  - `FraisScolariteService` (`app/Services/`) : logique de calcul/transaction extraite du contrôleur (conforme section 7 du cahier des charges) — `createWithTranches` (mode `comptant` = 1 tranche automatique, mode `tranches` = lignes fournies) et `replaceTranches` (remplacement complet, utilisées toutes deux dans une transaction DB).
+  - **Validation bloquante** dans `StoreFraisScolariteRequest`/`UpdateFraisScolariteRequest` : la somme des tranches doit égaler le montant total (tolérance d'arrondi 0,01) via une règle `withValidator`/`after` ; contrainte unique `(niveau_id, annee_academique_id)` en base, rejetée proprement en cas de doublon.
+  - `FraisScolaritePolicy`, `FraisScolariteResource` (inclut les tranches), `FraisScolariteController`, mêmes patterns d'isolation multi-établissement qu'en Phase 2.
+  - `FraisScolariteSeeder` : configure un barème (comptant ou tranches) pour chaque niveau des 4 établissements de démo, démontrant les deux modes.
+  - Tests Feature : `FraisScolariteTest` (rejet somme incohérente, mode comptant, mode tranches valide, doublon niveau/année rejeté, isolation, remplacement via update) — 27/27 tests OK au total (suite complète).
+- Frontend :
+  - `src/api/financeApi.js`, module `features/finance/fraisScolarite/` (`FraisScolaritePage` + `FraisScolariteFormModal`).
+  - **Répartition assistée** : bouton "Répartir automatiquement" qui calcule une répartition égale du montant total sur le nombre de tranches choisi, avec échéances mensuelles proposées à partir de la date de début de l'année académique — chaque ligne reste éditable, avec un total calculé en direct et un message d'erreur visuel si la somme ne correspond pas (miroir de la validation bloquante backend).
+  - Nouveau groupe de navigation "Finance" (rôles `super_admin`/`admin_etablissement`).
+- Vérification bout-en-bout (Playwright) : configuration d'un barème de zéro (nouvelle filière → niveau → frais en tranches via répartition assistée) réussie ; tentative de somme incohérente correctement bloquée avec message clair, sans enregistrement.
+
+### Hypothèses / écarts documentés
+- L'alternative A2 de l'UML ("modification d'une grille déjà utilisée par une inscription → nouvelle version plutôt qu'écrasement") ne s'applique pas encore : `Inscription` n'existe pas avant la Phase 4. Pour l'instant, `update` remplace directement les tranches existantes (`FraisScolariteService::replaceTranches`). **À revoir dès la Phase 4** : dès qu'une grille sera référencée par une inscription, protéger sa modification (avertissement ou versionnement) au lieu de l'écraser.
+
 ## Phases suivantes
-Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 3 à 11. Prochaine étape : **Phase 3 — Frais de scolarité et tranches** (configuration des frais par niveau/année, échéancier de tranches avec contrôle de cohérence).
+Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 4 à 11. Prochaine étape : **Phase 4 — Inscriptions** (génération automatique du matricule, rattachement de la grille de frais, cycle de vie de l'inscription).
