@@ -12,7 +12,10 @@ class FraisScolaritePolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement']);
+        // Lecture seule ouverte a la secretaire (apercu de l'echeancier dans
+        // le formulaire d'inscription) ; create/update/delete restent
+        // reserves aux admins.
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire']);
     }
 
     public function view(User $user, FraisScolarite $fraisScolarite): bool

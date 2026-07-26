@@ -13,8 +13,11 @@ trait ChecksEtablissementOwnership
             return true;
         }
 
-        return $user->hasRole('admin_etablissement')
-            && $user->etablissement_id !== null
+        // Les méthodes viewAny/create de chaque policy restreignent déjà les
+        // rôles autorisés à atteindre ce point ; ici on ne vérifie que
+        // l'appartenance au même établissement (peu importe le rôle exact :
+        // admin_etablissement, secretaire, comptable, enseignant...).
+        return $user->etablissement_id !== null
             && $user->etablissement_id === $model->etablissement_id;
     }
 }

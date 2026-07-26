@@ -15,6 +15,7 @@ class Etablissement extends Model
         'type_etablissement',
         'sigle',
         'adresse',
+        'next_matricule_sequence',
     ];
 
     public function users(): HasMany

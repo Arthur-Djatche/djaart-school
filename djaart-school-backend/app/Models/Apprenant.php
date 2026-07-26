@@ -5,31 +5,31 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToEtablissement;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Classe extends Model
+class Apprenant extends Model
 {
     use BelongsToEtablissement, HasFactory;
 
-    protected $table = 'classes';
-
     protected $fillable = [
         'etablissement_id',
-        'niveau_id',
-        'annee_academique_id',
-        'libelle',
-        'effectif_max',
+        'matricule',
+        'nom',
+        'prenom',
+        'date_naissance',
+        'sexe',
+        'telephone',
+        'email',
+        'adresse',
+        'photo',
+        'statut',
     ];
 
-    public function niveau(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(Niveau::class);
-    }
-
-    public function anneeAcademique(): BelongsTo
-    {
-        return $this->belongsTo(AnneeAcademique::class);
+        return [
+            'date_naissance' => 'date',
+        ];
     }
 
     public function inscriptions(): HasMany

@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ParametrageSeeder::class,
             FraisScolariteSeeder::class,
+            InscriptionSeeder::class,
         ]);
     }
 }

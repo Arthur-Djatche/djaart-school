@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\UserController;
 use App\Http\Controllers\Api\Finance\FraisScolariteController;
+use App\Http\Controllers\Api\Inscription\ApprenantController;
+use App\Http\Controllers\Api\Inscription\InscriptionController;
 use App\Http\Controllers\Api\Parametrage\AnneeAcademiqueController;
 use App\Http\Controllers\Api\Parametrage\ClasseController;
 use App\Http\Controllers\Api\Parametrage\EtablissementController;
@@ -30,7 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('annees-academiques', AnneeAcademiqueController::class)->except('show')
             ->parameters(['annees-academiques' => 'anneeAcademique']);
         Route::apiResource('filieres', FiliereController::class)->except('show');
-        Route::apiResource('classes', ClasseController::class)->except('show')
+        Route::apiResource('classes', ClasseController::class)->except(['show', 'index'])
             ->parameters(['classes' => 'classe']);
         Route::apiResource('matieres', MatiereController::class)->except('show');
 
@@ -39,7 +41,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/niveaux/{niveau}', [NiveauController::class, 'update']);
         Route::delete('/niveaux/{niveau}', [NiveauController::class, 'destroy']);
 
-        Route::apiResource('frais-scolarite', FraisScolariteController::class)->except('show')
+        Route::apiResource('frais-scolarite', FraisScolariteController::class)->except(['show', 'index'])
             ->parameters(['frais-scolarite' => 'fraisScolarite']);
+    });
+
+    Route::middleware('role:super_admin|admin_etablissement|secretaire')->group(function () {
+        // Lecture seule : necessaire a la secretaire pour le formulaire d'inscription
+        // (choix de la classe + apercu de l'echeancier des frais), sans lui donner
+        // les droits de creation/modification reserves aux admins.
+        Route::get('/classes', [ClasseController::class, 'index']);
+        Route::get('/frais-scolarite', [FraisScolariteController::class, 'index']);
+
+        Route::get('/apprenants', [ApprenantController::class, 'index']);
+        Route::get('/apprenants/{apprenant}', [ApprenantController::class, 'show']);
+
+        Route::get('/inscriptions', [InscriptionController::class, 'index']);
+        Route::post('/inscriptions', [InscriptionController::class, 'store']);
+        Route::post('/inscriptions/{inscription}/annuler', [InscriptionController::class, 'cancel']);
     });
 });
