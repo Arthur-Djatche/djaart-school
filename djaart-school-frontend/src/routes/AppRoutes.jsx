@@ -4,6 +4,7 @@ import LoginPage from '../features/auth/LoginPage'
 import ResetPasswordPage from '../features/auth/ResetPasswordPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
 import FraisScolaritePage from '../features/finance/fraisScolarite/FraisScolaritePage'
+import InscriptionsListPage from '../features/inscriptions/InscriptionsListPage'
 import AnneesAcademiquesPage from '../features/parametrage/annees/AnneesAcademiquesPage'
 import ClassesPage from '../features/parametrage/classes/ClassesPage'
 import EtablissementsPage from '../features/parametrage/etablissements/EtablissementsPage'
@@ -14,6 +15,7 @@ import UsersListPage from '../features/users/UsersListPage'
 import ProtectedRoute from './ProtectedRoute'
 
 const ADMIN_ROLES = ['super_admin', 'admin_etablissement']
+const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
 
 export default function AppRoutes() {
   return (
@@ -24,6 +26,10 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={INSCRIPTION_ROLES} />}>
+        <Route path="/inscriptions" element={<InscriptionsListPage />} />
       </Route>
 
       <Route element={<ProtectedRoute roles={ADMIN_ROLES} />}>

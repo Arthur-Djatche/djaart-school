@@ -1,7 +1,9 @@
 const PARAMETRAGE_ROLES = ['super_admin', 'admin_etablissement']
+const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
 
 export const NAVIGATION = [
   { label: 'Tableau de bord', to: '/dashboard', roles: null },
+  { label: 'Inscriptions', to: '/inscriptions', roles: INSCRIPTION_ROLES },
   {
     label: 'Paramétrage',
     roles: PARAMETRAGE_ROLES,
