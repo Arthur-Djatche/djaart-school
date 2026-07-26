@@ -3,6 +3,7 @@ import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
 import LoginPage from '../features/auth/LoginPage'
 import ResetPasswordPage from '../features/auth/ResetPasswordPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
+import FraisScolaritePage from '../features/finance/fraisScolarite/FraisScolaritePage'
 import AnneesAcademiquesPage from '../features/parametrage/annees/AnneesAcademiquesPage'
 import ClassesPage from '../features/parametrage/classes/ClassesPage'
 import EtablissementsPage from '../features/parametrage/etablissements/EtablissementsPage'
@@ -33,6 +34,7 @@ export default function AppRoutes() {
         <Route path="/parametrage/filieres/:filiereId/niveaux" element={<NiveauxPage />} />
         <Route path="/parametrage/classes" element={<ClassesPage />} />
         <Route path="/parametrage/matieres" element={<MatieresPage />} />
+        <Route path="/finance/frais-scolarite" element={<FraisScolaritePage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

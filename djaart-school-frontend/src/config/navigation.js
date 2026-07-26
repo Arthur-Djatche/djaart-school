@@ -13,6 +13,13 @@ export const NAVIGATION = [
       { label: 'Matières', to: '/parametrage/matieres' },
     ],
   },
+  {
+    label: 'Finance',
+    roles: PARAMETRAGE_ROLES,
+    children: [
+      { label: 'Frais de scolarité', to: '/finance/frais-scolarite' },
+    ],
+  },
   { label: 'Comptes utilisateurs', to: '/users', roles: ['super_admin', 'admin_etablissement'] },
 ]
 
