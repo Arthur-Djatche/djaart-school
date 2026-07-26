@@ -31,3 +31,4 @@ djaart-school-frontend/.env.local
 # Editors
 .vscode/
 .idea/
+.claude/settings.local.json

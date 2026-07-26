@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -16,6 +17,18 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     /**
+     * Pas de Global Scope ici : résoudre l'utilisateur authentifié (Auth::user())
+     * déclenche une requête sur ce modèle, ce qui recréerait une boucle infinie
+     * si un scope global appelait lui-même Auth::user() (cf. EtablissementScope,
+     * réservé aux modèles métier autres que User — filtrage fait explicitement
+     * dans les contrôleurs pour User).
+     */
+    public function etablissement(): BelongsTo
+    {
+        return $this->belongsTo(Etablissement::class);
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -24,6 +37,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'etablissement_id',
     ];
 
     /**

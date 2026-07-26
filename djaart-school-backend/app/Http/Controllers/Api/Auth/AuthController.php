@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Concerns\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Models\User;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,10 +23,9 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        /** @var User $user */
-        $user = Auth::user();
+        $user = Auth::user()->load('etablissement');
 
-        return $this->success($this->formatUser($user), 'Connexion réussie.');
+        return $this->success(new UserResource($user), 'Connexion réussie.');
     }
 
     public function logout(Request $request)
@@ -40,16 +39,6 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return $this->success($this->formatUser($request->user()));
-    }
-
-    private function formatUser(User $user): array
-    {
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'roles' => $user->getRoleNames(),
-        ];
+        return $this->success(new UserResource($request->user()->load('etablissement')));
     }
 }
