@@ -69,5 +69,33 @@
 | Enseignant | enseignant@djaart.school | password | Lycée Démo DJAART |
 | Apprenant | apprenant@djaart.school | password | Lycée Démo DJAART |
 
+## Phase 2 — Paramétrage académique
+- Statut : **terminée**
+
+### Réalisé
+- Backend :
+  - `Etablissement` enrichi (`adresse`) ; 5 nouveaux modèles (`AnneeAcademique`, `Filiere`, `Niveau`, `Classe`, `Matiere`), tous rattachés à un `etablissement_id` en dur et utilisant le trait `BelongsToEtablissement` (Global Scope) posé en Phase 1 — première utilisation réelle de cette infrastructure sur des modèles métier (sans le problème de récursion propre à `User`).
+  - CRUD complet pour les 6 entités (`app/Http/Controllers/Api/Parametrage/`), avec le même pattern qu'en Phase 1 (Form Requests avec `etablissement_id` auto-assigné pour `admin_etablissement`/exigé pour `super_admin`, Policies via le trait partagé `ChecksEtablissementOwnership`, Resources dédiées).
+  - Règles métier appliquées : `Niveau.type_systeme` (`classique`/`lmd`), `Classe` liée à un `Niveau` **et** une `AnneeAcademique` de le **même établissement** (validation croisée), `Filiere.code` unique par établissement (pas globalement), `AnneeAcademique.date_fin` postérieure à `date_debut`, `EtablissementPolicy` réservant `create`/`delete` au `super_admin` uniquement.
+  - `ParametrageSeeder` : peuple entièrement le "Lycée Démo DJAART" existant (année, filière, 2 niveaux classiques, classes, matières) et crée **3 nouveaux établissements de démo** (primaire, universitaire LMD, centre de formation), chacun avec son propre `admin_etablissement` — couvrant les 4 types exigés par la section 5 du cahier des charges.
+  - Tests Feature : `AcademicStructureTest` (auto-scoping par rôle, rejet cross-établissement, isolation des listes, unicité de code par établissement, validations métier) — 21/21 tests OK au total (suite complète).
+- Frontend :
+  - Module `features/parametrage/` (etablissements, annees, filieres, niveaux, classes, matieres), chaque page suivant le pattern posé par `features/users/` en Phase 1 (Table + Modal).
+  - Nouveau composant `components/ui/Select.jsx` ; `Sidebar`/`config/navigation.js` étendus pour supporter un menu à sous-items ("Paramétrage").
+  - Page `Niveaux` imbriquée sous une filière (`/parametrage/filieres/:filiereId/niveaux`) ; les formulaires Classe/Matière chargent dynamiquement la liste des niveaux disponibles.
+- Vérification bout-en-bout (Playwright) : connecté en `admin_etablissement` (Lycée Démo DJAART), paramétrage **de zéro** d'une nouvelle filière → niveau → classe → matière ; isolation confirmée (un admin d'un autre établissement ne voit pas ces données) ; `super_admin` voit et gère les 4 établissements de démo.
+
+### Bugs corrigés pendant cette phase
+- Les migrations avec noms de table français pluralisés en préfixe (`annees_academiques`) ne correspondent pas à la pluralisation anglaise par défaut d'Eloquent (`Str::plural('AnneeAcademique')` → `annee_academiques`) : `protected $table` explicite nécessaire sur `AnneeAcademique`. Idem pour les FK générées par `foreignId()->constrained()` (deviné à partir du nom de colonne) : `->constrained('annees_academiques')` explicite requis.
+- `Route::apiResource('classes', ...)` nomme le paramètre de route `{class}` (singulier anglais valide) au lieu de `{classe}` attendu par le contrôleur/Form Request — nécessite `->parameters(['classes' => 'classe'])`.
+- Ordre des migrations : deux fichiers générés avec le même horodatage (`niveaux`/`classes`) peuvent s'exécuter dans le mauvais ordre alphabétique si les FK ne sont pas prises en compte — toujours vérifier/forcer l'ordre quand des dépendances de clé étrangère existent entre tables créées dans la même minute.
+
+### Comptes de démonstration (ajoutés en Phase 2)
+| Rôle | Email | Mot de passe | Établissement |
+|---|---|---|---|
+| Admin Établissement | admin.primaire@djaart.school | password | École Primaire Démo DJAART |
+| Admin Établissement | admin.universite@djaart.school | password | Université Démo DJAART (LMD) |
+| Admin Établissement | admin.centreformation@djaart.school | password | Centre de Formation Démo DJAART |
+
 ## Phases suivantes
-Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 2 à 11. Prochaine étape : **Phase 2 — Paramétrage académique** (établissements complets, années académiques, filières/niveaux/classes, matières).
+Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 3 à 11. Prochaine étape : **Phase 3 — Frais de scolarité et tranches** (configuration des frais par niveau/année, échéancier de tranches avec contrôle de cohérence).
