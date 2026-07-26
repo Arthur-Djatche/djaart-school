@@ -117,5 +117,31 @@
 ### Hypothèses / écarts documentés
 - L'alternative A2 de l'UML ("modification d'une grille déjà utilisée par une inscription → nouvelle version plutôt qu'écrasement") ne s'applique pas encore : `Inscription` n'existe pas avant la Phase 4. Pour l'instant, `update` remplace directement les tranches existantes (`FraisScolariteService::replaceTranches`). **À revoir dès la Phase 4** : dès qu'une grille sera référencée par une inscription, protéger sa modification (avertissement ou versionnement) au lieu de l'écraser.
 
+## Phase 4 — Inscriptions
+- Statut : **terminée**
+
+### Réalisé
+- Backend :
+  - Modèles `Apprenant` et `Inscription` (trait `BelongsToEtablissement`). Compteur `next_matricule_sequence` ajouté sur `etablissements` pour générer des matricules uniques et séquentiels (`{SIGLE}-{5 chiffres}`) sans collision sous concurrence (transaction + `lockForUpdate()`).
+  - `ApprenantService` (génération de matricule, réutilisation/création d'apprenant) et `InscriptionService` (résolution automatique de la grille de frais à partir du couple niveau/année de la classe choisie, contrôle de capacité de la classe, détection automatique `nouvelle`/`reinscription`, annulation).
+  - **Premier rôle opérationnel non-admin** introduit sur des routes protégées : `secretaire` peut désormais créer des inscriptions et consulter apprenants/classes/frais de scolarité (lecture seule sur ces deux derniers, écriture toujours réservée aux admins).
+  - Tests Feature : `InscriptionTest` (matricule généré et séquentiel par établissement, grille de frais rattachée automatiquement, classe pleine rejetée, classe sans grille rejetée, isolation, rôle non autorisé rejeté, annulation, réinscription détectée, réutilisation d'apprenant existant) — 36/36 tests OK au total (suite complète).
+- Frontend :
+  - Module `features/inscriptions/` : liste des inscriptions + formulaire en une modale (recherche d'apprenant existant **ou** création à la volée, sélection de classe, aperçu automatique de l'échéancier de frais avant validation).
+  - Nouvel item de navigation "Inscriptions" (rôles `super_admin`, `admin_etablissement`, **`secretaire`**).
+- Vérification bout-en-bout (Playwright), connecté en `secretaire` : création d'un nouvel apprenant, inscription dans une classe avec grille de frais, échéancier affiché avant validation, matricule généré visible dans la liste.
+
+### Bugs corrigés pendant cette phase
+- **`next_matricule_sequence` absent du `$fillable` d'`Etablissement`** : `update()` l'ignorait silencieusement (protection mass-assignment, sans erreur), donnant toujours la séquence 1 — leçon générale : après l'ajout d'une colonne destinée à être modifiée par l'application (pas seulement en lecture), toujours vérifier qu'elle est bien listée dans `$fillable`, la lecture seule fonctionnant même sans cela.
+- Règle de validation Laravel `prohibited_with` inexistante dans cette version : remplacée par une vérification manuelle dans `withValidator`/`after` (mutuelle exclusivité `apprenant_id`/`apprenant`).
+- Routes `/classes` et `/frais-scolarite` (lecture) étaient enfermées dans le groupe réservé aux admins, rendant le formulaire d'inscription inutilisable pour `secretaire` : séparation de l'`index` (lecture, ouvert aussi à `secretaire`) des routes d'écriture (toujours admin uniquement), avec mise à jour des policies `viewAny` correspondantes.
+- Généralisation du trait `ChecksEtablissementOwnership` : il vérifiait `hasRole('admin_etablissement')` en dur, ce qui aurait bloqué `secretaire` sur les vérifications de propriété d'établissement — remplacé par une simple comparaison d'`etablissement_id` (les méthodes `viewAny`/`create` de chaque policy filtrent déjà les rôles autorisés en amont).
+- `components/ui/Modal.jsx` n'avait pas de défilement interne : un formulaire long (comme celui d'inscription) pouvait pousser le bouton de validation hors de l'écran sans moyen d'y accéder — ajout de `max-h-[90vh]` + `overflow-y-auto` sur le contenu, bénéficie à toutes les modales.
+
+### Hypothèses / écarts documentés
+- Cycle de vie de l'inscription partiel : seuls `en_cours` (création) et `annulee` (annulation manuelle) sont implémentés. Les transitions `validee` (Phase 5, premier paiement), `suspendue` et `cloturee` (Phase 7, clôture d'année) seront ajoutées avec leurs déclencheurs respectifs.
+- Pas de gestion de liste d'attente pour une classe pleine : simple blocage avec message d'erreur.
+- Champ `photo` de l'apprenant présent en base mais sans composant de téléversement dans l'UI (prévu pour la Phase 8, carte scolaire).
+
 ## Phases suivantes
-Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 4 à 11. Prochaine étape : **Phase 4 — Inscriptions** (génération automatique du matricule, rattachement de la grille de frais, cycle de vie de l'inscription).
+Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 5 à 11. Prochaine étape : **Phase 5 — Paiements et reçus** (encaissement de tranche, numérotation sécurisée des reçus, génération PDF, transition de l'inscription vers `validee`).
