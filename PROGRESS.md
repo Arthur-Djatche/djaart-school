@@ -30,5 +30,44 @@
 |---|---|---|
 | Super Admin | admin@djaart.school | password |
 
+## Phase 1 — Authentification & gestion des utilisateurs/rôles
+- Statut : **terminée**
+
+### Réalisé
+- Backend :
+  - Table `etablissements` (minimale : nom, type, sigle) créée en avance de la Phase 2, uniquement comme ancrage FK multi-tenant — voir hypothèse ci-dessous.
+  - `etablissement_id` nullable ajouté sur `users` (super_admin sans établissement, les autres rôles rattachés à un établissement).
+  - `EtablissementScope` (Global Scope) + trait `BelongsToEtablissement`, réutilisables pour les futurs modèles métier (Phase 2+).
+  - `UserController` (index paginé+recherche, store, update, destroy), `UserPolicy` (isolation par établissement, un `admin_etablissement` ne peut ni créer ni promouvoir un `super_admin`), `StoreUserRequest`/`UpdateUserRequest`, `UserResource`.
+  - Middlewares Spatie (`role`, `permission`, `role_or_permission`) enregistrés dans `bootstrap/app.php`.
+  - Mot de passe oublié : `PasswordResetController` (Laravel natif `Password` facade), URL de réinitialisation redirigée vers le frontend via `ResetPassword::createUrlUsing` dans `AppServiceProvider`.
+  - Seeders étendus : établissement de démo "Lycée Démo DJAART" + un utilisateur par rôle restant.
+  - Tests Feature : `UserManagementTest` (CRUD, isolation multi-établissement, restrictions de rôle), `PasswordResetTest` — 14/14 tests OK au total (suite complète).
+- Frontend :
+  - `config/navigation.js` (menu par rôle) + `Sidebar` dynamique, `ProtectedRoute` avec prop `roles` (redirection `/dashboard` si rôle non autorisé).
+  - Composants réutilisables `Table` (recherche/tri/pagination) et `Modal`.
+  - Pages `ForgotPasswordPage`/`ResetPasswordPage`, module `features/users` (liste + création/édition/suppression via modal).
+- Vérification bout-en-bout (Playwright) : connexion successive avec les 6 comptes de démo, menu et accès à `/users` conformes au rôle pour chacun ; CRUD utilisateur complet (créer/modifier/supprimer) ; flux mot de passe oublié → réinitialisation → connexion avec le nouveau mot de passe.
+
+### Bugs corrigés pendant cette phase (à retenir pour la suite)
+- **Ne jamais appliquer un Global Scope qui appelle `Auth::user()`/`auth()->check()` sur le modèle `User` lui-même** : résoudre l'utilisateur authentifié interroge ce modèle, ce qui réapplique le scope et provoque une récursion infinie (plantage silencieux du serveur PHP, réponse 500 vide, sans log). `EtablissementScope` reste utilisable sur les futurs modèles métier (Classe, Inscription, Paiement...), mais **pas** sur `User` — le filtrage par établissement y est fait explicitement dans les contrôleurs.
+- Middleware Spatie `role:` : plusieurs rôles se séparent avec `|` (ex. `role:super_admin|admin_etablissement`), **pas** avec une virgule (une virgule est interprétée comme un paramètre "guard" additionnel).
+- `AuthContext` ne doit pas appeler `/api/me` sur les pages publiques (login, mot de passe oublié, reset) : cet appel touche la session et peut entrer en concurrence avec la requête de connexion sur la même session (pilote `database`), invalidant le jeton CSRF.
+- Cohérence de dépaquetage des réponses Axios dans `authApi.js` : toutes les fonctions (`login`, `fetchMe`, ...) doivent unwrap `response.data` de la même façon avant de renvoyer l'enveloppe `{data, message, errors}` à l'appelant — une incohérence ici avait cassé la re-hydratation de session après un rechargement de page.
+- Laravel 11+ : la classe `Controller` de base n'inclut plus le trait `AuthorizesRequests` par défaut — nécessaire pour `$this->authorize(...)`.
+
+### Hypothèses / écarts documentés
+- Modèle `Etablissement` créé en avance de la Phase 2 (voir ci-dessus), sous forme minimale ; la Phase 2 l'enrichira et ajoutera son écran de gestion CRUD dédié.
+
+### Comptes de démonstration
+| Rôle | Email | Mot de passe | Établissement |
+|---|---|---|---|
+| Super Admin | admin@djaart.school | password | — |
+| Admin Établissement | admin_etablissement@djaart.school | password | Lycée Démo DJAART |
+| Secrétaire | secretaire@djaart.school | password | Lycée Démo DJAART |
+| Comptable | comptable@djaart.school | password | Lycée Démo DJAART |
+| Enseignant | enseignant@djaart.school | password | Lycée Démo DJAART |
+| Apprenant | apprenant@djaart.school | password | Lycée Démo DJAART |
+
 ## Phases suivantes
-Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 1 à 11. Prochaine étape : **Phase 1 — Authentification & gestion des utilisateurs/rôles** (CRUD comptes, garde de routes par rôle, sidebar dynamique par rôle).
+Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 2 à 11. Prochaine étape : **Phase 2 — Paramétrage académique** (établissements complets, années académiques, filières/niveaux/classes, matières).
