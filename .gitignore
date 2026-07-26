@@ -1,0 +1,33 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend (Laravel)
+djaart-school-backend/vendor/
+djaart-school-backend/node_modules/
+djaart-school-backend/.env
+djaart-school-backend/storage/*.key
+djaart-school-backend/storage/framework/cache/*
+djaart-school-backend/storage/framework/sessions/*
+djaart-school-backend/storage/framework/testing/*
+djaart-school-backend/storage/framework/views/*
+djaart-school-backend/storage/logs/*
+!djaart-school-backend/storage/framework/cache/.gitignore
+!djaart-school-backend/storage/framework/sessions/.gitignore
+!djaart-school-backend/storage/framework/testing/.gitignore
+!djaart-school-backend/storage/framework/views/.gitignore
+!djaart-school-backend/storage/logs/.gitignore
+djaart-school-backend/.phpunit.result.cache
+djaart-school-backend/Homestead.json
+djaart-school-backend/Homestead.yaml
+djaart-school-backend/auth.json
+
+# Frontend (React/Vite)
+djaart-school-frontend/node_modules/
+djaart-school-frontend/dist/
+djaart-school-frontend/.env
+djaart-school-frontend/.env.local
+
+# Editors
+.vscode/
+.idea/
