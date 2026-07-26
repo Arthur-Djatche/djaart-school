@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-navy: #001335;
+  --color-brand-blue: #003fa2;
+  --color-brand-blue-light: #009bec;
+  --color-brand-orange: #fe9605;
+  --color-brand-teal: #009ca0;
+
+  --font-sans: 'Segoe UI', system-ui, Roboto, sans-serif;
+}
+
+body {
+  @apply bg-slate-50 text-brand-navy antialiased;
+}
