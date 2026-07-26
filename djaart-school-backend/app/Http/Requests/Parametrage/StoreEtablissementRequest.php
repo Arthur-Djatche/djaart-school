@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Http\Requests\Parametrage;
+
+use App\Models\Etablissement;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class StoreEtablissementRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()->can('create', Etablissement::class);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'nom' => ['required', 'string', 'max:255'],
+            'type_etablissement' => ['required', Rule::in(['primaire', 'secondaire', 'universitaire', 'centre_formation'])],
+            'sigle' => ['nullable', 'string', 'max:20'],
+            'adresse' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+}

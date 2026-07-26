@@ -14,10 +14,36 @@ class Etablissement extends Model
         'nom',
         'type_etablissement',
         'sigle',
+        'adresse',
     ];
 
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    public function anneesAcademiques(): HasMany
+    {
+        return $this->hasMany(AnneeAcademique::class);
+    }
+
+    public function filieres(): HasMany
+    {
+        return $this->hasMany(Filiere::class);
+    }
+
+    public function niveaux(): HasMany
+    {
+        return $this->hasMany(Niveau::class);
+    }
+
+    public function classes(): HasMany
+    {
+        return $this->hasMany(Classe::class);
+    }
+
+    public function matieres(): HasMany
+    {
+        return $this->hasMany(Matiere::class);
     }
 }
