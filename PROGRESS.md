@@ -260,5 +260,36 @@ Retour utilisateur après la Phase 5 : le comptable doit pouvoir lui-même crée
 - **QR auto-porteur, pas d'URL de vérification publique** : aucun portail de consultation/vérification externe n'existe dans ce projet (même remarque que le portail apprenant différé en Phases 5/7) — le QR encode directement les données d'identification du document.
 - **Blocage strict** (pas d'attestation "sous réserve") si l'inscription n'est pas validée, cohérent avec le choix déjà fait en Phases 5/7.
 
+## Phase 9 — Tableaux de bord et rapports
+- Statut : **terminée**
+
+### Contexte et décision de périmètre
+Le cahier des charges demande un tableau de bord par rôle, y compris "Apprenant". Or aucune liaison `User`↔`Apprenant` n'existe dans ce projet (déjà documenté comme différé en Phases 5, 7 et 8, sous l'angle du portail apprenant/parent). Avant de re-différer une 4ème fois par simple hypothèse silencieuse, la question a été posée explicitement à l'utilisateur : le tableau de bord "Apprenant" reste **hors périmètre** pour cette itération (décision confirmée). Cette phase livre les 4 tableaux de bord **staff** : Super Admin, Admin établissement, Comptable, Enseignant.
+
+### Réalisé
+- Backend :
+  - **Un seul endpoint `GET /dashboard`** (pas de restriction de rôle sur la route elle-même, ouverte à tout utilisateur authentifié) : le contenu varie selon le rôle déterminé côté serveur (`DashboardController` teste `hasRole()` dans l'ordre super_admin → admin_etablissement → comptable → enseignant) et renvoie `{ role, data }`. Plus simple qu'un endpoint par rôle ; le frontend n'a qu'à choisir le composant de présentation correspondant à `role`.
+  - `DashboardService` : une méthode par rôle.
+    - `pourSuperAdmin()` : agrégats globaux (nb établissements, apprenants actifs tous établissements, encaissé du mois tous établissements, effectif d'utilisateurs par rôle via le scope Spatie `User::role()`) + un tableau par établissement (effectif, encaissé du mois) — bypass volontaire du scope multi-tenant, réservé à ce rôle.
+    - `pourAdminEtablissement()` : effectifs par classe, taux de recouvrement (encaissé / `montant_total` attendu sur les inscriptions actives, tous statuts confondus hors annulée), liste des affectations dont la **période la plus récente** (dernière séquence ou dernier semestre configuré pour le niveau+année) n'a pas encore de saisie verrouillée, top-5 des impayés en retard.
+    - `pourComptable()` : encaissé du jour, encaissé du mois, liste complète des impayés en retard.
+    - `pourEnseignant()` : ses affectations avec, pour chacune, la période la plus récente et si elle est déjà soumise ou non.
+  - `RapportService` (réutilisé par `DashboardService` pour la liste d'impayés, afin de ne pas dupliquer la règle de calcul) :
+    - `listerImpayes()` : tranches dont `date_echeance` est dépassée et dont le solde (montant de la tranche − somme des paiements de **cette inscription** sur cette tranche, même méthode que `ApprenantController::echeancier`) est encore positif — agrégées par apprenant, triées par ancienneté de retard décroissante.
+    - `statistiquesReussite()` : répartition des mentions déjà attribuées, à partir de `ReleveDeNotes.mention` (et non `Bulletin`, qui ne porte qu'une moyenne/rang par séquence sans mention).
+  - **Rapports en PDF uniquement**, générés à la volée et streamés directement (`response()->streamDownload` équivalent — réponse PDF brute avec `Content-Disposition: attachment`), **non persistés en base** : ce sont des rapports consultatifs, pas des documents officiels numérotés comme les reçus/attestations/bulletins. `RapportController::impayes()`/`statistiquesReussite()`, route `role:super_admin|admin_etablissement|comptable` (l'enseignant et la secrétaire n'y ont pas accès).
+  - Tests Feature : `DashboardTest` (agrégats globaux corrects pour super_admin sur 2 établissements, taux de recouvrement et top impayés corrects pour admin_etablissement avec isolation multi-établissement vérifiée, encaissements du jour/mois et impayés corrects pour comptable, affectations avec statut de saisie correct pour enseignant, isolation des affectations incomplètes entre établissements), `RapportTest` (PDF valides pour comptable/admin_etablissement/super_admin, accès refusé à enseignant et secrétaire) — 104/104 tests OK au total (suite complète).
+- Frontend :
+  - `src/api/dashboardApi.js` (`fetchDashboard`, URLs des deux rapports).
+  - `DashboardPage.jsx` remplace le message générique de bienvenue : bascule sur l'un des 4 composants (`SuperAdminDashboard`, `AdminEtablissementDashboard`, `ComptableDashboard`, `EnseignantDashboard`, nouveau dossier `features/dashboard/`) selon `data.role` reçu de l'API. Cartes de métriques (`MetricCard`, couleurs de marque) + tableaux simples pour les listes (impayés, affectations incomplètes, effectifs, par établissement).
+  - Boutons d'export PDF ("Rapport des impayés", "Statistiques de réussite") sur les tableaux de bord Admin établissement/Comptable, ouverture dans un nouvel onglet avec `rel="noopener"` (cohérent avec le correctif Referer/Sanctum de la Phase 5).
+- Vérification bout-en-bout (Playwright, sur les données de démo existantes) : connexion successive `admin@djaart.school` (super_admin — 4 établissements, répartition par rôle et par établissement cohérente), `admin_etablissement@djaart.school` (taux de recouvrement 27,6 %, 1 affectation à saisir, impayés réels affichés), `comptable@djaart.school` (encaissements du jour/mois et impayés en retard identiques à ceux de l'admin établissement, même établissement), `enseignant@djaart.school` (affectation "6ème A / Mathématiques", statut "À saisir" correct) — aucune erreur console sur les 4 tableaux de bord ; téléchargement réel des deux rapports PDF pour l'admin établissement (contenu non vide, en-tête `%PDF` valide).
+
+### Hypothèses / écarts documentés
+- **Tableau de bord Apprenant explicitement hors périmètre** (décision utilisateur confirmée, cf. contexte ci-dessus) — aucune route ni composant n'est prévu pour ce rôle dans cette phase.
+- **Rapports PDF uniquement**, pas d'export Excel/CSV séparé — le "/" du cahier des charges ("PDF/Excel") a été lu comme une alternative de format, pas une obligation des deux ; évite d'ajouter une dépendance lourde (type PhpSpreadsheet) pour un besoin secondaire.
+- **Rapports non persistés/non numérotés** (contrairement aux reçus/attestations/cartes/bulletins) — générés à la demande à chaque téléchargement, cohérents avec leur nature consultative plutôt qu'officielle.
+- **Statistiques de réussite basées sur `ReleveDeNotes.mention`**, pas `Bulletin` (qui n'a qu'une moyenne/rang par séquence, sans mention) — plus juste par rapport aux données réellement disponibles.
+
 ## Phases suivantes
-Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 9 à 11. Prochaine étape : **Phase 9 — Tableaux de bord et rapports**.
+Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 10 à 11. Prochaine étape : **Phase 10**.
