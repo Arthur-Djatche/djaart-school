@@ -215,5 +215,29 @@ Retour utilisateur après la Phase 5 : le comptable doit pouvoir lui-même crée
 - **Absence** : stockée comme un booléen `absent` (valeur nulle) plutôt que forcée à 0 — le traitement dans le calcul de moyenne (0 ou neutralisée) est différé à la Phase 7, qui ne fait pas encore partie du périmètre ici (Phase 6 = saisie et verrouillage uniquement, pas de calcul de moyenne/bulletin).
 - Hors périmètre explicite (alternatives UML différées) : blocage automatique de la saisie Session Normale pour "assiduité insuffisante" (aucun suivi d'assiduité n'existe dans le projet) ; calcul de moyenne UE/matière, rang, mention — tout cela est Phase 7.
 
+## Phase 7 — Bulletins et relevés de notes
+- Statut : **terminée**
+
+### Réalisé
+- Backend :
+  - Modèles `Bulletin` (`inscription_id`, `sequence_id`, `moyenne_generale`, `rang`, `fichier_pdf`, unique par inscription+séquence) et `ReleveDeNotes` (`inscription_id`, `semestre_id` nullable — null pour le relevé annuel classique — `moyenne_generale`, `mention`, `fichier_pdf`).
+  - `BulletinService::cloturerSequence(classe, sequence)` : génère **en un seul lot** les bulletins de toute la classe (le rang exige de comparer tous les apprenants actifs entre eux) — vérifie que toutes les matières affectées ont une saisie **verrouillée** couvrant tous les apprenants actifs (sinon bloque avec la liste des matières incomplètes) ; moyenne pondérée par coefficient (note "Absent" = 0, résout l'hypothèse différée en Phase 6) ; rang par classement de compétition (ex æquo = même rang) ; PDF par apprenant (même pattern dompdf que `RecuService`) ; bloque toute re-clôture si des bulletins existent déjà.
+  - `ReleveService::genererAnnuelClassique(classe)` : vérifie qu'un bulletin existe pour **chaque séquence** du niveau/année avant de générer (moyenne = moyenne des moyennes de séquence, mention selon barème classique). `ReleveService::genererSemestrielLmd(classe, semestre)` : vérifie que chaque UE a des notes **CC et Session Normale** verrouillées ; moyenne UE = pondération `ponderation_cc`/`ponderation_session_normale` posée en Phase 6 ; moyenne générale pondérée par `credits_ects` ; mention Admis/Ajourné.
+  - `BulletinPolicy`/`ReleveDeNotesPolicy` (`super_admin`, `admin_etablissement`, `secretaire` — la secrétaire déclenche la clôture comme le prévoit l'UML) ; routes imbriquées `POST /classes/{classe}/sequences/{sequence}/cloturer`, `POST /classes/{classe}/releves/annuel`, `POST /classes/{classe}/semestres/{semestre}/releves`.
+  - Tests Feature : `BulletinTest` (clôture bloquée si notes manquantes avec message nommant la matière, moyenne pondérée et rang corrects sur 2 apprenants, re-clôture bloquée, note "Absent" comptée comme 0, rôle enseignant/autre établissement rejeté), `ReleveTest` (relevé classique bloqué si séquence sans bulletin, mention correcte, relevé LMD bloqué si CC/SN manquant, moyenne pondérée par crédits ECTS et mention Admis/Ajourné correctes, secrétaire autorisée, comptable rejeté) — 83/83 tests OK au total (suite complète).
+- Frontend :
+  - `src/api/bulletinsApi.js` ; groupe "Pédagogie" étendu avec "Bulletins" et "Relevés de notes" (rôles `super_admin`/`admin_etablissement`/`secretaire`).
+  - `BulletinsPage` : classe → séquence → "Clôturer la séquence" → tableau des bulletins (moyenne, rang, téléchargement). `RelevesPage` : classe → (si niveau LMD) semestre → génération en un clic pour toute la classe → tableau des relevés (moyenne, mention, téléchargement).
+- Vérification bout-en-bout (Playwright) : `enseignant@djaart.school` saisit et verrouille les 3 séquences de "6ème A" ; `admin_etablissement` clôture chacune (bulletins générés, moyenne/rang corrects), re-clôture bloquée avec message clair, téléchargement réel du bulletin PDF via un vrai clic navigateur (fichier non vide) ; génération du relevé annuel réussie une fois les 3 séquences clôturées, moyenne et mention correctes.
+
+### Bug corrigé pendant cette vérification
+- **Convention de nommage des policies** : `ReleveDeNotesPolicy` avait été nommée `RelevePolicy` — Laravel 11 résout les policies par correspondance exacte `{NomDuModèle}Policy` (ici `ReleveDeNotes` → `ReleveDeNotesPolicy`), sans quoi `$this->authorize(..., ReleveDeNotes::class)` échoue silencieusement et refuse l'accès à **tout le monde**, y compris les admins — masqué en tests unitaires jusqu'à ce que `ReleveTest` échoue sur des cas pourtant correctement autorisés. Corrigé en renommant fichier et classe pour respecter la convention.
+- **Grille de saisie non réinitialisée en changeant de séquence** (`SaisieNotesPage.jsx`) : `chargerGrille()` ne vidait pas l'ancien état `grille` avant de récupérer les notes de la séquence nouvellement sélectionnée, laissant transitoirement affichée (et verrouillée) la grille de la séquence précédente. Corrigé en réinitialisant `grille` à `null` au début du chargement (affiche "Chargement…" pendant la requête) — découvert en testant la saisie successive de plusieurs séquences dans la même session navigateur.
+
+### Hypothèses / écarts documentés
+- **Barème de mention non chiffré dans le cahier des charges** (choix assumé) : classique — Excellent ≥16, Bien ≥14, Assez Bien ≥12, Passable ≥10, Insuffisant <10 ; LMD — Admis si moyenne générale ≥10, sinon Ajourné (pas de session de rattrapage, déjà différée en Phase 6).
+- **Génération en lot par classe** (pas apprenant par apprenant) pour bulletins et relevés — le rang et la vérification de complétude s'évaluent naturellement à l'échelle de la classe.
+- **Portail apprenant/parent hors périmètre** : consultation réservée à secrétariat/admin (aucune authentification apprenant/parent n'existe dans ce projet, cf. même remarque en Phase 5 pour les reçus).
+
 ## Phases suivantes
-Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 7 à 11. Prochaine étape : **Phase 7 — Bulletins et relevés de notes**.
+Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 8 à 11. Prochaine étape : **Phase 8 — Effets académiques (attestations et cartes)**.
