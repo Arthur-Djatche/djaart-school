@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
 import LoginPage from '../features/auth/LoginPage'
 import ResetPasswordPage from '../features/auth/ResetPasswordPage'
+import ApprenantFichePage from '../features/apprenants/ApprenantFichePage'
+import ApprenantsListPage from '../features/apprenants/ApprenantsListPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
 import CaissePage from '../features/finance/caisse/CaissePage'
 import FraisScolaritePage from '../features/finance/fraisScolarite/FraisScolaritePage'
@@ -67,6 +69,8 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute roles={BULLETINS_ROLES} />}>
         <Route path="/pedagogie/bulletins" element={<BulletinsPage />} />
         <Route path="/pedagogie/releves" element={<RelevesPage />} />
+        <Route path="/apprenants" element={<ApprenantsListPage />} />
+        <Route path="/apprenants/:id" element={<ApprenantFichePage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
