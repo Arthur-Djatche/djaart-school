@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\UserController;
+use App\Http\Controllers\Api\Documents\AttestationController;
+use App\Http\Controllers\Api\Documents\CarteScolaireController;
 use App\Http\Controllers\Api\Finance\FraisScolariteController;
 use App\Http\Controllers\Api\Finance\PaiementController;
 use App\Http\Controllers\Api\Finance\RecuController;
@@ -100,5 +102,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/classes/{classe}/releves/annuel', [ReleveController::class, 'storeAnnuel']);
         Route::post('/classes/{classe}/semestres/{semestre}/releves', [ReleveController::class, 'storeSemestriel']);
         Route::get('/releves/{releve}/telecharger', [ReleveController::class, 'telecharger']);
+
+        Route::post('/apprenants/{apprenant}/photo', [ApprenantController::class, 'updatePhoto']);
+
+        Route::get('/apprenants/{apprenant}/attestations', [AttestationController::class, 'index']);
+        Route::post('/apprenants/{apprenant}/attestations', [AttestationController::class, 'store']);
+        Route::get('/attestations/{attestation}/telecharger', [AttestationController::class, 'telecharger']);
+
+        Route::get('/apprenants/{apprenant}/cartes-scolaires', [CarteScolaireController::class, 'index']);
+        Route::post('/apprenants/{apprenant}/cartes-scolaires', [CarteScolaireController::class, 'store']);
+        Route::get('/cartes-scolaires/{carte}/telecharger', [CarteScolaireController::class, 'telecharger']);
     });
 });

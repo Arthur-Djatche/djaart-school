@@ -36,4 +36,14 @@ class Apprenant extends Model
     {
         return $this->hasMany(Inscription::class);
     }
+
+    public function attestations(): HasMany
+    {
+        return $this->hasMany(Attestation::class);
+    }
+
+    public function cartesScolaires(): HasMany
+    {
+        return $this->hasMany(CarteScolaire::class);
+    }
 }

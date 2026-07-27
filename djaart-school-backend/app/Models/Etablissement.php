@@ -17,6 +17,8 @@ class Etablissement extends Model
         'adresse',
         'next_matricule_sequence',
         'next_recu_sequence',
+        'next_attestation_sequence',
+        'next_carte_sequence',
     ];
 
     public function users(): HasMany

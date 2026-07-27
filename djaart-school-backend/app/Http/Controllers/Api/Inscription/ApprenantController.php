@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ApprenantResource;
 use App\Models\Apprenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ApprenantController extends Controller
 {
@@ -83,5 +84,23 @@ class ApprenantController extends Controller
             'apprenant' => new ApprenantResource($apprenant),
             'inscriptions' => $data,
         ]);
+    }
+
+    public function updatePhoto(Request $request, Apprenant $apprenant)
+    {
+        $this->authorize('gererDocuments', $apprenant);
+
+        $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        if ($apprenant->photo) {
+            Storage::disk('public')->delete($apprenant->photo);
+        }
+
+        $chemin = $request->file('photo')->store("apprenants/{$apprenant->etablissement_id}", 'public');
+        $apprenant->update(['photo' => $chemin]);
+
+        return $this->success(new ApprenantResource($apprenant), 'Photo mise à jour.');
     }
 }
