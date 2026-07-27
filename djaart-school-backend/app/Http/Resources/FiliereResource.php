@@ -14,6 +14,11 @@ class FiliereResource extends JsonResource
             'etablissement_id' => $this->etablissement_id,
             'nom' => $this->nom,
             'code' => $this->code,
+            'chef_departement_id' => $this->chef_departement_id,
+            'chef_departement' => $this->whenLoaded('chefDepartement', fn () => $this->chefDepartement ? [
+                'id' => $this->chefDepartement->id,
+                'name' => $this->chefDepartement->name,
+            ] : null),
         ];
     }
 }

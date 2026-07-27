@@ -7,8 +7,9 @@
         body { font-family: Helvetica, Arial, sans-serif; color: #001335; font-size: 11px; margin: 0; }
         .carte {
             width: 340px; height: 214px; border: 2px solid #003fa2; border-radius: 10px;
-            padding: 12px; box-sizing: border-box; position: relative;
+            padding: 12px; box-sizing: border-box; position: relative; overflow: hidden;
         }
+        .filigrane { position: absolute; top: 25%; left: 15%; width: 70%; opacity: 0.08; z-index: -1; }
         .entete { display: table; width: 100%; border-bottom: 2px solid #fe9605; padding-bottom: 6px; margin-bottom: 8px; }
         .entete .logo { display: table-cell; width: 24px; vertical-align: middle; }
         .entete .logo img { width: 20px; height: 20px; object-fit: contain; }
@@ -32,6 +33,9 @@
 </head>
 <body>
     <div class="carte">
+        @if($logoDataUri)
+            <img class="filigrane" src="{{ $logoDataUri }}" alt="">
+        @endif
         <div class="numero">
             N° {{ $etablissement->sigle ?? 'ETB' }}-{{ str_pad($carte->numero, 5, '0', STR_PAD_LEFT) }}
             @if($carte->numero_duplicata > 0)

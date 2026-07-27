@@ -143,6 +143,51 @@ class AcademicStructureTest extends TestCase
         $otherEtablissement->assertCreated();
     }
 
+    public function test_filiere_peut_avoir_un_chef_de_departement_enseignant(): void
+    {
+        $etablissement = Etablissement::factory()->create();
+        $admin = $this->makeAdmin($etablissement);
+        $enseignant = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $enseignant->assignRole('enseignant');
+
+        $response = $this->actingAs($admin)->postJson('/api/filieres', [
+            'nom' => 'Informatique', 'code' => 'INFO', 'chef_departement_id' => $enseignant->id,
+        ]);
+
+        $response->assertCreated();
+        $this->assertSame($enseignant->id, $response->json('data.chef_departement_id'));
+        $this->assertSame($enseignant->name, $response->json('data.chef_departement.name'));
+    }
+
+    public function test_chef_de_departement_doit_avoir_le_role_enseignant(): void
+    {
+        $etablissement = Etablissement::factory()->create();
+        $admin = $this->makeAdmin($etablissement);
+        $comptable = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $comptable->assignRole('comptable');
+
+        $response = $this->actingAs($admin)->postJson('/api/filieres', [
+            'nom' => 'Informatique', 'code' => 'INFO', 'chef_departement_id' => $comptable->id,
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_chef_de_departement_doit_appartenir_au_meme_etablissement(): void
+    {
+        $etablissement = Etablissement::factory()->create();
+        $autreEtablissement = Etablissement::factory()->create();
+        $admin = $this->makeAdmin($etablissement);
+        $enseignantAutreEtablissement = User::factory()->create(['etablissement_id' => $autreEtablissement->id]);
+        $enseignantAutreEtablissement->assignRole('enseignant');
+
+        $response = $this->actingAs($admin)->postJson('/api/filieres', [
+            'nom' => 'Informatique', 'code' => 'INFO', 'chef_departement_id' => $enseignantAutreEtablissement->id,
+        ]);
+
+        $response->assertStatus(422);
+    }
+
     public function test_niveau_requires_valid_type_systeme(): void
     {
         $etablissement = Etablissement::factory()->create();

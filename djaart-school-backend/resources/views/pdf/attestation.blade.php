@@ -5,6 +5,9 @@
     <title>{{ $typeLabel }}</title>
     <style>
         body { font-family: Helvetica, Arial, sans-serif; color: #001335; font-size: 13px; }
+        .filigrane { position: fixed; top: 32%; left: 20%; width: 60%; opacity: 0.07; z-index: -1; }
+        .entete-image { width: 100%; margin-bottom: 10px; }
+        .entete-image img { width: 100%; }
         .header { display: table; width: 100%; border-bottom: 3px solid #003fa2; padding-bottom: 10px; margin-bottom: 10px; }
         .header .logo { display: table-cell; width: 70px; vertical-align: middle; }
         .header .logo img { width: 55px; height: 55px; object-fit: contain; }
@@ -22,18 +25,26 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            @if($logoDataUri)
-                <img src="{{ $logoDataUri }}" alt="Logo">
-            @endif
+    @if($logoDataUri)
+        <img class="filigrane" src="{{ $logoDataUri }}" alt="">
+    @endif
+
+    @if($enteteDataUri)
+        <div class="entete-image"><img src="{{ $enteteDataUri }}" alt="En-tête"></div>
+    @else
+        <div class="header">
+            <div class="logo">
+                @if($logoDataUri)
+                    <img src="{{ $logoDataUri }}" alt="Logo">
+                @endif
+            </div>
+            <div class="identite">
+                <h1>{{ $etablissement->nom }}</h1>
+                <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
+            </div>
+            <div class="logo"></div>
         </div>
-        <div class="identite">
-            <h1>{{ $etablissement->nom }}</h1>
-            <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
-        </div>
-        <div class="logo"></div>
-    </div>
+    @endif
 
     <div class="numero">N° {{ $etablissement->sigle ?? 'ETB' }}-ATT-{{ str_pad($attestation->numero, 5, '0', STR_PAD_LEFT) }}</div>
 

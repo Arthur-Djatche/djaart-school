@@ -42,6 +42,11 @@ class RecuService
                 'fichier_pdf' => '',
             ]);
 
+            $totalPayeSurTranche = (float) Paiement::where('inscription_id', $paiement->inscription_id)
+                ->where('tranche_id', $paiement->tranche_id)
+                ->sum('montant');
+            $soldeRestant = round((float) $paiement->tranche->montant - $totalPayeSurTranche, 2);
+
             $pdf = Pdf::loadView('pdf.recu', [
                 'recu' => $recu,
                 'etablissement' => $etablissement,
@@ -50,9 +55,10 @@ class RecuService
                 'anneeAcademique' => $paiement->inscription->anneeAcademique,
                 'tranche' => $paiement->tranche,
                 'paiement' => $paiement,
+                'soldeRestant' => $soldeRestant,
                 'modeLabel' => self::MODE_LABELS[$paiement->mode_paiement] ?? $paiement->mode_paiement,
                 'logoDataUri' => $this->logoDataUri($etablissement),
-                'signatureDataUri' => $this->signatureDataUri($etablissement),
+                'enteteDataUri' => $this->enteteDataUri($etablissement),
             ]);
 
             $chemin = "recus/{$paiement->etablissement_id}/{$numero}.pdf";

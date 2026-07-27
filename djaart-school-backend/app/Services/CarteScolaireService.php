@@ -71,6 +71,7 @@ class CarteScolaireService
                 'photoDataUri' => $this->photoDataUri($apprenant->photo),
                 'logoDataUri' => $this->logoDataUri($etablissement),
                 'signatureDataUri' => $this->signatureDataUri($etablissement),
+                'enteteDataUri' => $this->enteteDataUri($etablissement),
             ]);
 
             $chemin = "cartes/{$apprenant->etablissement_id}/{$numero}.pdf";

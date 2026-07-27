@@ -19,6 +19,7 @@ use App\Models\Sequence;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class BulletinTest extends TestCase
@@ -273,7 +274,7 @@ class BulletinTest extends TestCase
             'absences' => 4,
             'absences_non_justifiees' => 2,
             'retards' => 1,
-            'mention_travail' => 'tableau_honneur',
+            'mention_travail' => 'encouragements',
             'mention_conduite' => 'encouragements',
         ]);
 
@@ -288,11 +289,64 @@ class BulletinTest extends TestCase
         $bulletinMoussa = Bulletin::where('inscription_id', $inscriptions[1]->id)->first();
 
         $this->assertSame(4, $bulletinAicha->absences);
-        $this->assertSame('tableau_honneur', $bulletinAicha->mention_travail);
+        $this->assertSame('encouragements', $bulletinAicha->mention_travail);
 
         // Aucune conduite saisie pour Moussa -> valeurs par defaut, non bloquant.
         $this->assertSame(0, $bulletinMoussa->absences);
         $this->assertNull($bulletinMoussa->mention_travail);
+    }
+
+    public function test_tableau_dhonneur_est_automatique_a_partir_de_12_de_moyenne(): void
+    {
+        [$etablissement, $classe, $sequence, $matieres, $apprenants, $inscriptions, $affectations] = $this->makeStructure();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        // Aïcha : Maths 18 (coef 3), Français 8.25 (coef 2) -> (18*3+8.25*2)/5 = 14.10 (>= 12).
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[0], 18);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[0], 8.25);
+        // Moussa : Maths 10 (coef 3), Français 8 (coef 2) -> (10*3+8*2)/5 = 9.20 (< 12).
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[1], 10);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[1], 8);
+
+        $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer")->assertCreated();
+
+        $bulletinAicha = Bulletin::where('inscription_id', $inscriptions[0]->id)->first();
+        $bulletinMoussa = Bulletin::where('inscription_id', $inscriptions[1]->id)->first();
+
+        $this->assertEquals(14.1, $bulletinAicha->moyenne_generale);
+        $this->assertTrue((bool) $bulletinAicha->tableau_honneur);
+        $this->assertFalse((bool) $bulletinMoussa->tableau_honneur);
+    }
+
+    #[DataProvider('appreciationsDuSpecimen')]
+    public function test_appreciation_par_matiere_suit_le_bareme_du_specimen(float $valeur, string $attendu): void
+    {
+        $service = new \App\Services\BulletinService();
+        $methode = new \ReflectionMethod($service, 'appreciation');
+        $methode->setAccessible(true);
+
+        $this->assertSame($attendu, $methode->invoke($service, $valeur));
+    }
+
+    public static function appreciationsDuSpecimen(): array
+    {
+        // Couples (note, appreciation) verifies un par un sur le specimen
+        // bulletin_annuel_secondaire.jpeg fourni par l'utilisateur.
+        return [
+            'très faible' => [4.00, 'Très Faible'],
+            'faible bas' => [5.17, 'Faible'],
+            'faible haut' => [7.42, 'Faible'],
+            'insuffisant' => [8.83, 'Insuffisant'],
+            'à peine passable bas' => [9.67, 'À peine passable'],
+            'à peine passable haut' => [9.83, 'À peine passable'],
+            'passable bas' => [10.00, 'Passable'],
+            'passable haut (anglais specimen)' => [11.75, 'Passable'],
+            'assez bien bas' => [12.06, 'Assez Bien'],
+            'assez bien haut (eps specimen)' => [13.50, 'Assez Bien'],
+            'bien bas' => [14.79, 'Bien'],
+            'bien haut' => [15.88, 'Bien'],
+            'excellent' => [18.00, 'Excellent'],
+        ];
     }
 
     public function test_enseignant_ne_peut_pas_declencher_la_cloture(): void

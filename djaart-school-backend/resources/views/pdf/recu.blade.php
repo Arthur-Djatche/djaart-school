@@ -5,6 +5,9 @@
     <title>Reçu {{ $recu->numero_recu }}</title>
     <style>
         body { font-family: Helvetica, Arial, sans-serif; color: #001335; font-size: 13px; }
+        .filigrane { position: fixed; top: 32%; left: 20%; width: 60%; opacity: 0.07; z-index: -1; }
+        .entete-image { width: 100%; margin-bottom: 10px; }
+        .entete-image img { width: 100%; }
         .header { display: table; width: 100%; border-bottom: 3px solid #003fa2; padding-bottom: 10px; margin-bottom: 16px; }
         .header .logo { display: table-cell; width: 60px; vertical-align: middle; }
         .header .logo img { width: 50px; height: 50px; object-fit: contain; }
@@ -16,25 +19,34 @@
         table.details td { padding: 8px; border: 1px solid #cbd5e1; }
         table.details td.label { background-color: #f1f5f9; font-weight: bold; width: 40%; color: #003fa2; }
         .montant { font-size: 18px; font-weight: bold; color: #009ca0; margin-top: 20px; }
-        .signature { margin-top: 30px; display: table; width: 100%; }
+        .solde { font-size: 12px; color: {{ $soldeRestant > 0 ? '#fe9605' : '#009ca0' }}; margin-top: 4px; }
+        .signature { margin-top: 40px; display: table; width: 100%; }
         .signature .zone { display: table-cell; width: 50%; text-align: center; vertical-align: bottom; }
-        .signature img { height: 40px; object-fit: contain; }
+        .signature .ligne { display: inline-block; width: 160px; border-bottom: 1px solid #001335; margin-bottom: 4px; }
         .signature p { margin: 2px 0; font-size: 10px; }
         .footer { margin-top: 30px; font-size: 11px; color: #64748b; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            @if($logoDataUri)
-                <img src="{{ $logoDataUri }}" alt="Logo">
-            @endif
+    @if($logoDataUri)
+        <img class="filigrane" src="{{ $logoDataUri }}" alt="">
+    @endif
+
+    @if($enteteDataUri)
+        <div class="entete-image"><img src="{{ $enteteDataUri }}" alt="En-tête"></div>
+    @else
+        <div class="header">
+            <div class="logo">
+                @if($logoDataUri)
+                    <img src="{{ $logoDataUri }}" alt="Logo">
+                @endif
+            </div>
+            <div class="identite">
+                <h1>{{ $etablissement->nom }}</h1>
+                <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
+            </div>
         </div>
-        <div class="identite">
-            <h1>{{ $etablissement->nom }}</h1>
-            <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
-        </div>
-    </div>
+    @endif
 
     <div class="numero">Reçu N° {{ $etablissement->sigle ?? 'ETB' }}-{{ str_pad($recu->numero_recu, 5, '0', STR_PAD_LEFT) }}</div>
 
@@ -74,14 +86,19 @@
     </table>
 
     <p class="montant">Montant encaissé : {{ number_format($paiement->montant, 2, ',', ' ') }}</p>
+    <p class="solde">
+        @if($soldeRestant > 0)
+            Solde restant sur cette tranche : {{ number_format($soldeRestant, 2, ',', ' ') }}
+        @else
+            Tranche intégralement soldée
+        @endif
+    </p>
 
     <div class="signature">
         <div class="zone"></div>
         <div class="zone">
-            @if($signatureDataUri)
-                <img src="{{ $signatureDataUri }}" alt="Signature"><br>
-            @endif
-            <p><strong>Le Comptable / La Caisse</strong></p>
+            <div class="ligne">&nbsp;</div>
+            <p><strong>Signature du caissier</strong></p>
         </div>
     </div>
 

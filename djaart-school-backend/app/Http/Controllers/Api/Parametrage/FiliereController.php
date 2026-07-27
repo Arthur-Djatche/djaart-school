@@ -19,6 +19,7 @@ class FiliereController extends Controller
         $this->authorize('viewAny', Filiere::class);
 
         $filieres = Filiere::query()
+            ->with('chefDepartement')
             ->when($request->string('search')->trim()->isNotEmpty(), function ($query) use ($request) {
                 $search = $request->string('search')->trim();
                 $query->where(function ($query) use ($search) {
@@ -43,14 +44,14 @@ class FiliereController extends Controller
 
         $filiere = Filiere::create($data);
 
-        return $this->success(new FiliereResource($filiere), 'Filière créée.', 201);
+        return $this->success(new FiliereResource($filiere->load('chefDepartement')), 'Filière créée.', 201);
     }
 
     public function update(UpdateFiliereRequest $request, Filiere $filiere)
     {
         $filiere->update($request->validated());
 
-        return $this->success(new FiliereResource($filiere), 'Filière mise à jour.');
+        return $this->success(new FiliereResource($filiere->load('chefDepartement')), 'Filière mise à jour.');
     }
 
     public function destroy(Filiere $filiere)

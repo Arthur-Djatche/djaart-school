@@ -60,37 +60,39 @@ class EtablissementController extends Controller
 
     public function updateLogo(Request $request, Etablissement $etablissement)
     {
-        $this->authorize('update', $etablissement);
-
-        $request->validate([
-            'logo' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
-        ]);
-
-        if ($etablissement->logo) {
-            Storage::disk('public')->delete($etablissement->logo);
-        }
-
-        $chemin = $request->file('logo')->store("etablissements/{$etablissement->id}", 'public');
-        $etablissement->update(['logo' => $chemin]);
-
-        return $this->success(new EtablissementResource($etablissement), 'Logo mis à jour.');
+        return $this->updateImage($request, $etablissement, 'logo', 'Logo mis à jour.');
     }
 
     public function updateSignature(Request $request, Etablissement $etablissement)
     {
+        return $this->updateImage($request, $etablissement, 'signature', 'Signature mise à jour.');
+    }
+
+    /**
+     * En-tete complet (logo+nom+adresse deja composes par l'etablissement,
+     * cf. specimen fourni) : remplace le bloc "logo + nom" genere par
+     * l'application en haut des documents lorsqu'il est renseigne.
+     */
+    public function updateEntete(Request $request, Etablissement $etablissement)
+    {
+        return $this->updateImage($request, $etablissement, 'entete', 'En-tête mis à jour.');
+    }
+
+    private function updateImage(Request $request, Etablissement $etablissement, string $champ, string $message)
+    {
         $this->authorize('update', $etablissement);
 
         $request->validate([
-            'signature' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            $champ => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
         ]);
 
-        if ($etablissement->signature) {
-            Storage::disk('public')->delete($etablissement->signature);
+        if ($etablissement->{$champ}) {
+            Storage::disk('public')->delete($etablissement->{$champ});
         }
 
-        $chemin = $request->file('signature')->store("etablissements/{$etablissement->id}", 'public');
-        $etablissement->update(['signature' => $chemin]);
+        $chemin = $request->file($champ)->store("etablissements/{$etablissement->id}", 'public');
+        $etablissement->update([$champ => $chemin]);
 
-        return $this->success(new EtablissementResource($etablissement), 'Signature mise à jour.');
+        return $this->success(new EtablissementResource($etablissement), $message);
     }
 }

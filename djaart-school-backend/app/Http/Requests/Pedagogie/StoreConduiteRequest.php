@@ -27,8 +27,10 @@ class StoreConduiteRequest extends FormRequest
             'lignes.*.absences' => ['sometimes', 'integer', 'min:0'],
             'lignes.*.absences_non_justifiees' => ['sometimes', 'integer', 'min:0'],
             'lignes.*.retards' => ['sometimes', 'integer', 'min:0'],
-            'lignes.*.mention_travail' => ['nullable', Rule::in(['tableau_honneur', 'encouragements', 'avertissement', 'blame'])],
-            'lignes.*.mention_conduite' => ['nullable', Rule::in(['tableau_honneur', 'encouragements', 'avertissement', 'blame'])],
+            // "tableau_honneur" n'est plus une valeur saisissable manuellement : c'est
+            // desormais un calcul automatique (moyenne_generale >= 12, cf. BulletinService).
+            'lignes.*.mention_travail' => ['nullable', Rule::in(['encouragements', 'avertissement', 'blame'])],
+            'lignes.*.mention_conduite' => ['nullable', Rule::in(['encouragements', 'avertissement', 'blame'])],
         ];
     }
 }

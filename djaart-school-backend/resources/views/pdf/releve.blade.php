@@ -5,6 +5,9 @@
     <title>Relevé de notes</title>
     <style>
         body { font-family: Helvetica, Arial, sans-serif; color: #001335; font-size: 12px; }
+        .filigrane { position: fixed; top: 32%; left: 20%; width: 60%; opacity: 0.07; z-index: -1; }
+        .entete-image { width: 100%; margin-bottom: 10px; }
+        .entete-image img { width: 100%; }
         .header { display: table; width: 100%; border-bottom: 3px solid #003fa2; padding-bottom: 10px; margin-bottom: 16px; }
         .header .logo { display: table-cell; width: 60px; vertical-align: middle; }
         .header .logo img { width: 50px; height: 50px; object-fit: contain; }
@@ -28,17 +31,25 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            @if($logoDataUri)
-                <img src="{{ $logoDataUri }}" alt="Logo">
-            @endif
+    @if($logoDataUri)
+        <img class="filigrane" src="{{ $logoDataUri }}" alt="">
+    @endif
+
+    @if($enteteDataUri)
+        <div class="entete-image"><img src="{{ $enteteDataUri }}" alt="En-tête"></div>
+    @else
+        <div class="header">
+            <div class="logo">
+                @if($logoDataUri)
+                    <img src="{{ $logoDataUri }}" alt="Logo">
+                @endif
+            </div>
+            <div class="identite">
+                <h1>{{ $etablissement->nom }}</h1>
+                <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
+            </div>
         </div>
-        <div class="identite">
-            <h1>{{ $etablissement->nom }}</h1>
-            <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
-        </div>
-    </div>
+    @endif
 
     <div class="titre">
         Relevé de notes officiel — {{ $semestre ? $semestre->libelle : $anneeAcademique->libelle }}

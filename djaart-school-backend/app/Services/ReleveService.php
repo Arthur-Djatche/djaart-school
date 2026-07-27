@@ -105,6 +105,7 @@ class ReleveService
                     'lignes' => $lignes,
                     'logoDataUri' => $this->logoDataUri($classe->etablissement),
                     'signatureDataUri' => $this->signatureDataUri($classe->etablissement),
+                    'enteteDataUri' => $this->enteteDataUri($classe->etablissement),
                 ]);
 
                 $chemin = "releves/{$classe->etablissement_id}/annuel/{$inscription->id}.pdf";
@@ -225,6 +226,7 @@ class ReleveService
                     'lignes' => $lignes,
                     'logoDataUri' => $this->logoDataUri($classe->etablissement),
                     'signatureDataUri' => $this->signatureDataUri($classe->etablissement),
+                    'enteteDataUri' => $this->enteteDataUri($classe->etablissement),
                 ]);
 
                 $chemin = "releves/{$classe->etablissement_id}/{$semestre->id}/{$inscription->id}.pdf";

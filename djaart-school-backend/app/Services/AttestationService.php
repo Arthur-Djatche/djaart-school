@@ -67,6 +67,7 @@ class AttestationService
                 'qrDataUri' => $qrDataUri,
                 'logoDataUri' => $this->logoDataUri($etablissement),
                 'signatureDataUri' => $this->signatureDataUri($etablissement),
+                'enteteDataUri' => $this->enteteDataUri($etablissement),
             ]);
 
             $chemin = "attestations/{$apprenant->etablissement_id}/{$numero}.pdf";

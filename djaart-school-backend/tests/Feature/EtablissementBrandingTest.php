@@ -49,6 +49,20 @@ class EtablissementBrandingTest extends TestCase
         Storage::disk('public')->assertExists($etablissement->fresh()->signature);
     }
 
+    public function test_admin_etablissement_peut_televerser_len_tete_complet(): void
+    {
+        $etablissement = Etablissement::factory()->create();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        $response = $this->actingAs($admin)->postJson("/api/etablissements/{$etablissement->id}/entete", [
+            'entete' => UploadedFile::fake()->image('entete.png'),
+        ]);
+
+        $response->assertOk();
+        $this->assertNotNull($response->json('data.entete_url'));
+        Storage::disk('public')->assertExists($etablissement->fresh()->entete);
+    }
+
     public function test_reteleversement_du_logo_supprime_lancien_fichier(): void
     {
         $etablissement = Etablissement::factory()->create();

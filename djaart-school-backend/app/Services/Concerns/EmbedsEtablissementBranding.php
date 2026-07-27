@@ -23,6 +23,11 @@ trait EmbedsEtablissementBranding
         return $this->fichierVersDataUri($etablissement->signature);
     }
 
+    private function enteteDataUri(Etablissement $etablissement): ?string
+    {
+        return $this->fichierVersDataUri($etablissement->entete);
+    }
+
     private function fichierVersDataUri(?string $chemin): ?string
     {
         if (! $chemin || ! Storage::disk('public')->exists($chemin)) {

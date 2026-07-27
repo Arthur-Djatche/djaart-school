@@ -22,7 +22,7 @@ class BulletinService
     public function cloturerSequence(Classe $classe, Sequence $sequence): Collection
     {
         return DB::transaction(function () use ($classe, $sequence) {
-            $affectations = AffectationEnseignant::where('classe_id', $classe->id)->with('matiere')->get();
+            $affectations = AffectationEnseignant::where('classe_id', $classe->id)->with(['matiere', 'enseignant'])->get();
 
             if ($affectations->isEmpty()) {
                 throw ValidationException::withMessages([
@@ -63,7 +63,7 @@ class BulletinService
                     continue;
                 }
 
-                $donneesParAffectation[] = ['matiere' => $affectation->matiere, 'notes' => $notes];
+                $donneesParAffectation[] = ['matiere' => $affectation->matiere, 'enseignant' => $affectation->enseignant, 'notes' => $notes];
             }
 
             if ($manquants !== []) {
@@ -118,10 +118,12 @@ class BulletinService
 
                     return [
                         'matiere' => $donnee['matiere']->nom,
+                        'enseignant' => $donnee['enseignant']->name,
                         'groupe' => $donnee['matiere']->groupe ?? 'Non groupé',
                         'coefficient' => $donnee['matiere']->coefficient,
                         'valeur' => $note->absent ? 0 : $note->valeur,
                         'absent' => $note->absent,
+                        'appreciation' => $note->absent ? null : $this->appreciation((float) $note->valeur),
                     ];
                 })->all();
 
@@ -144,6 +146,7 @@ class BulletinService
                     'retards' => $conduite->retards ?? 0,
                     'mention_travail' => $conduite->mention_travail ?? null,
                     'mention_conduite' => $conduite->mention_conduite ?? null,
+                    'tableau_honneur' => $moyennes[$inscription->id] >= 12,
                     'fichier_pdf' => '',
                 ]);
 
@@ -159,6 +162,7 @@ class BulletinService
                     'effectif' => $effectif,
                     'logoDataUri' => $this->logoDataUri($classe->etablissement),
                     'signatureDataUri' => $this->signatureDataUri($classe->etablissement),
+                    'enteteDataUri' => $this->enteteDataUri($classe->etablissement),
                 ]);
 
                 $chemin = "bulletins/{$classe->etablissement_id}/{$sequence->id}/{$inscription->id}.pdf";
@@ -205,6 +209,27 @@ class BulletinService
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * Appreciation par matiere selon la note obtenue. Bareme reconstruit a
+     * partir des couples (note, appreciation) du specimen fourni par
+     * l'utilisateur (bulletin_annuel_secondaire) — verifie exact sur les 12
+     * exemples disponibles (ex. Anglais 11.75 -> Passable, EPS 13.50 -> Assez
+     * Bien), pas invente.
+     */
+    private function appreciation(float $valeur): string
+    {
+        return match (true) {
+            $valeur < 5 => 'Très Faible',
+            $valeur < 8 => 'Faible',
+            $valeur < 9.5 => 'Insuffisant',
+            $valeur < 10 => 'À peine passable',
+            $valeur < 12 => 'Passable',
+            $valeur < 14 => 'Assez Bien',
+            $valeur < 16 => 'Bien',
+            default => 'Excellent',
+        };
     }
 
     /**

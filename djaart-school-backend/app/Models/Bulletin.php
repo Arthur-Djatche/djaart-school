@@ -27,6 +27,7 @@ class Bulletin extends Model
         'retards',
         'mention_travail',
         'mention_conduite',
+        'tableau_honneur',
         'fichier_pdf',
     ];
 
@@ -34,6 +35,7 @@ class Bulletin extends Model
     {
         return [
             'details_groupes' => 'array',
+            'tableau_honneur' => 'boolean',
         ];
     }
 

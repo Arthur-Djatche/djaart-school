@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('etablissements', EtablissementController::class)->except('show');
         Route::post('/etablissements/{etablissement}/logo', [EtablissementController::class, 'updateLogo']);
         Route::post('/etablissements/{etablissement}/signature', [EtablissementController::class, 'updateSignature']);
+        Route::post('/etablissements/{etablissement}/entete', [EtablissementController::class, 'updateEntete']);
         Route::apiResource('annees-academiques', AnneeAcademiqueController::class)->except('show')
             ->parameters(['annees-academiques' => 'anneeAcademique']);
         Route::apiResource('filieres', FiliereController::class)->except('show');

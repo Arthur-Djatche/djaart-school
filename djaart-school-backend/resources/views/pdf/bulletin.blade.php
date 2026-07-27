@@ -5,13 +5,17 @@
     <title>Bulletin {{ $sequence->libelle }}</title>
     <style>
         body { font-family: Helvetica, Arial, sans-serif; color: #001335; font-size: 11px; }
+        .filigrane { position: fixed; top: 32%; left: 20%; width: 60%; opacity: 0.07; z-index: -1; }
         .header { display: table; width: 100%; border-bottom: 3px solid #003fa2; padding-bottom: 10px; margin-bottom: 14px; }
         .header .logo { display: table-cell; width: 60px; vertical-align: middle; }
         .header .logo img { width: 50px; height: 50px; object-fit: contain; }
         .header .identite { display: table-cell; vertical-align: middle; padding-left: 10px; }
         .header h1 { color: #003fa2; font-size: 18px; margin: 0; }
         .header p { margin: 2px 0; color: #001335; font-size: 10px; }
+        .entete-image { width: 100%; margin-bottom: 10px; }
+        .entete-image img { width: 100%; }
         .titre { text-align: center; font-size: 15px; font-weight: bold; color: #fe9605; margin: 12px 0; text-transform: uppercase; }
+        .enseignant { display: block; font-size: 8px; font-weight: normal; color: #64748b; font-style: italic; }
 
         table.infos { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
         table.infos td { padding: 5px 8px; border: 1px solid #cbd5e1; font-size: 10px; }
@@ -40,17 +44,25 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            @if($logoDataUri)
-                <img src="{{ $logoDataUri }}" alt="Logo">
-            @endif
+    @if($logoDataUri)
+        <img class="filigrane" src="{{ $logoDataUri }}" alt="">
+    @endif
+
+    @if($enteteDataUri)
+        <div class="entete-image"><img src="{{ $enteteDataUri }}" alt="En-tête"></div>
+    @else
+        <div class="header">
+            <div class="logo">
+                @if($logoDataUri)
+                    <img src="{{ $logoDataUri }}" alt="Logo">
+                @endif
+            </div>
+            <div class="identite">
+                <h1>{{ $etablissement->nom }}</h1>
+                <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
+            </div>
         </div>
-        <div class="identite">
-            <h1>{{ $etablissement->nom }}</h1>
-            <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
-        </div>
-    </div>
+    @endif
 
     <div class="titre">Bulletin — {{ $sequence->libelle }} ({{ $anneeAcademique->libelle }})</div>
 
@@ -87,24 +99,26 @@
                 <th>Matière</th>
                 <th>Coefficient</th>
                 <th>Note / 20</th>
+                <th>Appréciation</th>
             </tr>
         </thead>
         <tbody>
             @foreach($detailsGroupes as $groupe)
-                <tr class="groupe-titre"><td colspan="3">{{ $groupe['libelle'] }}</td></tr>
+                <tr class="groupe-titre"><td colspan="4">{{ $groupe['libelle'] }}</td></tr>
                 @foreach($lignes as $ligne)
                     @if(($ligne['groupe'] ?? 'Non groupé') === $groupe['libelle'])
                         <tr>
-                            <td>{{ $ligne['matiere'] }}</td>
+                            <td>{{ $ligne['matiere'] }}<span class="enseignant">{{ $ligne['enseignant'] }}</span></td>
                             <td>{{ $ligne['coefficient'] }}</td>
                             <td>{{ $ligne['absent'] ? 'Absent' : number_format($ligne['valeur'], 2, ',', ' ') }}</td>
+                            <td>{{ $ligne['absent'] ? '—' : $ligne['appreciation'] }}</td>
                         </tr>
                     @endif
                 @endforeach
                 <tr class="groupe-total">
                     <td>Total {{ $groupe['libelle'] }}</td>
                     <td>{{ $groupe['total_coefficient'] }}</td>
-                    <td>Moyenne : {{ number_format($groupe['moyenne'], 2, ',', ' ') }} / 20</td>
+                    <td colspan="2">Moyenne : {{ number_format($groupe['moyenne'], 2, ',', ' ') }} / 20</td>
                 </tr>
             @endforeach
         </tbody>
@@ -136,7 +150,15 @@
         <div class="encadre-col" style="padding-right: 0;">
             <div class="encadre">
                 <h3>Travail de l'élève</h3>
-                <p>Mention : {{ $bulletin->mention_travail ? ucfirst(str_replace('_', ' ', $bulletin->mention_travail)) : '—' }}</p>
+                @if($bulletin->tableau_honneur)
+                    <p><strong>Tableau d'honneur</strong> (moyenne ≥ 12)</p>
+                @endif
+                @if($bulletin->mention_travail)
+                    <p>Mention : {{ ucfirst(str_replace('_', ' ', $bulletin->mention_travail)) }}</p>
+                @endif
+                @if(! $bulletin->tableau_honneur && ! $bulletin->mention_travail)
+                    <p>—</p>
+                @endif
             </div>
         </div>
     </div>
