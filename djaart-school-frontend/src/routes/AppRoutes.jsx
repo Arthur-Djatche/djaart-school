@@ -16,7 +16,7 @@ import UsersListPage from '../features/users/UsersListPage'
 import ProtectedRoute from './ProtectedRoute'
 
 const ADMIN_ROLES = ['super_admin', 'admin_etablissement']
-const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
+const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire', 'comptable']
 const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
 
 export default function AppRoutes() {

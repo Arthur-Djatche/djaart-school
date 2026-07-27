@@ -54,6 +54,7 @@ export default function FraisScolaritePage() {
     { key: 'niveau', label: 'Niveau', render: (row) => row.niveau?.libelle ?? '—' },
     { key: 'annee_academique', label: 'Année', render: (row) => row.annee_academique?.libelle ?? '—' },
     { key: 'montant_total', label: 'Montant total' },
+    { key: 'frais_inscription', label: "Frais d'inscription" },
     { key: 'mode', label: 'Mode', render: (row) => MODE_LABELS[row.mode] },
     { key: 'nombre_tranches', label: 'Tranches' },
     {

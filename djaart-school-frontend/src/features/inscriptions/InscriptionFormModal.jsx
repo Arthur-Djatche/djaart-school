@@ -174,6 +174,9 @@ export default function InscriptionFormModal({ onClose, onSubmit }) {
               <p className="font-medium text-brand-navy">
                 Échéancier — {fraisRecap.montant_total} ({fraisRecap.mode === 'comptant' ? 'comptant' : 'tranches'})
               </p>
+              <p className="text-brand-orange">
+                Frais d'inscription : {fraisRecap.frais_inscription} — à encaisser pour valider l'inscription
+              </p>
               <ul className="mt-1 flex flex-col gap-1">
                 {fraisRecap.tranches.map((t) => (
                   <li key={t.numero}>Tranche {t.numero} : {t.montant} — échéance {t.date_echeance}</li>

@@ -35,6 +35,7 @@ export default function FraisScolariteFormModal({ fraisScolarite, onClose, onSub
   const [niveauId, setNiveauId] = useState(fraisScolarite?.niveau_id ?? '')
   const [anneeAcademiqueId, setAnneeAcademiqueId] = useState(fraisScolarite?.annee_academique_id ?? '')
   const [montantTotal, setMontantTotal] = useState(fraisScolarite?.montant_total ?? '')
+  const [fraisInscription, setFraisInscription] = useState(fraisScolarite?.frais_inscription ?? '')
   const [mode, setMode] = useState(fraisScolarite?.mode ?? 'comptant')
   const [nombreTranches, setNombreTranches] = useState(fraisScolarite?.nombre_tranches ?? 2)
   const [tranches, setTranches] = useState(
@@ -91,6 +92,7 @@ export default function FraisScolariteFormModal({ fraisScolarite, onClose, onSub
         niveau_id: Number(niveauId),
         annee_academique_id: Number(anneeAcademiqueId),
         montant_total: Number(montantTotal),
+        frais_inscription: Number(fraisInscription),
         mode,
       }
       if (mode === 'tranches') {
@@ -147,6 +149,20 @@ export default function FraisScolariteFormModal({ fraisScolarite, onClose, onSub
             onChange={(e) => setMontantTotal(e.target.value)}
             required
           />
+          <Input
+            id="frais_inscription"
+            type="number"
+            min="0"
+            step="0.01"
+            label="Frais d'inscription (inclus dans le montant total)"
+            value={fraisInscription}
+            onChange={(e) => setFraisInscription(e.target.value)}
+            required
+          />
+          <p className="text-sm text-slate-500">
+            Dès que le montant encaissé pour cet apprenant atteint ce seuil, son inscription est validée
+            automatiquement — même si la tranche en cours n'est pas encore intégralement soldée.
+          </p>
           <Select id="mode" label="Mode de paiement" value={mode} onChange={(e) => setMode(e.target.value)} options={MODES} />
 
           {mode === 'tranches' && (

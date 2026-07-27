@@ -1,5 +1,5 @@
 const PARAMETRAGE_ROLES = ['super_admin', 'admin_etablissement']
-const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
+const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire', 'comptable']
 const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
 
 export const NAVIGATION = [
