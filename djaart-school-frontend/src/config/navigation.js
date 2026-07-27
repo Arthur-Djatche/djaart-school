@@ -2,6 +2,7 @@ const PARAMETRAGE_ROLES = ['super_admin', 'admin_etablissement']
 const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire', 'comptable']
 const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
 const PEDAGOGIE_ROLES = ['super_admin', 'admin_etablissement', 'enseignant']
+const BULLETINS_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
 
 export const NAVIGATION = [
   { label: 'Tableau de bord', to: '/dashboard', roles: null },
@@ -27,12 +28,14 @@ export const NAVIGATION = [
   },
   {
     label: 'Pédagogie',
-    roles: PEDAGOGIE_ROLES,
+    roles: [...PEDAGOGIE_ROLES, 'secretaire'],
     children: [
       { label: 'Affectations', to: '/pedagogie/affectations', roles: PARAMETRAGE_ROLES },
       { label: 'Séquences', to: '/pedagogie/sequences', roles: PARAMETRAGE_ROLES },
       { label: 'Semestres', to: '/pedagogie/semestres', roles: PARAMETRAGE_ROLES },
       { label: 'Saisie des notes', to: '/pedagogie/notes', roles: PEDAGOGIE_ROLES },
+      { label: 'Bulletins', to: '/pedagogie/bulletins', roles: BULLETINS_ROLES },
+      { label: 'Relevés de notes', to: '/pedagogie/releves', roles: BULLETINS_ROLES },
     ],
   },
   { label: 'Comptes utilisateurs', to: '/users', roles: ['super_admin', 'admin_etablissement'] },

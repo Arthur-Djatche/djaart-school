@@ -13,7 +13,9 @@ import FilieresPage from '../features/parametrage/filieres/FilieresPage'
 import MatieresPage from '../features/parametrage/matieres/MatieresPage'
 import NiveauxPage from '../features/parametrage/niveaux/NiveauxPage'
 import AffectationsPage from '../features/pedagogie/affectations/AffectationsPage'
+import BulletinsPage from '../features/pedagogie/bulletins/BulletinsPage'
 import SaisieNotesPage from '../features/pedagogie/notes/SaisieNotesPage'
+import RelevesPage from '../features/pedagogie/releves/RelevesPage'
 import SemestresPage from '../features/pedagogie/semestres/SemestresPage'
 import SequencesPage from '../features/pedagogie/sequences/SequencesPage'
 import UsersListPage from '../features/users/UsersListPage'
@@ -23,6 +25,7 @@ const ADMIN_ROLES = ['super_admin', 'admin_etablissement']
 const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire', 'comptable']
 const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
 const PEDAGOGIE_ROLES = ['super_admin', 'admin_etablissement', 'enseignant']
+const BULLETINS_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
 
 export default function AppRoutes() {
   return (
@@ -59,6 +62,11 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute roles={PEDAGOGIE_ROLES} />}>
         <Route path="/pedagogie/notes" element={<SaisieNotesPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={BULLETINS_ROLES} />}>
+        <Route path="/pedagogie/bulletins" element={<BulletinsPage />} />
+        <Route path="/pedagogie/releves" element={<RelevesPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

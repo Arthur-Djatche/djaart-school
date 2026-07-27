@@ -56,6 +56,7 @@ export default function SaisieNotesPage() {
 
   const chargerGrille = async () => {
     if (!decoupageId) return
+    setGrille(null)
     setLoadingGrille(true)
     try {
       const params = estLmd
