@@ -1,0 +1,256 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\AffectationEnseignant;
+use App\Models\AnneeAcademique;
+use App\Models\Apprenant;
+use App\Models\Bulletin;
+use App\Models\Classe;
+use App\Models\Etablissement;
+use App\Models\Filiere;
+use App\Models\FraisScolarite;
+use App\Models\Inscription;
+use App\Models\Matiere;
+use App\Models\Niveau;
+use App\Models\Note;
+use App\Models\Sequence;
+use App\Models\User;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class BulletinTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RoleSeeder::class);
+    }
+
+    private function makeUser(Etablissement $etablissement, string $role): User
+    {
+        $user = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $user->assignRole($role);
+
+        return $user;
+    }
+
+    /**
+     * @return array{
+     *     0: Etablissement, 1: Classe, 2: Sequence,
+     *     3: array{0: Matiere, 1: Matiere}, 4: array{0: Apprenant, 1: Apprenant},
+     *     5: array{0: Inscription, 1: Inscription}
+     * }
+     */
+    private function makeStructure(): array
+    {
+        $etablissement = Etablissement::factory()->create();
+        $filiere = Filiere::create(['etablissement_id' => $etablissement->id, 'nom' => 'Filière', 'code' => 'F1']);
+        $niveau = Niveau::create([
+            'etablissement_id' => $etablissement->id,
+            'filiere_id' => $filiere->id,
+            'libelle' => 'Niveau 1',
+            'ordre' => 1,
+            'type_systeme' => 'classique',
+        ]);
+        $annee = AnneeAcademique::create([
+            'etablissement_id' => $etablissement->id,
+            'libelle' => '2025-2026',
+            'date_debut' => '2025-09-01',
+            'date_fin' => '2026-07-31',
+        ]);
+        $classe = Classe::create([
+            'etablissement_id' => $etablissement->id,
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'libelle' => 'Classe A',
+            'effectif_max' => 30,
+        ]);
+        $matiereMaths = Matiere::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id,
+            'nom' => 'Mathématiques', 'coefficient' => 3,
+        ]);
+        $matiereFrancais = Matiere::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id,
+            'nom' => 'Français', 'coefficient' => 2,
+        ]);
+        $sequence = Sequence::create([
+            'etablissement_id' => $etablissement->id,
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'numero' => 1,
+            'libelle' => 'Séquence 1',
+        ]);
+
+        $enseignantMaths = $this->makeUser($etablissement, 'enseignant');
+        $enseignantFrancais = $this->makeUser($etablissement, 'enseignant');
+        $affectationMaths = AffectationEnseignant::create([
+            'etablissement_id' => $etablissement->id, 'classe_id' => $classe->id,
+            'matiere_id' => $matiereMaths->id, 'enseignant_id' => $enseignantMaths->id,
+            'annee_academique_id' => $annee->id,
+        ]);
+        $affectationFrancais = AffectationEnseignant::create([
+            'etablissement_id' => $etablissement->id, 'classe_id' => $classe->id,
+            'matiere_id' => $matiereFrancais->id, 'enseignant_id' => $enseignantFrancais->id,
+            'annee_academique_id' => $annee->id,
+        ]);
+
+        $fraisScolarite = FraisScolarite::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id, 'montant_total' => 100000,
+            'frais_inscription' => 15000, 'nombre_tranches' => 1,
+        ]);
+
+        $apprenant1 = Apprenant::create([
+            'etablissement_id' => $etablissement->id, 'matricule' => 'ETB-00001',
+            'nom' => 'Traoré', 'prenom' => 'Aïcha', 'date_naissance' => '2013-05-14', 'sexe' => 'F',
+        ]);
+        $apprenant2 = Apprenant::create([
+            'etablissement_id' => $etablissement->id, 'matricule' => 'ETB-00002',
+            'nom' => 'Koné', 'prenom' => 'Moussa', 'date_naissance' => '2012-08-22', 'sexe' => 'M',
+        ]);
+
+        $inscriptions = [];
+        foreach ([$apprenant1, $apprenant2] as $apprenant) {
+            $inscriptions[] = Inscription::create([
+                'etablissement_id' => $etablissement->id,
+                'apprenant_id' => $apprenant->id,
+                'classe_id' => $classe->id,
+                'annee_academique_id' => $annee->id,
+                'frais_scolarite_id' => $fraisScolarite->id,
+                'statut' => 'en_cours',
+                'type_inscription' => 'nouvelle',
+                'date_inscription' => now()->toDateString(),
+            ]);
+        }
+
+        return [
+            $etablissement, $classe, $sequence,
+            [$matiereMaths, $matiereFrancais],
+            [$apprenant1, $apprenant2],
+            $inscriptions,
+            [$affectationMaths, $affectationFrancais],
+        ];
+    }
+
+    private function soumettreNote(AffectationEnseignant $affectation, Sequence $sequence, Apprenant $apprenant, float $valeur): void
+    {
+        Note::create([
+            'etablissement_id' => $affectation->etablissement_id,
+            'affectation_id' => $affectation->id,
+            'apprenant_id' => $apprenant->id,
+            'sequence_id' => $sequence->id,
+            'type_evaluation' => 'sequence',
+            'valeur' => $valeur,
+            'absent' => false,
+            'soumis_le' => now(),
+        ]);
+    }
+
+    public function test_cloture_bloquee_si_notes_manquantes(): void
+    {
+        [$etablissement, $classe, $sequence, $matieres, $apprenants, , $affectations] = $this->makeStructure();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        // Seule la matiere Maths a des notes soumises ; Francais est incomplet.
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[0], 15);
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[1], 10);
+
+        $response = $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer");
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString('Français', $response->json('message') ?? implode(',', $response->json('errors.sequence_id') ?? []));
+    }
+
+    public function test_cloture_genere_bulletins_avec_moyenne_et_rang_corrects(): void
+    {
+        [$etablissement, $classe, $sequence, $matieres, $apprenants, $inscriptions, $affectations] = $this->makeStructure();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        // Aïcha : Maths 18 (coef 3), Français 12 (coef 2) -> (18*3+12*2)/5 = 15.60
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[0], 18);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[0], 12);
+        // Moussa : Maths 10 (coef 3), Français 8 (coef 2) -> (10*3+8*2)/5 = 9.20
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[1], 10);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[1], 8);
+
+        $response = $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer");
+
+        $response->assertCreated();
+        $this->assertCount(2, $response->json('data'));
+
+        $bulletinAicha = Bulletin::where('inscription_id', $inscriptions[0]->id)->first();
+        $bulletinMoussa = Bulletin::where('inscription_id', $inscriptions[1]->id)->first();
+
+        $this->assertEquals(15.6, $bulletinAicha->moyenne_generale);
+        $this->assertEquals(1, $bulletinAicha->rang);
+        $this->assertEquals(9.2, $bulletinMoussa->moyenne_generale);
+        $this->assertEquals(2, $bulletinMoussa->rang);
+    }
+
+    public function test_recloture_est_bloquee(): void
+    {
+        [$etablissement, $classe, $sequence, $matieres, $apprenants, , $affectations] = $this->makeStructure();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[0], 18);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[0], 12);
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[1], 10);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[1], 8);
+
+        $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer")->assertCreated();
+
+        $response = $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer");
+
+        $response->assertStatus(422);
+        $this->assertSame(2, Bulletin::count());
+    }
+
+    public function test_note_absent_est_comptee_comme_zero(): void
+    {
+        [$etablissement, $classe, $sequence, $matieres, $apprenants, $inscriptions, $affectations] = $this->makeStructure();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        Note::create([
+            'etablissement_id' => $etablissement->id, 'affectation_id' => $affectations[0]->id,
+            'apprenant_id' => $apprenants[0]->id, 'sequence_id' => $sequence->id,
+            'type_evaluation' => 'sequence', 'valeur' => null, 'absent' => true, 'soumis_le' => now(),
+        ]);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[0], 10);
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[1], 10);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[1], 10);
+
+        $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer")->assertCreated();
+
+        // Aïcha : Maths absent (0, coef 3) + Français 10 (coef 2) -> (0*3+10*2)/5 = 4.00
+        $bulletinAicha = Bulletin::where('inscription_id', $inscriptions[0]->id)->first();
+        $this->assertEquals(4.0, $bulletinAicha->moyenne_generale);
+    }
+
+    public function test_enseignant_ne_peut_pas_declencher_la_cloture(): void
+    {
+        [$etablissement, $classe, $sequence, , , , $affectations] = $this->makeStructure();
+        $enseignant = $affectations[0]->enseignant;
+
+        $response = $this->actingAs($enseignant)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer");
+
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_ne_peut_pas_cloturer_une_classe_dun_autre_etablissement(): void
+    {
+        [, $classe, $sequence] = $this->makeStructure();
+        $autreEtablissement = Etablissement::factory()->create();
+        $autreAdmin = $this->makeUser($autreEtablissement, 'admin_etablissement');
+
+        // Le scope multi-etablissement filtre la Classe au niveau du route-model-binding
+        // avant meme d'atteindre le controleur : isolation -> 404 (et non 403), cohérent
+        // avec le reste du codebase (cf. Phase 5, telechargement de recu).
+        $response = $this->actingAs($autreAdmin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer");
+
+        $response->assertStatus(404);
+    }
+}

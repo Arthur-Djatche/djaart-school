@@ -19,6 +19,7 @@ class ClasseResource extends JsonResource
             'niveau' => $this->whenLoaded('niveau', fn () => [
                 'id' => $this->niveau->id,
                 'libelle' => $this->niveau->libelle,
+                'type_systeme' => $this->niveau->type_systeme,
             ]),
             'annee_academique' => $this->whenLoaded('anneeAcademique', fn () => [
                 'id' => $this->anneeAcademique->id,

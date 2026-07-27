@@ -54,4 +54,14 @@ class Inscription extends Model
     {
         return $this->hasMany(Paiement::class);
     }
+
+    public function bulletins(): HasMany
+    {
+        return $this->hasMany(Bulletin::class);
+    }
+
+    public function relevesDeNotes(): HasMany
+    {
+        return $this->hasMany(ReleveDeNotes::class, 'inscription_id');
+    }
 }

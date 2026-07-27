@@ -15,7 +15,9 @@ use App\Http\Controllers\Api\Parametrage\FiliereController;
 use App\Http\Controllers\Api\Parametrage\MatiereController;
 use App\Http\Controllers\Api\Parametrage\NiveauController;
 use App\Http\Controllers\Api\Pedagogie\AffectationController;
+use App\Http\Controllers\Api\Pedagogie\BulletinController;
 use App\Http\Controllers\Api\Pedagogie\NoteController;
+use App\Http\Controllers\Api\Pedagogie\ReleveController;
 use App\Http\Controllers\Api\Pedagogie\SemestreController;
 use App\Http\Controllers\Api\Pedagogie\SequenceController;
 use Illuminate\Support\Facades\Route;
@@ -87,5 +89,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/affectations', [AffectationController::class, 'index']);
         Route::get('/affectations/{affectation}/notes', [NoteController::class, 'show']);
         Route::post('/affectations/{affectation}/notes', [NoteController::class, 'store']);
+    });
+
+    Route::middleware('role:super_admin|admin_etablissement|secretaire')->group(function () {
+        Route::get('/bulletins', [BulletinController::class, 'index']);
+        Route::post('/classes/{classe}/sequences/{sequence}/cloturer', [BulletinController::class, 'store']);
+        Route::get('/bulletins/{bulletin}/telecharger', [BulletinController::class, 'telecharger']);
+
+        Route::get('/releves', [ReleveController::class, 'index']);
+        Route::post('/classes/{classe}/releves/annuel', [ReleveController::class, 'storeAnnuel']);
+        Route::post('/classes/{classe}/semestres/{semestre}/releves', [ReleveController::class, 'storeSemestriel']);
+        Route::get('/releves/{releve}/telecharger', [ReleveController::class, 'telecharger']);
     });
 });
