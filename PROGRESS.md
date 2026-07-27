@@ -321,5 +321,30 @@ Retour utilisateur : le système doit gérer des milliers d'apprenants, ce qui e
 - **Mentions travail/conduite saisies manuellement**, pas calculées à partir du rang — dans les spécimens, ce sont des choix du conseil de classe, pas une formule automatique.
 - **Génération en masse par classe** (comme les bulletins/relevés), pas par établissement entier — cohérent avec le seul pattern déjà existant dans l'interface.
 
+## Affinage — En-tête/filigrane, bulletin enrichi, spécialités universitaires, reçu
+- Statut : **terminé**
+
+### Contexte
+Retour utilisateur après le correctif branding : plutôt qu'un logo réinjecté dans un en-tête généré par l'application, l'admin doit pouvoir importer **l'en-tête complet déjà prêt** de ses documents (spécimen fourni : `entete.jpeg`, bandeau bilingue logo+texte+sceau) — l'en-tête généré automatiquement ("logo + nom établissement") n'est alors plus affiché. Le logo seul sert désormais de **filigrane** en fond de tous les documents. Le bulletin secondaire se rapproche encore des spécimens (nom de l'enseignant sous chaque matière, appréciation par matière, tableau d'honneur automatique), les universités gèrent leurs spécialités avec un chef de département, et le reçu affiche le solde restant avec un espace de signature manuelle plutôt que l'image de signature de l'établissement.
+
+### Réalisé
+- **En-tête complet + filigrane** : `Etablissement.entete` (upload image, même pattern que logo/signature, `EtablissementController::updateEntete` factorisé via une méthode privée commune `updateImage`), trait `EmbedsEtablissementBranding::enteteDataUri()`. Les 5 templates PDF affichent l'en-tête importé en pleine largeur à la place du bloc "logo + nom" s'il existe (repli sinon) ; le logo est positionné en filigrane (`position: fixed`, opacité ~0.07, `z-index:-1`) en fond de chaque document — sauf sur la carte scolaire où l'en-tête complet n'est pas utilisé (format trop compact pour un bandeau conçu pour une page A4 ; le logo y reste filigrane).
+- **Bulletin enrichi (système classique uniquement)** :
+  - Nom de l'enseignant affiché sous chaque matière (comme le spécimen).
+  - **Barème d'appréciation par matière** reconstruit et vérifié un par un sur les 12 couples (note, appréciation) du spécimen `bulletin_annuel_secondaire.jpeg` : `<5` Très Faible · `[5,8[` Faible · `[8,9.5[` Insuffisant · `[9.5,10[` À peine passable · `[10,12[` Passable · `[12,14[` Assez Bien · `[14,16[` Bien · `≥16` Excellent (le "11,75 → Passable" et "12-13 → Assez Bien" cités par l'utilisateur en sont des exemples exacts : Anglais 11,75 et EPS 13,50 dans le spécimen).
+  - **Tableau d'honneur automatique** (`Bulletin.tableau_honneur`, calculé `moyenne_generale >= 12`) : remplace la valeur `tableau_honneur` qui existait dans le menu manuel "Mention travail" de `SaisieConduitePage` — celle-ci ne porte plus que encouragements/avertissement/blâme, choix réellement discrétionnaires. Migration dédiée qui neutralise d'abord les lignes existantes portant l'ancienne valeur avant de restreindre l'ENUM (MySQL uniquement ; SQLite/tests s'appuie sur la validation applicative).
+- **Spécialités universitaires** : `Filiere.chef_departement_id` (même pattern que `professeur_principal` sur `Classe` — doit être un enseignant du même établissement), le concept de "spécialité" s'appuyant sur la `Filiere` déjà existante (ex. "Informatique" pour Université Démo DJAART) plutôt qu'un nouveau concept.
+- **Reçu** : ajout du solde restant sur la tranche (même calcul que `ApprenantController::echeancier`) ; remplacement de l'image de signature de l'établissement par un espace vierge avec la mention "Signature du caissier" — le reçu est signé à la main par le caissier, pas par l'admin.
+- Tests Feature : upload de l'en-tête (`EtablissementBrandingTest`), barème d'appréciation vérifié par `#[DataProvider]` sur les 12 valeurs exactes du spécimen, tableau d'honneur automatique (vrai à 12, faux à 11,99), reçu inline avec `Content-Disposition` vérifié, chef de département (accepté si enseignant du même établissement, rejeté sinon) — 145/145 tests OK au total (suite complète).
+- Vérification bout-en-bout (Playwright) : upload de l'en-tête réel fourni par l'utilisateur (aperçu conforme) ; ajout d'une 2e affectation (Français) pour enrichir le bulletin ; chef de département assigné sur une filière ; clôture de séquence → bulletin PDF redessiné (27 Ko, en-tête + filigrane + appréciations + enseignants) ; encaissement → reçu avec solde restant (23 Ko) ; aucune erreur console sur l'ensemble du parcours.
+
+### Bug de test corrigé pendant cette vérification (pas un bug applicatif)
+- Le script de vérification navigateur vérifiait le contenu de la page "Affectations" immédiatement après un clic de navigation, avant que l'appel API asynchrone n'ait eu le temps de se résoudre — la page réelle fonctionnait correctement (confirmé en l'observant directement avec une attente suffisante), seul le script de test était trop impatient. Corrigé en attendant la disparition du message "Chargement…" avant d'inspecter le contenu.
+
+### Hypothèses / écarts documentés
+- **Logo et en-tête appartiennent à l'Établissement**, pas à un utilisateur précis — cohérent avec la décision déjà prise pour la signature dans le correctif précédent.
+- **Mentions travail/conduite restent manuelles** (encouragements/avertissement/blâme) ; seul le tableau d'honneur devient automatique, conformément à la règle stricte donnée par l'utilisateur ("tous et uniquement les élèves ayant une moyenne ≥ 12").
+- **Pas de nouvelle vue "étudiants par spécialité"** : la structure Filière → Niveau → Classe déjà en place sert déjà cet objectif ; seul le chef de département manquait.
+
 ## Phases suivantes
 Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 10 à 11. Prochaine étape : **Phase 10**.
