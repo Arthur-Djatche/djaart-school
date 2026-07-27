@@ -22,6 +22,8 @@ export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
   const [nom, setNom] = useState(matiere?.nom ?? '')
   const [coefficient, setCoefficient] = useState(matiere?.coefficient ?? 1)
   const [creditsEcts, setCreditsEcts] = useState(matiere?.credits_ects ?? '')
+  const [ponderationCc, setPonderationCc] = useState(matiere?.ponderation_cc ?? 40)
+  const [ponderationSn, setPonderationSn] = useState(matiere?.ponderation_session_normale ?? 60)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [loadingOptions, setLoadingOptions] = useState(true)
@@ -43,6 +45,8 @@ export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
         nom,
         coefficient: Number(coefficient),
         credits_ects: creditsEcts ? Number(creditsEcts) : null,
+        ponderation_cc: Number(ponderationCc),
+        ponderation_session_normale: Number(ponderationSn),
       })
     } catch (err) {
       setError(err.response?.data?.message ?? 'Une erreur est survenue.')
@@ -85,6 +89,28 @@ export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
             value={creditsEcts}
             onChange={(e) => setCreditsEcts(e.target.value)}
           />
+          <div className="flex gap-2">
+            <Input
+              id="ponderation_cc"
+              type="number"
+              min="0"
+              max="100"
+              label="Pondération CC % (LMD)"
+              value={ponderationCc}
+              onChange={(e) => setPonderationCc(e.target.value)}
+              className="flex-1"
+            />
+            <Input
+              id="ponderation_session_normale"
+              type="number"
+              min="0"
+              max="100"
+              label="Pondération SN % (LMD)"
+              value={ponderationSn}
+              onChange={(e) => setPonderationSn(e.target.value)}
+              className="flex-1"
+            />
+          </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={onClose}>

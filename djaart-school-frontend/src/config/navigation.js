@@ -1,6 +1,7 @@
 const PARAMETRAGE_ROLES = ['super_admin', 'admin_etablissement']
 const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire', 'comptable']
 const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
+const PEDAGOGIE_ROLES = ['super_admin', 'admin_etablissement', 'enseignant']
 
 export const NAVIGATION = [
   { label: 'Tableau de bord', to: '/dashboard', roles: null },
@@ -22,6 +23,16 @@ export const NAVIGATION = [
     children: [
       { label: 'Frais de scolarité', to: '/finance/frais-scolarite', roles: PARAMETRAGE_ROLES },
       { label: 'Caisse', to: '/finance/caisse', roles: FINANCE_ROLES },
+    ],
+  },
+  {
+    label: 'Pédagogie',
+    roles: PEDAGOGIE_ROLES,
+    children: [
+      { label: 'Affectations', to: '/pedagogie/affectations', roles: PARAMETRAGE_ROLES },
+      { label: 'Séquences', to: '/pedagogie/sequences', roles: PARAMETRAGE_ROLES },
+      { label: 'Semestres', to: '/pedagogie/semestres', roles: PARAMETRAGE_ROLES },
+      { label: 'Saisie des notes', to: '/pedagogie/notes', roles: PEDAGOGIE_ROLES },
     ],
   },
   { label: 'Comptes utilisateurs', to: '/users', roles: ['super_admin', 'admin_etablissement'] },

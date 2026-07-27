@@ -12,12 +12,17 @@ import EtablissementsPage from '../features/parametrage/etablissements/Etablisse
 import FilieresPage from '../features/parametrage/filieres/FilieresPage'
 import MatieresPage from '../features/parametrage/matieres/MatieresPage'
 import NiveauxPage from '../features/parametrage/niveaux/NiveauxPage'
+import AffectationsPage from '../features/pedagogie/affectations/AffectationsPage'
+import SaisieNotesPage from '../features/pedagogie/notes/SaisieNotesPage'
+import SemestresPage from '../features/pedagogie/semestres/SemestresPage'
+import SequencesPage from '../features/pedagogie/sequences/SequencesPage'
 import UsersListPage from '../features/users/UsersListPage'
 import ProtectedRoute from './ProtectedRoute'
 
 const ADMIN_ROLES = ['super_admin', 'admin_etablissement']
 const INSCRIPTION_ROLES = ['super_admin', 'admin_etablissement', 'secretaire', 'comptable']
 const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
+const PEDAGOGIE_ROLES = ['super_admin', 'admin_etablissement', 'enseignant']
 
 export default function AppRoutes() {
   return (
@@ -43,10 +48,17 @@ export default function AppRoutes() {
         <Route path="/parametrage/classes" element={<ClassesPage />} />
         <Route path="/parametrage/matieres" element={<MatieresPage />} />
         <Route path="/finance/frais-scolarite" element={<FraisScolaritePage />} />
+        <Route path="/pedagogie/affectations" element={<AffectationsPage />} />
+        <Route path="/pedagogie/sequences" element={<SequencesPage />} />
+        <Route path="/pedagogie/semestres" element={<SemestresPage />} />
       </Route>
 
       <Route element={<ProtectedRoute roles={FINANCE_ROLES} />}>
         <Route path="/finance/caisse" element={<CaissePage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={PEDAGOGIE_ROLES} />}>
+        <Route path="/pedagogie/notes" element={<SaisieNotesPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
