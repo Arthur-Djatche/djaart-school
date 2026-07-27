@@ -151,7 +151,7 @@
             <div class="encadre">
                 <h3>Travail de l'élève</h3>
                 @if($bulletin->tableau_honneur)
-                    <p><strong>Tableau d'honneur</strong> (moyenne ≥ 12)</p>
+                    <p><strong>Tableau d'honneur</strong> (moyenne &gt;= 12)</p>
                 @endif
                 @if($bulletin->mention_travail)
                     <p>Mention : {{ ucfirst(str_replace('_', ' ', $bulletin->mention_travail)) }}</p>
