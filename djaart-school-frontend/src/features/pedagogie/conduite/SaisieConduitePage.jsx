@@ -10,7 +10,6 @@ import useToast from '../../../hooks/useToast'
 
 const MENTIONS = [
   { value: '', label: 'Aucune' },
-  { value: 'tableau_honneur', label: "Tableau d'honneur" },
   { value: 'encouragements', label: 'Encouragements' },
   { value: 'avertissement', label: 'Avertissement' },
   { value: 'blame', label: 'Blâme' },
@@ -106,6 +105,7 @@ export default function SaisieConduitePage() {
         <h1 className="text-2xl font-semibold text-brand-navy">Saisie de la conduite</h1>
         <p className="text-sm text-slate-500">
           Absences, retards et mentions (travail/conduite) par apprenant — figés sur le bulletin à la clôture de la séquence.
+          Le tableau d'honneur n'est pas saisi ici : il est attribué automatiquement à la clôture aux apprenants dont la moyenne est ≥ 12.
         </p>
       </div>
 

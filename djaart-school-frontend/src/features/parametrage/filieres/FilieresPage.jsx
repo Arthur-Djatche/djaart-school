@@ -54,6 +54,7 @@ export default function FilieresPage() {
   const columns = [
     { key: 'nom', label: 'Nom' },
     { key: 'code', label: 'Code' },
+    { key: 'chef_departement', label: 'Chef de département', render: (row) => row.chef_departement?.name ?? '—' },
     {
       key: 'actions',
       label: 'Actions',

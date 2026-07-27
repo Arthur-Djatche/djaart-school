@@ -3,81 +3,94 @@ import Modal from '../../../components/ui/Modal'
 import * as parametrageApi from '../../../api/parametrageApi'
 import useToast from '../../../hooks/useToast'
 
+const CHAMPS = [
+  {
+    key: 'entete',
+    label: "En-tête complet (logo + nom + adresse déjà composés)",
+    urlKey: 'entete_url',
+    upload: parametrageApi.uploadEtablissementEntete,
+    messageOk: 'En-tête mis à jour.',
+    vide: 'Aucun en-tête',
+    wide: true,
+  },
+  {
+    key: 'logo',
+    label: 'Logo (utilisé en filigrane sur les documents)',
+    urlKey: 'logo_url',
+    upload: parametrageApi.uploadEtablissementLogo,
+    messageOk: 'Logo mis à jour.',
+    vide: 'Aucun logo',
+  },
+  {
+    key: 'signature',
+    label: 'Signature (image, pour les documents officiels)',
+    urlKey: 'signature_url',
+    upload: parametrageApi.uploadEtablissementSignature,
+    messageOk: 'Signature mise à jour.',
+    vide: 'Aucune signature',
+  },
+]
+
 export default function EtablissementBrandingModal({ etablissement, onClose, onUpdated }) {
   const { showToast } = useToast()
   const [current, setCurrent] = useState(etablissement)
-  const [uploadingLogo, setUploadingLogo] = useState(false)
-  const [uploadingSignature, setUploadingSignature] = useState(false)
+  const [uploadingKey, setUploadingKey] = useState(null)
   const [error, setError] = useState('')
 
-  const handleUpload = async (field, file) => {
+  const handleUpload = async (champ, file) => {
     if (!file) return
     setError('')
-    const setUploading = field === 'logo' ? setUploadingLogo : setUploadingSignature
-    const upload = field === 'logo' ? parametrageApi.uploadEtablissementLogo : parametrageApi.uploadEtablissementSignature
-    setUploading(true)
+    setUploadingKey(champ.key)
     try {
-      const { data } = await upload(current.id, file)
+      const { data } = await champ.upload(current.id, file)
       setCurrent(data.data)
       onUpdated?.(data.data)
-      showToast(field === 'logo' ? 'Logo mis à jour.' : 'Signature mise à jour.', 'success')
+      showToast(champ.messageOk, 'success')
     } catch (err) {
       setError(err.response?.data?.message ?? 'Une erreur est survenue.')
     } finally {
-      setUploading(false)
+      setUploadingKey(null)
     }
   }
 
   return (
-    <Modal title={`Logo & signature — ${current.nom}`} onClose={onClose}>
+    <Modal title={`Image de marque — ${current.nom}`} onClose={onClose}>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <div>
-          <p className="mb-2 text-sm font-medium text-brand-navy">Logo de l'établissement</p>
-          {current.logo_url ? (
-            <img src={current.logo_url} alt="Logo" className="mb-3 h-24 w-24 rounded object-contain border border-slate-200" />
-          ) : (
-            <div className="mb-3 flex h-24 w-24 items-center justify-center rounded bg-slate-100 text-xs text-slate-400">
-              Aucun logo
-            </div>
-          )}
-          <label className="inline-block cursor-pointer rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy">
-            {uploadingLogo ? 'Téléversement…' : 'Téléverser un logo'}
-            <input
-              type="file"
-              accept="image/png,image/jpeg"
-              className="hidden"
-              onChange={(e) => handleUpload('logo', e.target.files?.[0])}
-              disabled={uploadingLogo}
-            />
-          </label>
-        </div>
-
-        <div>
-          <p className="mb-2 text-sm font-medium text-brand-navy">Signature (image)</p>
-          {current.signature_url ? (
-            <img src={current.signature_url} alt="Signature" className="mb-3 h-24 w-24 rounded object-contain border border-slate-200" />
-          ) : (
-            <div className="mb-3 flex h-24 w-24 items-center justify-center rounded bg-slate-100 text-xs text-slate-400">
-              Aucune signature
-            </div>
-          )}
-          <label className="inline-block cursor-pointer rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy">
-            {uploadingSignature ? 'Téléversement…' : 'Téléverser une signature'}
-            <input
-              type="file"
-              accept="image/png,image/jpeg"
-              className="hidden"
-              onChange={(e) => handleUpload('signature', e.target.files?.[0])}
-              disabled={uploadingSignature}
-            />
-          </label>
-        </div>
+        {CHAMPS.map((champ) => (
+          <div key={champ.key} className={champ.wide ? 'sm:col-span-2' : undefined}>
+            <p className="mb-2 text-sm font-medium text-brand-navy">{champ.label}</p>
+            {current[champ.urlKey] ? (
+              <img
+                src={current[champ.urlKey]}
+                alt={champ.label}
+                className={`mb-3 rounded border border-slate-200 object-contain ${champ.wide ? 'h-16 w-full' : 'h-24 w-24'}`}
+              />
+            ) : (
+              <div
+                className={`mb-3 flex items-center justify-center rounded bg-slate-100 text-xs text-slate-400 ${champ.wide ? 'h-16 w-full' : 'h-24 w-24'}`}
+              >
+                {champ.vide}
+              </div>
+            )}
+            <label className="inline-block cursor-pointer rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy">
+              {uploadingKey === champ.key ? 'Téléversement…' : 'Téléverser'}
+              <input
+                type="file"
+                accept="image/png,image/jpeg"
+                className="hidden"
+                onChange={(e) => handleUpload(champ, e.target.files?.[0])}
+                disabled={uploadingKey === champ.key}
+              />
+            </label>
+          </div>
+        ))}
       </div>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
       <p className="mt-4 text-xs text-slate-500">
-        Le logo et la signature apparaîtront sur tous les documents générés (bulletins, relevés, reçus, attestations, cartes scolaires).
+        Si un en-tête complet est importé, il remplace le bloc logo + nom généré automatiquement en haut des documents.
+        Le logo apparaît en filigrane en fond de tous les documents (bulletins, relevés, reçus, attestations, cartes scolaires).
       </p>
     </Modal>
   )
