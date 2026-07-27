@@ -14,6 +14,10 @@ use App\Http\Controllers\Api\Parametrage\EtablissementController;
 use App\Http\Controllers\Api\Parametrage\FiliereController;
 use App\Http\Controllers\Api\Parametrage\MatiereController;
 use App\Http\Controllers\Api\Parametrage\NiveauController;
+use App\Http\Controllers\Api\Pedagogie\AffectationController;
+use App\Http\Controllers\Api\Pedagogie\NoteController;
+use App\Http\Controllers\Api\Pedagogie\SemestreController;
+use App\Http\Controllers\Api\Pedagogie\SequenceController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
@@ -45,6 +49,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::apiResource('frais-scolarite', FraisScolariteController::class)->except(['show', 'index'])
             ->parameters(['frais-scolarite' => 'fraisScolarite']);
+
+        Route::apiResource('sequences', SequenceController::class)->except(['show', 'index']);
+        Route::apiResource('semestres', SemestreController::class)->except(['show', 'index']);
+        Route::post('/affectations', [AffectationController::class, 'store']);
+        Route::delete('/affectations/{affectation}', [AffectationController::class, 'destroy']);
+        Route::post('/affectations/{affectation}/notes/deverrouiller', [NoteController::class, 'deverrouiller']);
     });
 
     Route::middleware('role:super_admin|admin_etablissement|secretaire|comptable')->group(function () {
@@ -69,5 +79,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/paiements', [PaiementController::class, 'index']);
         Route::post('/paiements', [PaiementController::class, 'store']);
         Route::get('/recus/{recu}/telecharger', [RecuController::class, 'telecharger']);
+    });
+
+    Route::middleware('role:super_admin|admin_etablissement|enseignant')->group(function () {
+        Route::get('/sequences', [SequenceController::class, 'index']);
+        Route::get('/semestres', [SemestreController::class, 'index']);
+        Route::get('/affectations', [AffectationController::class, 'index']);
+        Route::get('/affectations/{affectation}/notes', [NoteController::class, 'show']);
+        Route::post('/affectations/{affectation}/notes', [NoteController::class, 'store']);
     });
 });

@@ -7,22 +7,25 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Matiere extends Model
+class Sequence extends Model
 {
     use BelongsToEtablissement, HasFactory;
 
     protected $fillable = [
         'etablissement_id',
         'niveau_id',
-        'nom',
-        'coefficient',
-        'credits_ects',
-        'ponderation_cc',
-        'ponderation_session_normale',
+        'annee_academique_id',
+        'numero',
+        'libelle',
     ];
 
     public function niveau(): BelongsTo
     {
         return $this->belongsTo(Niveau::class);
+    }
+
+    public function anneeAcademique(): BelongsTo
+    {
+        return $this->belongsTo(AnneeAcademique::class);
     }
 }

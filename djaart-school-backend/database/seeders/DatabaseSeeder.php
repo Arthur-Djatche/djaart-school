@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             FraisScolariteSeeder::class,
             InscriptionSeeder::class,
             PaiementSeeder::class,
+            PedagogieSeeder::class,
         ]);
     }
 }

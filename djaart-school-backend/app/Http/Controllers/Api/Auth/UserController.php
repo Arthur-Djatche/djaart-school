@@ -30,6 +30,9 @@ class UserController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
+            ->when($request->string('role')->trim()->isNotEmpty(), function ($query) use ($request) {
+                $query->role($request->string('role')->trim());
+            })
             ->orderBy('name')
             ->paginate(15);
 

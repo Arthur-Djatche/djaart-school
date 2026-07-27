@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class MatiereResource extends JsonResource
+class SequenceResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
@@ -13,14 +13,16 @@ class MatiereResource extends JsonResource
             'id' => $this->id,
             'etablissement_id' => $this->etablissement_id,
             'niveau_id' => $this->niveau_id,
-            'nom' => $this->nom,
-            'coefficient' => $this->coefficient,
-            'credits_ects' => $this->credits_ects,
-            'ponderation_cc' => $this->ponderation_cc,
-            'ponderation_session_normale' => $this->ponderation_session_normale,
+            'annee_academique_id' => $this->annee_academique_id,
+            'numero' => $this->numero,
+            'libelle' => $this->libelle,
             'niveau' => $this->whenLoaded('niveau', fn () => [
                 'id' => $this->niveau->id,
                 'libelle' => $this->niveau->libelle,
+            ]),
+            'annee_academique' => $this->whenLoaded('anneeAcademique', fn () => [
+                'id' => $this->anneeAcademique->id,
+                'libelle' => $this->anneeAcademique->libelle,
             ]),
         ];
     }

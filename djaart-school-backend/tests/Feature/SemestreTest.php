@@ -1,0 +1,106 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\AnneeAcademique;
+use App\Models\Etablissement;
+use App\Models\Filiere;
+use App\Models\Niveau;
+use App\Models\User;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class SemestreTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RoleSeeder::class);
+    }
+
+    private function makeAdmin(Etablissement $etablissement): User
+    {
+        $admin = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $admin->assignRole('admin_etablissement');
+
+        return $admin;
+    }
+
+    /** @return array{0: Etablissement, 1: Niveau, 2: AnneeAcademique} */
+    private function makeStructure(): array
+    {
+        $etablissement = Etablissement::factory()->create();
+        $filiere = Filiere::create(['etablissement_id' => $etablissement->id, 'nom' => 'Informatique', 'code' => 'INFO']);
+        $niveau = Niveau::create([
+            'etablissement_id' => $etablissement->id,
+            'filiere_id' => $filiere->id,
+            'libelle' => 'Licence 1',
+            'ordre' => 1,
+            'type_systeme' => 'lmd',
+        ]);
+        $annee = AnneeAcademique::create([
+            'etablissement_id' => $etablissement->id,
+            'libelle' => '2025-2026',
+            'date_debut' => '2025-09-01',
+            'date_fin' => '2026-07-31',
+        ]);
+
+        return [$etablissement, $niveau, $annee];
+    }
+
+    public function test_admin_can_create_semestre(): void
+    {
+        [$etablissement, $niveau, $annee] = $this->makeStructure();
+        $admin = $this->makeAdmin($etablissement);
+
+        $response = $this->actingAs($admin)->postJson('/api/semestres', [
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'numero' => 1,
+            'libelle' => 'Semestre 1',
+        ]);
+
+        $response->assertCreated()->assertJsonPath('data.numero', 1);
+    }
+
+    public function test_duplicate_numero_for_same_niveau_annee_is_rejected(): void
+    {
+        [$etablissement, $niveau, $annee] = $this->makeStructure();
+        $admin = $this->makeAdmin($etablissement);
+
+        $this->actingAs($admin)->postJson('/api/semestres', [
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'numero' => 1,
+            'libelle' => 'Semestre 1',
+        ])->assertCreated();
+
+        $response = $this->actingAs($admin)->postJson('/api/semestres', [
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'numero' => 1,
+            'libelle' => 'Doublon',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_admin_cannot_configure_semestre_of_another_etablissement(): void
+    {
+        [, $niveauA, $anneeA] = $this->makeStructure();
+        [$etablissementB] = $this->makeStructure();
+        $adminB = $this->makeAdmin($etablissementB);
+
+        $response = $this->actingAs($adminB)->postJson('/api/semestres', [
+            'niveau_id' => $niveauA->id,
+            'annee_academique_id' => $anneeA->id,
+            'numero' => 1,
+            'libelle' => 'Semestre 1',
+        ]);
+
+        $response->assertStatus(422);
+    }
+}
