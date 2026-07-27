@@ -170,5 +170,28 @@
 - **Alternative A2 de l'UML** ("montant > solde dû → système propose d'affecter le surplus à la tranche suivante") **non implémentée** : un paiement dépassant le solde restant de la tranche choisie est bloqué avec un message clair : le comptable doit saisir un montant ≤ solde dû ou encaisser la tranche suivante séparément. Répartition automatique du surplus déférée à une itération future si besoin.
 - Le statut d'une tranche (`en_attente`/`partielle`/`payee`/`en_retard`) n'est **pas stocké** en base (pas de colonne `statut` sur `tranches`) : il est calculé à la volée par inscription (montant payé cumulé vs `montant`, `date_echeance` vs aujourd'hui) — évite tout risque de désynchronisation, cohérent avec le diagramme d'état de l'analyse UML.
 
+## Correctif post-Phase 5 — Frais d'inscription et accès comptable aux inscriptions
+- Statut : **terminé**
+
+### Contexte
+Retour utilisateur après la Phase 5 : le comptable doit pouvoir lui-même créer une inscription (cas d'usage : un parent se présente directement à la caisse), mais celle-ci ne doit être validée qu'après encaissement d'un montant de **frais d'inscription**, paramétrable, inclus dans la pension (pas un supplément). Ce montant remplace la règle provisoire posée en Phase 5 ("validée dès que la 1ère tranche est intégralement soldée").
+
+### Réalisé
+- Backend :
+  - Nouveau champ `frais_inscription` sur `frais_scolarite` (paramétré par l'admin en même temps que `montant_total`/les tranches, requis, `<= montant_total`).
+  - `PaiementService::validerInscriptionSiFraisInscriptionCouverts()` remplace l'ancienne règle basée sur la tranche n°1 : l'inscription passe à `validee` dès que le **cumul des paiements de l'apprenant sur cette inscription** atteint le montant des frais d'inscription — quelle que soit la tranche sur laquelle les paiements ont été enregistrés, même si aucune tranche n'est encore intégralement soldée.
+  - Rôle `comptable` ajouté à `InscriptionPolicy` (`viewAny`/`create`) et à la route `POST /inscriptions` (le comptable peut désormais créer, lister et annuler des inscriptions, au même titre que la secrétaire).
+  - Reçu PDF enrichi : ligne "Apprenant" remplacée par des lignes distinctes "Nom"/"Prénom"/"Matricule", ajout de la ligne "Année académique".
+  - `FraisScolariteSeeder`/`PaiementSeeder` mis à jour pour démontrer concrètement la nouvelle règle (ex. Aïcha Traoré : paiement de 30 000 sur une tranche de 50 000, avec des frais d'inscription à 25 000 → inscription validée alors que la tranche reste "partielle").
+  - Tests Feature : nouveau test dédié (`test_paiement_couvrant_les_frais_dinscription_valide_sans_solder_la_tranche`), `test_comptable_can_create_inscription`, `test_comptable_can_list_classes`, `test_comptable_can_list_frais_scolarite`, `test_frais_inscription_superieur_au_montant_total_est_rejete` — 50/50 tests OK au total (suite complète).
+- Frontend :
+  - `FraisScolariteFormModal`/`FraisScolaritePage` : champ et colonne "Frais d'inscription", avec message explicatif.
+  - `InscriptionFormModal` : l'aperçu de l'échéancier affiche désormais le montant des frais d'inscription à encaisser pour valider l'inscription.
+  - `comptable` ajouté aux rôles autorisés pour le module Inscriptions (navigation + routes protégées).
+- Vérification bout-en-bout (Playwright) : connecté en `comptable`, création complète d'une inscription (apprenant + classe), aperçu affichant bien les frais d'inscription ; connecté en `admin_etablissement`, colonne "Frais d'inscription" visible dans la liste des grilles de frais.
+
+### Bug corrigé pendant cette vérification (non détecté par la suite PHPUnit existante)
+- En ouvrant le formulaire d'inscription en tant que `comptable` dans un vrai navigateur, la liste des classes restait vide malgré l'ajout du rôle à la route `GET /classes` : `ClassePolicy::viewAny()` et `FraisScolaritePolicy::viewAny()` vérifiaient encore une liste de rôles codée en dur n'incluant pas `comptable` (le contrôleur appelle `$this->authorize('viewAny', ...)` **en plus** du middleware de route — un même gap avait déjà été corrigé pour `ApprenantPolicy` en Phase 5, mais ces deux policies-ci avaient été oubliées). Corrigé en ajoutant `comptable` aux deux policies ; deux tests dédiés (`test_comptable_can_list_classes`, `test_comptable_can_list_frais_scolarite`) ajoutés pour que ce type de régression soit désormais couvert par la suite automatisée et non plus seulement détectable en navigateur.
+
 ## Phases suivantes
 Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 6 à 11. Prochaine étape : **Phase 6 — Pédagogie : affectations et saisie des notes**.
