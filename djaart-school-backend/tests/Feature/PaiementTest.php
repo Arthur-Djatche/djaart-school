@@ -254,5 +254,22 @@ class PaiementTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/pdf');
+        $this->assertStringContainsString('attachment', $response->headers->get('content-disposition'));
+    }
+
+    public function test_telechargement_inline_du_recu_pour_limpression_automatique(): void
+    {
+        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        $comptable = $this->makeUser($etablissement, 'comptable');
+
+        $created = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 50000))->json('data');
+        $recuId = $created['recu']['id'];
+
+        $response = $this->actingAs($comptable)->getJson("/api/recus/{$recuId}/telecharger?inline=1");
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $this->assertStringContainsString('inline', $response->headers->get('content-disposition'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 }

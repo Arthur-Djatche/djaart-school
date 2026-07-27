@@ -19,7 +19,7 @@ class ClasseController extends Controller
         $this->authorize('viewAny', Classe::class);
 
         $classes = Classe::query()
-            ->with(['niveau', 'anneeAcademique'])
+            ->with(['niveau', 'anneeAcademique', 'professeurPrincipal'])
             ->when($request->string('search')->trim()->isNotEmpty(), function ($query) use ($request) {
                 $query->where('libelle', 'like', '%'.$request->string('search')->trim().'%');
             })
@@ -41,14 +41,14 @@ class ClasseController extends Controller
 
         $classe = Classe::create($data);
 
-        return $this->success(new ClasseResource($classe->load(['niveau', 'anneeAcademique'])), 'Classe créée.', 201);
+        return $this->success(new ClasseResource($classe->load(['niveau', 'anneeAcademique', 'professeurPrincipal'])), 'Classe créée.', 201);
     }
 
     public function update(UpdateClasseRequest $request, Classe $classe)
     {
         $classe->update($request->validated());
 
-        return $this->success(new ClasseResource($classe->load(['niveau', 'anneeAcademique'])), 'Classe mise à jour.');
+        return $this->success(new ClasseResource($classe->load(['niveau', 'anneeAcademique', 'professeurPrincipal'])), 'Classe mise à jour.');
     }
 
     public function destroy(Classe $classe)

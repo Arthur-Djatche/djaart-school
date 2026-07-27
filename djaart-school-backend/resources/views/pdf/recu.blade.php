@@ -5,21 +5,35 @@
     <title>Reçu {{ $recu->numero_recu }}</title>
     <style>
         body { font-family: Helvetica, Arial, sans-serif; color: #001335; font-size: 13px; }
-        .header { border-bottom: 3px solid #003fa2; padding-bottom: 10px; margin-bottom: 20px; }
-        .header h1 { color: #003fa2; font-size: 20px; margin: 0; }
+        .header { display: table; width: 100%; border-bottom: 3px solid #003fa2; padding-bottom: 10px; margin-bottom: 16px; }
+        .header .logo { display: table-cell; width: 60px; vertical-align: middle; }
+        .header .logo img { width: 50px; height: 50px; object-fit: contain; }
+        .header .identite { display: table-cell; vertical-align: middle; padding-left: 10px; }
+        .header h1 { color: #003fa2; font-size: 19px; margin: 0; }
         .header p { margin: 2px 0; color: #001335; }
-        .numero { text-align: right; font-size: 14px; font-weight: bold; color: #fe9605; }
-        table.details { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .numero { text-align: right; font-size: 14px; font-weight: bold; color: #fe9605; margin-bottom: 8px; }
+        table.details { width: 100%; border-collapse: collapse; margin-top: 10px; }
         table.details td { padding: 8px; border: 1px solid #cbd5e1; }
-        table.details td.label { background-color: #f1f5f9; font-weight: bold; width: 40%; }
+        table.details td.label { background-color: #f1f5f9; font-weight: bold; width: 40%; color: #003fa2; }
         .montant { font-size: 18px; font-weight: bold; color: #009ca0; margin-top: 20px; }
-        .footer { margin-top: 40px; font-size: 11px; color: #64748b; }
+        .signature { margin-top: 30px; display: table; width: 100%; }
+        .signature .zone { display: table-cell; width: 50%; text-align: center; vertical-align: bottom; }
+        .signature img { height: 40px; object-fit: contain; }
+        .signature p { margin: 2px 0; font-size: 10px; }
+        .footer { margin-top: 30px; font-size: 11px; color: #64748b; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>{{ $etablissement->nom }}</h1>
-        <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
+        <div class="logo">
+            @if($logoDataUri)
+                <img src="{{ $logoDataUri }}" alt="Logo">
+            @endif
+        </div>
+        <div class="identite">
+            <h1>{{ $etablissement->nom }}</h1>
+            <p>{{ $etablissement->sigle }} @if($etablissement->adresse) — {{ $etablissement->adresse }} @endif</p>
+        </div>
     </div>
 
     <div class="numero">Reçu N° {{ $etablissement->sigle ?? 'ETB' }}-{{ str_pad($recu->numero_recu, 5, '0', STR_PAD_LEFT) }}</div>
@@ -60,6 +74,16 @@
     </table>
 
     <p class="montant">Montant encaissé : {{ number_format($paiement->montant, 2, ',', ' ') }}</p>
+
+    <div class="signature">
+        <div class="zone"></div>
+        <div class="zone">
+            @if($signatureDataUri)
+                <img src="{{ $signatureDataUri }}" alt="Signature"><br>
+            @endif
+            <p><strong>Le Comptable / La Caisse</strong></p>
+        </div>
+    </div>
 
     <div class="footer">
         <p>Document généré automatiquement par DJAART SCHOOL — {{ now()->format('d/m/Y H:i') }}</p>

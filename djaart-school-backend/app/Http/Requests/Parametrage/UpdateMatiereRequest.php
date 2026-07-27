@@ -24,6 +24,7 @@ class UpdateMatiereRequest extends FormRequest
                 Rule::exists('niveaux', 'id')->where('etablissement_id', $matiere->etablissement_id),
             ],
             'nom' => ['sometimes', 'required', 'string', 'max:255'],
+            'groupe' => ['nullable', 'string', 'max:100'],
             'coefficient' => ['sometimes', 'numeric', 'min:0.5', 'max:20'],
             'credits_ects' => ['nullable', 'integer', 'min:1', 'max:60'],
             'ponderation_cc' => ['sometimes', 'integer', 'min:0', 'max:100'],

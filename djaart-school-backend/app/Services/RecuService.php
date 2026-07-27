@@ -5,12 +5,15 @@ namespace App\Services;
 use App\Models\Etablissement;
 use App\Models\Paiement;
 use App\Models\Recu;
+use App\Services\Concerns\EmbedsEtablissementBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class RecuService
 {
+    use EmbedsEtablissementBranding;
+
     private const MODE_LABELS = [
         'especes' => 'Espèces',
         'mobile_money' => 'Mobile Money',
@@ -48,6 +51,8 @@ class RecuService
                 'tranche' => $paiement->tranche,
                 'paiement' => $paiement,
                 'modeLabel' => self::MODE_LABELS[$paiement->mode_paiement] ?? $paiement->mode_paiement,
+                'logoDataUri' => $this->logoDataUri($etablissement),
+                'signatureDataUri' => $this->signatureDataUri($etablissement),
             ]);
 
             $chemin = "recus/{$paiement->etablissement_id}/{$numero}.pdf";

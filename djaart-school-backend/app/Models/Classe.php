@@ -18,6 +18,7 @@ class Classe extends Model
         'etablissement_id',
         'niveau_id',
         'annee_academique_id',
+        'professeur_principal_id',
         'libelle',
         'effectif_max',
     ];
@@ -30,6 +31,11 @@ class Classe extends Model
     public function anneeAcademique(): BelongsTo
     {
         return $this->belongsTo(AnneeAcademique::class);
+    }
+
+    public function professeurPrincipal(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'professeur_principal_id');
     }
 
     public function inscriptions(): HasMany

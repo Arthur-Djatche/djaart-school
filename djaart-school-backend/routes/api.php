@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Parametrage\MatiereController;
 use App\Http\Controllers\Api\Parametrage\NiveauController;
 use App\Http\Controllers\Api\Pedagogie\AffectationController;
 use App\Http\Controllers\Api\Pedagogie\BulletinController;
+use App\Http\Controllers\Api\Pedagogie\ConduiteController;
 use App\Http\Controllers\Api\Pedagogie\NoteController;
 use App\Http\Controllers\Api\Pedagogie\ReleveController;
 use App\Http\Controllers\Api\Pedagogie\SemestreController;
@@ -42,6 +43,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
         Route::apiResource('etablissements', EtablissementController::class)->except('show');
+        Route::post('/etablissements/{etablissement}/logo', [EtablissementController::class, 'updateLogo']);
+        Route::post('/etablissements/{etablissement}/signature', [EtablissementController::class, 'updateSignature']);
         Route::apiResource('annees-academiques', AnneeAcademiqueController::class)->except('show')
             ->parameters(['annees-academiques' => 'anneeAcademique']);
         Route::apiResource('filieres', FiliereController::class)->except('show');
@@ -99,6 +102,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/affectations/{affectation}/notes', [NoteController::class, 'store']);
     });
 
+    Route::middleware('role:super_admin|admin_etablissement|secretaire|enseignant')->group(function () {
+        Route::get('/classes/{classe}/sequences/{sequence}/conduite', [ConduiteController::class, 'show']);
+        Route::post('/classes/{classe}/sequences/{sequence}/conduite', [ConduiteController::class, 'store']);
+    });
+
     Route::middleware('role:super_admin|admin_etablissement|secretaire')->group(function () {
         Route::get('/bulletins', [BulletinController::class, 'index']);
         Route::post('/classes/{classe}/sequences/{sequence}/cloturer', [BulletinController::class, 'store']);
@@ -114,9 +122,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/apprenants/{apprenant}/attestations', [AttestationController::class, 'index']);
         Route::post('/apprenants/{apprenant}/attestations', [AttestationController::class, 'store']);
         Route::get('/attestations/{attestation}/telecharger', [AttestationController::class, 'telecharger']);
+        Route::post('/classes/{classe}/attestations/masse', [AttestationController::class, 'storeMasse']);
+        Route::get('/attestations/zip', [AttestationController::class, 'zip']);
 
         Route::get('/apprenants/{apprenant}/cartes-scolaires', [CarteScolaireController::class, 'index']);
         Route::post('/apprenants/{apprenant}/cartes-scolaires', [CarteScolaireController::class, 'store']);
         Route::get('/cartes-scolaires/{carte}/telecharger', [CarteScolaireController::class, 'telecharger']);
+        Route::post('/classes/{classe}/cartes-scolaires/masse', [CarteScolaireController::class, 'storeMasse']);
+        Route::get('/cartes-scolaires/zip', [CarteScolaireController::class, 'zip']);
     });
 });

@@ -14,6 +14,7 @@ class MatiereResource extends JsonResource
             'etablissement_id' => $this->etablissement_id,
             'niveau_id' => $this->niveau_id,
             'nom' => $this->nom,
+            'groupe' => $this->groupe,
             'coefficient' => $this->coefficient,
             'credits_ects' => $this->credits_ects,
             'ponderation_cc' => $this->ponderation_cc,

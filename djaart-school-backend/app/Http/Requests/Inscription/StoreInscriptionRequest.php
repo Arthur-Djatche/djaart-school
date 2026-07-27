@@ -32,6 +32,7 @@ class StoreInscriptionRequest extends FormRequest
             'apprenant.nom' => ['required_with:apprenant', 'string', 'max:255'],
             'apprenant.prenom' => ['required_with:apprenant', 'string', 'max:255'],
             'apprenant.date_naissance' => ['required_with:apprenant', 'date', 'before:today'],
+            'apprenant.lieu_naissance' => ['nullable', 'string', 'max:255'],
             'apprenant.sexe' => ['required_with:apprenant', Rule::in(['M', 'F'])],
             'apprenant.telephone' => ['nullable', 'string', 'max:30'],
             'apprenant.email' => ['nullable', 'email'],

@@ -9,7 +9,10 @@
             width: 340px; height: 214px; border: 2px solid #003fa2; border-radius: 10px;
             padding: 12px; box-sizing: border-box; position: relative;
         }
-        .entete { border-bottom: 2px solid #fe9605; padding-bottom: 6px; margin-bottom: 8px; }
+        .entete { display: table; width: 100%; border-bottom: 2px solid #fe9605; padding-bottom: 6px; margin-bottom: 8px; }
+        .entete .logo { display: table-cell; width: 24px; vertical-align: middle; }
+        .entete .logo img { width: 20px; height: 20px; object-fit: contain; }
+        .entete .titre { display: table-cell; vertical-align: middle; padding-left: 4px; }
         .entete h1 { font-size: 13px; color: #003fa2; margin: 0; }
         .entete p { font-size: 9px; color: #001335; margin: 1px 0; }
         .contenu { }
@@ -19,6 +22,9 @@
         }
         .infos p { margin: 2px 0; font-size: 11px; }
         .infos .label { color: #64748b; font-size: 9px; }
+        .signature { position: absolute; bottom: 10px; left: 12px; text-align: center; }
+        .signature img { height: 24px; object-fit: contain; }
+        .signature p { margin: 0; font-size: 7px; color: #64748b; }
         .qr { position: absolute; bottom: 10px; right: 10px; }
         .validite { font-size: 9px; color: #009ca0; font-weight: bold; margin-top: 6px; }
         .numero { position: absolute; top: 10px; right: 12px; font-size: 8px; color: #64748b; }
@@ -33,8 +39,15 @@
             @endif
         </div>
         <div class="entete">
-            <h1>{{ $etablissement->nom }}</h1>
-            <p>Carte scolaire — {{ $anneeAcademique->libelle }}</p>
+            <div class="logo">
+                @if($logoDataUri)
+                    <img src="{{ $logoDataUri }}" alt="Logo">
+                @endif
+            </div>
+            <div class="titre">
+                <h1>{{ $etablissement->nom }}</h1>
+                <p>Carte scolaire — {{ $anneeAcademique->libelle }}</p>
+            </div>
         </div>
         <div class="contenu">
             <img class="photo" src="{{ $photoDataUri }}" alt="Photo">
@@ -43,11 +56,19 @@
                 <p><strong>{{ $apprenant->nom }} {{ $apprenant->prenom }}</strong></p>
                 <p class="label">Matricule</p>
                 <p>{{ $apprenant->matricule }}</p>
+                <p class="label">Né(e) le / à</p>
+                <p>{{ $apprenant->date_naissance->format('d/m/Y') }} @if($apprenant->lieu_naissance) — {{ $apprenant->lieu_naissance }} @endif</p>
                 <p class="label">Classe</p>
                 <p>{{ $classe->libelle }}</p>
                 <p class="validite">Valable jusqu'au {{ $carte->date_expiration->format('d/m/Y') }}</p>
             </div>
         </div>
+        @if($signatureDataUri)
+            <div class="signature">
+                <img src="{{ $signatureDataUri }}" alt="Signature"><br>
+                <p>Le Directeur</p>
+            </div>
+        @endif
         <div class="qr">
             <img src="{{ $qrDataUri }}" width="50" height="50" alt="QR de vérification">
         </div>

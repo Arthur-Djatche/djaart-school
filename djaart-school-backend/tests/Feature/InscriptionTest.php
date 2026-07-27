@@ -130,6 +130,80 @@ class InscriptionTest extends TestCase
         $this->assertStringEndsWith('00002', $matricule2);
     }
 
+    public function test_matricule_respecte_le_format_2_lettres_majuscules_plus_8_chiffres(): void
+    {
+        [$etablissement, $classe] = $this->makeStructure();
+        $secretaire = $this->makeUser($etablissement, 'secretaire');
+
+        $response = $this->actingAs($secretaire)->postJson('/api/inscriptions', [
+            'classe_id' => $classe->id,
+            'apprenant' => $this->apprenantPayload(),
+        ]);
+
+        $matricule = $response->json('data.apprenant.matricule');
+
+        $this->assertSame(10, strlen($matricule));
+        $this->assertMatchesRegularExpression('/^[A-Z]{2}[0-9]{8}$/', $matricule);
+    }
+
+    public function test_matricule_utilise_xx_quand_le_sigle_est_vide_ou_trop_court(): void
+    {
+        $etablissementSansSigle = Etablissement::factory()->create(['sigle' => null]);
+        [, $classeSansSigle] = $this->makeStructureForEtablissement($etablissementSansSigle);
+        $secretaire = $this->makeUser($etablissementSansSigle, 'secretaire');
+
+        $response = $this->actingAs($secretaire)->postJson('/api/inscriptions', [
+            'classe_id' => $classeSansSigle->id,
+            'apprenant' => $this->apprenantPayload(),
+        ]);
+
+        $matricule = $response->json('data.apprenant.matricule');
+
+        $this->assertStringStartsWith('XX', $matricule);
+    }
+
+    /** @return array{0: Etablissement, 1: Classe} */
+    private function makeStructureForEtablissement(Etablissement $etablissement): array
+    {
+        $filiere = Filiere::create(['etablissement_id' => $etablissement->id, 'nom' => 'Filière', 'code' => 'F1']);
+        $niveau = Niveau::create([
+            'etablissement_id' => $etablissement->id,
+            'filiere_id' => $filiere->id,
+            'libelle' => 'Niveau 1',
+            'ordre' => 1,
+            'type_systeme' => 'classique',
+        ]);
+        $annee = AnneeAcademique::create([
+            'etablissement_id' => $etablissement->id,
+            'libelle' => '2025-2026',
+            'date_debut' => '2025-09-01',
+            'date_fin' => '2026-07-31',
+        ]);
+        $classe = Classe::create([
+            'etablissement_id' => $etablissement->id,
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'libelle' => 'Classe A',
+            'effectif_max' => 30,
+        ]);
+        $frais = FraisScolarite::create([
+            'etablissement_id' => $etablissement->id,
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'montant_total' => 100000,
+            'nombre_tranches' => 1,
+        ]);
+        Tranche::create([
+            'etablissement_id' => $etablissement->id,
+            'frais_scolarite_id' => $frais->id,
+            'numero' => 1,
+            'montant' => 100000,
+            'date_echeance' => '2025-09-01',
+        ]);
+
+        return [$etablissement, $classe];
+    }
+
     public function test_full_classe_rejects_inscription(): void
     {
         [$etablissement, $classe] = $this->makeStructure(effectifMax: 1);

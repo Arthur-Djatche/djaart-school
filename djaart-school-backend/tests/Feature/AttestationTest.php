@@ -142,6 +142,127 @@ class AttestationTest extends TestCase
         $response->assertStatus(403);
     }
 
+    /** @return array{0: Etablissement, 1: Classe, 2: Apprenant, 3: Apprenant} */
+    private function makeStructureAvecDeuxApprenants(): array
+    {
+        $etablissement = Etablissement::factory()->create();
+        $filiere = Filiere::create(['etablissement_id' => $etablissement->id, 'nom' => 'Filière', 'code' => 'F1']);
+        $niveau = Niveau::create([
+            'etablissement_id' => $etablissement->id, 'filiere_id' => $filiere->id,
+            'libelle' => 'Niveau 1', 'ordre' => 1, 'type_systeme' => 'classique',
+        ]);
+        $annee = AnneeAcademique::create([
+            'etablissement_id' => $etablissement->id, 'libelle' => '2025-2026',
+            'date_debut' => '2025-09-01', 'date_fin' => '2026-07-31', 'statut' => 'en_cours',
+        ]);
+        $classe = Classe::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id, 'libelle' => 'Classe A', 'effectif_max' => 30,
+        ]);
+        $fraisScolarite = FraisScolarite::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id, 'montant_total' => 100000,
+            'frais_inscription' => 15000, 'nombre_tranches' => 1,
+        ]);
+        $apprenantValide = Apprenant::create([
+            'etablissement_id' => $etablissement->id, 'matricule' => 'ET00000001',
+            'nom' => 'Traoré', 'prenom' => 'Aïcha', 'date_naissance' => '2013-05-14', 'sexe' => 'F',
+        ]);
+        $apprenantNonValide = Apprenant::create([
+            'etablissement_id' => $etablissement->id, 'matricule' => 'ET00000002',
+            'nom' => 'Koné', 'prenom' => 'Moussa', 'date_naissance' => '2012-08-22', 'sexe' => 'M',
+        ]);
+        Inscription::create([
+            'etablissement_id' => $etablissement->id, 'apprenant_id' => $apprenantValide->id,
+            'classe_id' => $classe->id, 'annee_academique_id' => $annee->id,
+            'frais_scolarite_id' => $fraisScolarite->id, 'statut' => 'validee',
+            'type_inscription' => 'nouvelle', 'date_inscription' => now()->toDateString(),
+        ]);
+        Inscription::create([
+            'etablissement_id' => $etablissement->id, 'apprenant_id' => $apprenantNonValide->id,
+            'classe_id' => $classe->id, 'annee_academique_id' => $annee->id,
+            'frais_scolarite_id' => $fraisScolarite->id, 'statut' => 'en_cours',
+            'type_inscription' => 'nouvelle', 'date_inscription' => now()->toDateString(),
+        ]);
+
+        return [$etablissement, $classe, $apprenantValide, $apprenantNonValide];
+    }
+
+    public function test_generation_en_masse_rapporte_les_succes_et_echecs_individuellement(): void
+    {
+        [$etablissement, $classe, $apprenantValide, $apprenantNonValide] = $this->makeStructureAvecDeuxApprenants();
+        $secretaire = $this->makeUser($etablissement, 'secretaire');
+
+        $response = $this->actingAs($secretaire)->postJson("/api/classes/{$classe->id}/attestations/masse", [
+            'type' => 'scolarite',
+        ]);
+
+        $response->assertOk();
+        $resultats = collect($response->json('data'));
+        $ligneValide = $resultats->firstWhere('apprenant_id', $apprenantValide->id);
+        $ligneNonValide = $resultats->firstWhere('apprenant_id', $apprenantNonValide->id);
+
+        $this->assertTrue($ligneValide['success']);
+        $this->assertNotNull($ligneValide['attestation_id']);
+        $this->assertFalse($ligneNonValide['success']);
+        $this->assertNotNull($ligneNonValide['message']);
+        $this->assertSame(1, Attestation::count());
+    }
+
+    public function test_generation_en_masse_peut_cibler_des_apprenants_precis(): void
+    {
+        [$etablissement, $classe, $apprenantValide] = $this->makeStructureAvecDeuxApprenants();
+        $secretaire = $this->makeUser($etablissement, 'secretaire');
+
+        $response = $this->actingAs($secretaire)->postJson("/api/classes/{$classe->id}/attestations/masse", [
+            'type' => 'scolarite',
+            'apprenant_ids' => [$apprenantValide->id],
+        ]);
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json('data'));
+        $this->assertSame(1, Attestation::count());
+    }
+
+    public function test_telechargement_zip_regroupe_plusieurs_attestations(): void
+    {
+        [$etablissement, $classe, $apprenantValide] = $this->makeStructureAvecDeuxApprenants();
+        $secretaire = $this->makeUser($etablissement, 'secretaire');
+
+        $r1 = $this->actingAs($secretaire)->postJson("/api/apprenants/{$apprenantValide->id}/attestations", ['type' => 'scolarite'])->json('data');
+        $r2 = $this->actingAs($secretaire)->postJson("/api/apprenants/{$apprenantValide->id}/attestations", ['type' => 'reussite'])->json('data');
+
+        $response = $this->actingAs($secretaire)->get("/api/attestations/zip?ids={$r1['id']},{$r2['id']}");
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/zip');
+    }
+
+    public function test_comptable_ne_peut_pas_generer_en_masse(): void
+    {
+        [$etablissement, $classe] = $this->makeStructureAvecDeuxApprenants();
+        $comptable = $this->makeUser($etablissement, 'comptable');
+
+        $response = $this->actingAs($comptable)->postJson("/api/classes/{$classe->id}/attestations/masse", [
+            'type' => 'scolarite',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_secretaire_dun_autre_etablissement_ne_peut_pas_generer_en_masse(): void
+    {
+        [, $classe] = $this->makeStructureAvecDeuxApprenants();
+        $autreEtablissement = Etablissement::factory()->create();
+        $autreSecretaire = $this->makeUser($autreEtablissement, 'secretaire');
+
+        $response = $this->actingAs($autreSecretaire)->postJson("/api/classes/{$classe->id}/attestations/masse", [
+            'type' => 'scolarite',
+        ]);
+
+        $response->assertStatus(404);
+    }
+
     public function test_isolation_multi_etablissement(): void
     {
         [, $apprenant] = $this->makeStructure('validee');

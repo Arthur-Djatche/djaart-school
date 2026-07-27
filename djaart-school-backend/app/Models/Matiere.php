@@ -15,6 +15,7 @@ class Matiere extends Model
         'etablissement_id',
         'niveau_id',
         'nom',
+        'groupe',
         'coefficient',
         'credits_ects',
         'ponderation_cc',

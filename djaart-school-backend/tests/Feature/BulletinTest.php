@@ -13,6 +13,7 @@ use App\Models\FraisScolarite;
 use App\Models\Inscription;
 use App\Models\Matiere;
 use App\Models\Niveau;
+use App\Models\ConduiteReleve;
 use App\Models\Note;
 use App\Models\Sequence;
 use App\Models\User;
@@ -228,6 +229,70 @@ class BulletinTest extends TestCase
         // Aïcha : Maths absent (0, coef 3) + Français 10 (coef 2) -> (0*3+10*2)/5 = 4.00
         $bulletinAicha = Bulletin::where('inscription_id', $inscriptions[0]->id)->first();
         $this->assertEquals(4.0, $bulletinAicha->moyenne_generale);
+    }
+
+    public function test_cloture_calcule_les_sous_totaux_par_groupe_et_les_statistiques_de_classe(): void
+    {
+        [$etablissement, $classe, $sequence, $matieres, $apprenants, $inscriptions, $affectations] = $this->makeStructure();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+        $matieres[0]->update(['groupe' => 'Groupe I']);
+        $matieres[1]->update(['groupe' => 'Groupe II']);
+
+        // Aïcha : Maths 18 (coef 3), Français 12 (coef 2) -> moyenne 15.60
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[0], 18);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[0], 12);
+        // Moussa : Maths 10 (coef 3), Français 8 (coef 2) -> moyenne 9.20
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[1], 10);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[1], 8);
+
+        $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer")->assertCreated();
+
+        $bulletinAicha = Bulletin::where('inscription_id', $inscriptions[0]->id)->first();
+
+        $groupes = collect($bulletinAicha->details_groupes)->keyBy('libelle');
+        $this->assertEquals(3.0, $groupes['Groupe I']['total_coefficient']);
+        $this->assertEquals(18.0, $groupes['Groupe I']['moyenne']);
+        $this->assertEquals(12.0, $groupes['Groupe II']['moyenne']);
+
+        // Classe : moyennes 15.60 et 9.20 -> moyenne classe 12.40, taux de reussite 50%, max 15.60, min 9.20.
+        $this->assertEquals(12.4, $bulletinAicha->moyenne_classe);
+        $this->assertEquals(50.0, $bulletinAicha->taux_reussite);
+        $this->assertEquals(15.6, $bulletinAicha->moyenne_max);
+        $this->assertEquals(9.2, $bulletinAicha->moyenne_min);
+    }
+
+    public function test_cloture_fige_la_conduite_deja_saisie_et_met_des_valeurs_par_defaut_sinon(): void
+    {
+        [$etablissement, $classe, $sequence, $matieres, $apprenants, $inscriptions, $affectations] = $this->makeStructure();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        ConduiteReleve::create([
+            'etablissement_id' => $etablissement->id,
+            'inscription_id' => $inscriptions[0]->id,
+            'sequence_id' => $sequence->id,
+            'absences' => 4,
+            'absences_non_justifiees' => 2,
+            'retards' => 1,
+            'mention_travail' => 'tableau_honneur',
+            'mention_conduite' => 'encouragements',
+        ]);
+
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[0], 18);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[0], 12);
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[1], 10);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[1], 8);
+
+        $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer")->assertCreated();
+
+        $bulletinAicha = Bulletin::where('inscription_id', $inscriptions[0]->id)->first();
+        $bulletinMoussa = Bulletin::where('inscription_id', $inscriptions[1]->id)->first();
+
+        $this->assertSame(4, $bulletinAicha->absences);
+        $this->assertSame('tableau_honneur', $bulletinAicha->mention_travail);
+
+        // Aucune conduite saisie pour Moussa -> valeurs par defaut, non bloquant.
+        $this->assertSame(0, $bulletinMoussa->absences);
+        $this->assertNull($bulletinMoussa->mention_travail);
     }
 
     public function test_enseignant_ne_peut_pas_declencher_la_cloture(): void

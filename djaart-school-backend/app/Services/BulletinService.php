@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\AffectationEnseignant;
 use App\Models\Bulletin;
 use App\Models\Classe;
+use App\Models\ConduiteReleve;
 use App\Models\Note;
 use App\Models\Sequence;
+use App\Services\Concerns\EmbedsEtablissementBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +17,8 @@ use Illuminate\Validation\ValidationException;
 
 class BulletinService
 {
+    use EmbedsEtablissementBranding;
+
     public function cloturerSequence(Classe $classe, Sequence $sequence): Collection
     {
         return DB::transaction(function () use ($classe, $sequence) {
@@ -89,6 +93,23 @@ class BulletinService
 
             $classement = $this->calculerRangs($moyennes);
             $effectif = $inscriptions->count();
+
+            $valeursMoyennes = array_values($moyennes);
+            $statistiquesClasse = [
+                'moyenne_classe' => round(array_sum($valeursMoyennes) / count($valeursMoyennes), 2),
+                'taux_reussite' => round(
+                    count(array_filter($valeursMoyennes, fn ($m) => $m >= 10)) / count($valeursMoyennes) * 100,
+                    1,
+                ),
+                'moyenne_max' => max($valeursMoyennes),
+                'moyenne_min' => min($valeursMoyennes),
+            ];
+
+            $conduites = ConduiteReleve::where('sequence_id', $sequence->id)
+                ->whereIn('inscription_id', $inscriptions->pluck('id'))
+                ->get()
+                ->keyBy('inscription_id');
+
             $bulletins = collect();
 
             foreach ($inscriptions as $inscription) {
@@ -97,11 +118,15 @@ class BulletinService
 
                     return [
                         'matiere' => $donnee['matiere']->nom,
+                        'groupe' => $donnee['matiere']->groupe ?? 'Non groupé',
                         'coefficient' => $donnee['matiere']->coefficient,
                         'valeur' => $note->absent ? 0 : $note->valeur,
                         'absent' => $note->absent,
                     ];
                 })->all();
+
+                $detailsGroupes = $this->calculerDetailsGroupes($donneesParAffectation, $inscription);
+                $conduite = $conduites->get($inscription->id);
 
                 $bulletin = Bulletin::create([
                     'etablissement_id' => $classe->etablissement_id,
@@ -109,6 +134,16 @@ class BulletinService
                     'sequence_id' => $sequence->id,
                     'moyenne_generale' => $moyennes[$inscription->id],
                     'rang' => $classement[$inscription->id],
+                    'details_groupes' => $detailsGroupes,
+                    'moyenne_classe' => $statistiquesClasse['moyenne_classe'],
+                    'taux_reussite' => $statistiquesClasse['taux_reussite'],
+                    'moyenne_max' => $statistiquesClasse['moyenne_max'],
+                    'moyenne_min' => $statistiquesClasse['moyenne_min'],
+                    'absences' => $conduite->absences ?? 0,
+                    'absences_non_justifiees' => $conduite->absences_non_justifiees ?? 0,
+                    'retards' => $conduite->retards ?? 0,
+                    'mention_travail' => $conduite->mention_travail ?? null,
+                    'mention_conduite' => $conduite->mention_conduite ?? null,
                     'fichier_pdf' => '',
                 ]);
 
@@ -120,7 +155,10 @@ class BulletinService
                     'sequence' => $sequence,
                     'bulletin' => $bulletin,
                     'lignes' => $lignes,
+                    'detailsGroupes' => $detailsGroupes,
                     'effectif' => $effectif,
+                    'logoDataUri' => $this->logoDataUri($classe->etablissement),
+                    'signatureDataUri' => $this->signatureDataUri($classe->etablissement),
                 ]);
 
                 $chemin = "bulletins/{$classe->etablissement_id}/{$sequence->id}/{$inscription->id}.pdf";
@@ -132,6 +170,41 @@ class BulletinService
 
             return $bulletins;
         });
+    }
+
+    /**
+     * Sous-totaux par groupe de matieres (Groupe I/II/III...), pour un
+     * apprenant donne. Une matiere sans groupe est regroupee sous
+     * "Non groupé" plutot que d'etre exclue.
+     *
+     * @param  array<int, array{matiere: \App\Models\Matiere, notes: \Illuminate\Support\Collection}>  $donneesParAffectation
+     * @return array<int, array{libelle: string, total_coefficient: float, total_points: float, moyenne: float}>
+     */
+    private function calculerDetailsGroupes(array $donneesParAffectation, $inscription): array
+    {
+        return collect($donneesParAffectation)
+            ->groupBy(fn ($donnee) => $donnee['matiere']->groupe ?? 'Non groupé')
+            ->map(function ($items, $libelle) use ($inscription) {
+                $totalCoefficient = 0.0;
+                $totalPoints = 0.0;
+
+                foreach ($items as $donnee) {
+                    $note = $donnee['notes']->get($inscription->apprenant_id);
+                    $valeur = $note->absent ? 0.0 : (float) $note->valeur;
+                    $coefficient = (float) $donnee['matiere']->coefficient;
+                    $totalCoefficient += $coefficient;
+                    $totalPoints += $valeur * $coefficient;
+                }
+
+                return [
+                    'libelle' => $libelle,
+                    'total_coefficient' => $totalCoefficient,
+                    'total_points' => round($totalPoints, 2),
+                    'moyenne' => $totalCoefficient > 0 ? round($totalPoints / $totalCoefficient, 2) : 0.0,
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     /**

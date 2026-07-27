@@ -7,35 +7,22 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Bulletin extends Model
+class ConduiteReleve extends Model
 {
     use BelongsToEtablissement, HasFactory;
+
+    protected $table = 'conduites_releves';
 
     protected $fillable = [
         'etablissement_id',
         'inscription_id',
         'sequence_id',
-        'moyenne_generale',
-        'rang',
-        'details_groupes',
-        'moyenne_classe',
-        'taux_reussite',
-        'moyenne_max',
-        'moyenne_min',
         'absences',
         'absences_non_justifiees',
         'retards',
         'mention_travail',
         'mention_conduite',
-        'fichier_pdf',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'details_groupes' => 'array',
-        ];
-    }
 
     public function inscription(): BelongsTo
     {

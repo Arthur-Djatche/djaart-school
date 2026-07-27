@@ -14,6 +14,7 @@ class ClasseResource extends JsonResource
             'etablissement_id' => $this->etablissement_id,
             'niveau_id' => $this->niveau_id,
             'annee_academique_id' => $this->annee_academique_id,
+            'professeur_principal_id' => $this->professeur_principal_id,
             'libelle' => $this->libelle,
             'effectif_max' => $this->effectif_max,
             'niveau' => $this->whenLoaded('niveau', fn () => [
@@ -25,6 +26,10 @@ class ClasseResource extends JsonResource
                 'id' => $this->anneeAcademique->id,
                 'libelle' => $this->anneeAcademique->libelle,
             ]),
+            'professeur_principal' => $this->whenLoaded('professeurPrincipal', fn () => $this->professeurPrincipal ? [
+                'id' => $this->professeurPrincipal->id,
+                'name' => $this->professeurPrincipal->name,
+            ] : null),
         ];
     }
 }

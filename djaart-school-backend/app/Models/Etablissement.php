@@ -15,6 +15,8 @@ class Etablissement extends Model
         'type_etablissement',
         'sigle',
         'adresse',
+        'logo',
+        'signature',
         'next_matricule_sequence',
         'next_recu_sequence',
         'next_attestation_sequence',

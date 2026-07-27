@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Apprenant;
 use App\Models\CarteScolaire;
 use App\Models\Etablissement;
+use App\Services\Concerns\EmbedsEtablissementBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -12,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 class CarteScolaireService
 {
+    use EmbedsEtablissementBranding;
+
     public function __construct(private readonly QrCodeService $qrCodeService)
     {
     }
@@ -66,6 +69,8 @@ class CarteScolaireService
                 'carte' => $carte,
                 'qrDataUri' => $qrDataUri,
                 'photoDataUri' => $this->photoDataUri($apprenant->photo),
+                'logoDataUri' => $this->logoDataUri($etablissement),
+                'signatureDataUri' => $this->signatureDataUri($etablissement),
             ]);
 
             $chemin = "cartes/{$apprenant->etablissement_id}/{$numero}.pdf";

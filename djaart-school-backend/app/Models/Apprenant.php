@@ -17,6 +17,7 @@ class Apprenant extends Model
         'nom',
         'prenom',
         'date_naissance',
+        'lieu_naissance',
         'sexe',
         'telephone',
         'email',

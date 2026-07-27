@@ -67,6 +67,7 @@ class ParametrageSeeder extends Seeder
     private function seedLyceeDemo(): void
     {
         $etablissement = Etablissement::where('nom', 'Lycée Démo DJAART')->firstOrFail();
+        $enseignant = User::where('email', 'enseignant@djaart.school')->first();
 
         $annee = AnneeAcademique::firstOrCreate(
             ['etablissement_id' => $etablissement->id, 'libelle' => '2025-2026'],
@@ -78,21 +79,33 @@ class ParametrageSeeder extends Seeder
             ['nom' => 'Général'],
         );
 
+        // Groupes de matieres de demo (Groupe I = scientifique, Groupe II = lettres),
+        // pour illustrer les sous-totaux par groupe sur le bulletin classique.
+        $groupesParMatiere = [
+            'Mathématiques' => 'Groupe I',
+            'Français' => 'Groupe II',
+            'Histoire-Géographie' => 'Groupe II',
+        ];
+
         foreach ([['libelle' => '6ème', 'ordre' => 1], ['libelle' => '5ème', 'ordre' => 2]] as $data) {
             $niveau = Niveau::firstOrCreate(
                 ['etablissement_id' => $etablissement->id, 'filiere_id' => $filiere->id, 'libelle' => $data['libelle']],
                 ['ordre' => $data['ordre'], 'type_systeme' => 'classique'],
             );
 
-            Classe::firstOrCreate(
+            $classe = Classe::firstOrCreate(
                 ['etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id, 'annee_academique_id' => $annee->id],
                 ['libelle' => $data['libelle'].' A', 'effectif_max' => 45],
             );
 
+            if ($enseignant && ! $classe->professeur_principal_id) {
+                $classe->update(['professeur_principal_id' => $enseignant->id]);
+            }
+
             foreach (['Mathématiques', 'Français', 'Histoire-Géographie'] as $matiereNom) {
                 Matiere::firstOrCreate(
                     ['etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id, 'nom' => $matiereNom],
-                    ['coefficient' => 2],
+                    ['coefficient' => 2, 'groupe' => $groupesParMatiere[$matiereNom]],
                 );
             }
         }

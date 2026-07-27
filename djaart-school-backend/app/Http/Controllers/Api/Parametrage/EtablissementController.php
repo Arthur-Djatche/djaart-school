@@ -9,6 +9,7 @@ use App\Http\Requests\Parametrage\UpdateEtablissementRequest;
 use App\Http\Resources\EtablissementResource;
 use App\Models\Etablissement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class EtablissementController extends Controller
 {
@@ -55,5 +56,41 @@ class EtablissementController extends Controller
         $etablissement->delete();
 
         return $this->success(null, 'Établissement supprimé.');
+    }
+
+    public function updateLogo(Request $request, Etablissement $etablissement)
+    {
+        $this->authorize('update', $etablissement);
+
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        if ($etablissement->logo) {
+            Storage::disk('public')->delete($etablissement->logo);
+        }
+
+        $chemin = $request->file('logo')->store("etablissements/{$etablissement->id}", 'public');
+        $etablissement->update(['logo' => $chemin]);
+
+        return $this->success(new EtablissementResource($etablissement), 'Logo mis à jour.');
+    }
+
+    public function updateSignature(Request $request, Etablissement $etablissement)
+    {
+        $this->authorize('update', $etablissement);
+
+        $request->validate([
+            'signature' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        if ($etablissement->signature) {
+            Storage::disk('public')->delete($etablissement->signature);
+        }
+
+        $chemin = $request->file('signature')->store("etablissements/{$etablissement->id}", 'public');
+        $etablissement->update(['signature' => $chemin]);
+
+        return $this->success(new EtablissementResource($etablissement), 'Signature mise à jour.');
     }
 }

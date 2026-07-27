@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Apprenant;
 use App\Models\Attestation;
 use App\Models\Etablissement;
+use App\Services\Concerns\EmbedsEtablissementBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -12,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 class AttestationService
 {
+    use EmbedsEtablissementBranding;
+
     private const TYPE_LABELS = [
         'scolarite' => 'Attestation de Scolarité',
         'frequentation' => 'Attestation de Fréquentation',
@@ -62,6 +65,8 @@ class AttestationService
                 'attestation' => $attestation,
                 'typeLabel' => self::TYPE_LABELS[$type] ?? $type,
                 'qrDataUri' => $qrDataUri,
+                'logoDataUri' => $this->logoDataUri($etablissement),
+                'signatureDataUri' => $this->signatureDataUri($etablissement),
             ]);
 
             $chemin = "attestations/{$apprenant->etablissement_id}/{$numero}.pdf";

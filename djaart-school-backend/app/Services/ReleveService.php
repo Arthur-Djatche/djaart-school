@@ -9,6 +9,7 @@ use App\Models\Note;
 use App\Models\ReleveDeNotes;
 use App\Models\Semestre;
 use App\Models\Sequence;
+use App\Services\Concerns\EmbedsEtablissementBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 
 class ReleveService
 {
+    use EmbedsEtablissementBranding;
+
     private const SEUIL_ADMISSION = 10.0;
 
     public function genererAnnuelClassique(Classe $classe): Collection
@@ -100,6 +103,8 @@ class ReleveService
                     'semestre' => null,
                     'releve' => $releve,
                     'lignes' => $lignes,
+                    'logoDataUri' => $this->logoDataUri($classe->etablissement),
+                    'signatureDataUri' => $this->signatureDataUri($classe->etablissement),
                 ]);
 
                 $chemin = "releves/{$classe->etablissement_id}/annuel/{$inscription->id}.pdf";
@@ -218,6 +223,8 @@ class ReleveService
                     'semestre' => $semestre,
                     'releve' => $releve,
                     'lignes' => $lignes,
+                    'logoDataUri' => $this->logoDataUri($classe->etablissement),
+                    'signatureDataUri' => $this->signatureDataUri($classe->etablissement),
                 ]);
 
                 $chemin = "releves/{$classe->etablissement_id}/{$semestre->id}/{$inscription->id}.pdf";
