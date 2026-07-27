@@ -73,6 +73,12 @@ export default function CaissePage() {
   }
 
   const handleEncaisser = async (payload) => {
+    // Reserve la fenetre d'impression tout de suite, dans le meme geste
+    // utilisateur que le clic sur "Encaisser" : ouvrir la fenetre APRES l'appel
+    // asynchrone serait bloque par le navigateur comme un pop-up non sollicite
+    // (meme lecon que le correctif rel="noreferrer" de la Phase 5).
+    const fenetreImpression = window.open('', '_blank')
+
     const { data } = await paiementApi.createPaiement({
       inscription_id: selectedInscriptionId,
       tranche_id: selectedTranche.id,
@@ -81,6 +87,9 @@ export default function CaissePage() {
     showToast('Paiement enregistré.', 'success')
     setSelectedTranche(null)
     setDernierRecuUrl(paiementApi.recuDownloadUrl(data.data.recu.id))
+    if (fenetreImpression) {
+      fenetreImpression.location = `${window.location.origin}/imprimer-recu/${data.data.recu.id}`
+    }
     await loadEcheancier(apprenant.id)
   }
 

@@ -20,6 +20,7 @@ export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
   const [niveaux, setNiveaux] = useState([])
   const [niveauId, setNiveauId] = useState(matiere?.niveau_id ?? '')
   const [nom, setNom] = useState(matiere?.nom ?? '')
+  const [groupe, setGroupe] = useState(matiere?.groupe ?? '')
   const [coefficient, setCoefficient] = useState(matiere?.coefficient ?? 1)
   const [creditsEcts, setCreditsEcts] = useState(matiere?.credits_ects ?? '')
   const [ponderationCc, setPonderationCc] = useState(matiere?.ponderation_cc ?? 40)
@@ -43,6 +44,7 @@ export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
       await onSubmit({
         niveau_id: Number(niveauId),
         nom,
+        groupe: groupe || null,
         coefficient: Number(coefficient),
         credits_ects: creditsEcts ? Number(creditsEcts) : null,
         ponderation_cc: Number(ponderationCc),
@@ -71,6 +73,13 @@ export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
             required
           />
           <Input id="nom" label="Nom" value={nom} onChange={(e) => setNom(e.target.value)} required />
+          <Input
+            id="groupe"
+            label="Groupe (bulletin classique, ex. « Groupe I »)"
+            value={groupe}
+            onChange={(e) => setGroupe(e.target.value)}
+            placeholder="Laisser vide si non groupée"
+          />
           <Input
             id="coefficient"
             type="number"

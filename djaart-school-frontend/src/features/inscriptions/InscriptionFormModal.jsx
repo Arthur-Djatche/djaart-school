@@ -24,7 +24,7 @@ export default function InscriptionFormModal({ onClose, onSubmit }) {
   const [selectedApprenant, setSelectedApprenant] = useState(null)
   const [showNewApprenantForm, setShowNewApprenantForm] = useState(false)
   const [newApprenant, setNewApprenant] = useState({
-    nom: '', prenom: '', date_naissance: '', sexe: 'F', telephone: '', email: '', adresse: '',
+    nom: '', prenom: '', date_naissance: '', lieu_naissance: '', sexe: 'F', telephone: '', email: '', adresse: '',
   })
 
   const [error, setError] = useState('')
@@ -120,6 +120,7 @@ export default function InscriptionFormModal({ onClose, onSubmit }) {
               <Input id="nom" label="Nom" value={newApprenant.nom} onChange={(e) => setNewApprenant({ ...newApprenant, nom: e.target.value })} required />
               <Input id="prenom" label="Prénom" value={newApprenant.prenom} onChange={(e) => setNewApprenant({ ...newApprenant, prenom: e.target.value })} required />
               <Input id="date_naissance" type="date" label="Date de naissance" value={newApprenant.date_naissance} onChange={(e) => setNewApprenant({ ...newApprenant, date_naissance: e.target.value })} required />
+              <Input id="lieu_naissance" label="Lieu de naissance" value={newApprenant.lieu_naissance} onChange={(e) => setNewApprenant({ ...newApprenant, lieu_naissance: e.target.value })} />
               <Select id="sexe" label="Sexe" value={newApprenant.sexe} onChange={(e) => setNewApprenant({ ...newApprenant, sexe: e.target.value })} options={SEXES} />
               <Input id="telephone" label="Téléphone" value={newApprenant.telephone} onChange={(e) => setNewApprenant({ ...newApprenant, telephone: e.target.value })} />
               <Input id="email" type="email" label="E-mail" value={newApprenant.email} onChange={(e) => setNewApprenant({ ...newApprenant, email: e.target.value })} />

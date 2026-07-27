@@ -53,6 +53,7 @@ export default function ClassesPage() {
     { key: 'libelle', label: 'Libellé' },
     { key: 'niveau', label: 'Niveau', render: (row) => row.niveau?.libelle ?? '—' },
     { key: 'annee_academique', label: 'Année', render: (row) => row.annee_academique?.libelle ?? '—' },
+    { key: 'professeur_principal', label: 'Professeur principal', render: (row) => row.professeur_principal?.name ?? '—' },
     { key: 'effectif_max', label: 'Effectif max' },
     {
       key: 'actions',

@@ -5,6 +5,18 @@ export const createEtablissement = (payload) => axiosClient.post('/api/etablisse
 export const updateEtablissement = (id, payload) => axiosClient.put(`/api/etablissements/${id}`, payload)
 export const deleteEtablissement = (id) => axiosClient.delete(`/api/etablissements/${id}`)
 
+export const uploadEtablissementLogo = (id, file) => {
+  const formData = new FormData()
+  formData.append('logo', file)
+  return axiosClient.post(`/api/etablissements/${id}/logo`, formData)
+}
+
+export const uploadEtablissementSignature = (id, file) => {
+  const formData = new FormData()
+  formData.append('signature', file)
+  return axiosClient.post(`/api/etablissements/${id}/signature`, formData)
+}
+
 export const fetchAnneesAcademiques = (params) => axiosClient.get('/api/annees-academiques', { params })
 export const createAnneeAcademique = (payload) => axiosClient.post('/api/annees-academiques', payload)
 export const updateAnneeAcademique = (id, payload) => axiosClient.put(`/api/annees-academiques/${id}`, payload)

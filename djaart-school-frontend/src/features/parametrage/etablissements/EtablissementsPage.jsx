@@ -6,6 +6,7 @@ import * as parametrageApi from '../../../api/parametrageApi'
 import useAuth from '../../../hooks/useAuth'
 import useToast from '../../../hooks/useToast'
 import EtablissementFormModal from './EtablissementFormModal'
+import EtablissementBrandingModal from './EtablissementBrandingModal'
 
 const TYPE_LABELS = {
   primaire: 'Primaire',
@@ -25,6 +26,7 @@ export default function EtablissementsPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null)
   const [showForm, setShowForm] = useState(false)
+  const [branding, setBranding] = useState(null)
 
   const load = useCallback(async (page = 1) => {
     setLoading(true)
@@ -73,6 +75,9 @@ export default function EtablissementsPage() {
           <Button variant="ghost" onClick={() => { setEditing(row); setShowForm(true) }}>
             Modifier
           </Button>
+          <Button variant="ghost" onClick={() => setBranding(row)}>
+            Logo &amp; signature
+          </Button>
           {isSuperAdmin && (
             <Button variant="ghost" onClick={() => handleDelete(row)}>
               Supprimer
@@ -109,6 +114,14 @@ export default function EtablissementsPage() {
 
       {showForm && (
         <EtablissementFormModal etablissement={editing} onClose={() => setShowForm(false)} onSubmit={handleSubmit} />
+      )}
+
+      {branding && (
+        <EtablissementBrandingModal
+          etablissement={branding}
+          onClose={() => setBranding(null)}
+          onUpdated={() => load(meta.current_page)}
+        />
       )}
     </DashboardLayout>
   )

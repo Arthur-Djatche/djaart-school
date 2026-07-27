@@ -4,6 +4,7 @@ import Input from '../../../components/ui/Input'
 import Modal from '../../../components/ui/Modal'
 import Select from '../../../components/ui/Select'
 import * as parametrageApi from '../../../api/parametrageApi'
+import * as usersApi from '../../../api/usersApi'
 
 async function loadAllNiveaux() {
   const { data: filieresResponse } = await parametrageApi.fetchFilieres({ page: 1 })
@@ -19,8 +20,10 @@ async function loadAllNiveaux() {
 export default function ClasseFormModal({ classe, onClose, onSubmit }) {
   const [niveaux, setNiveaux] = useState([])
   const [annees, setAnnees] = useState([])
+  const [enseignants, setEnseignants] = useState([])
   const [niveauId, setNiveauId] = useState(classe?.niveau_id ?? '')
   const [anneeAcademiqueId, setAnneeAcademiqueId] = useState(classe?.annee_academique_id ?? '')
+  const [professeurPrincipalId, setProfesseurPrincipalId] = useState(classe?.professeur_principal_id ?? '')
   const [libelle, setLibelle] = useState(classe?.libelle ?? '')
   const [effectifMax, setEffectifMax] = useState(classe?.effectif_max ?? 40)
   const [error, setError] = useState('')
@@ -29,12 +32,14 @@ export default function ClasseFormModal({ classe, onClose, onSubmit }) {
 
   useEffect(() => {
     (async () => {
-      const [niveauxList, anneesResponse] = await Promise.all([
+      const [niveauxList, anneesResponse, enseignantsResponse] = await Promise.all([
         loadAllNiveaux(),
         parametrageApi.fetchAnneesAcademiques({ page: 1 }),
+        usersApi.fetchUsers({ role: 'enseignant', page: 1 }),
       ])
       setNiveaux(niveauxList)
       setAnnees(anneesResponse.data.data)
+      setEnseignants(enseignantsResponse.data.data)
       setLoadingOptions(false)
     })()
   }, [])
@@ -47,6 +52,7 @@ export default function ClasseFormModal({ classe, onClose, onSubmit }) {
       await onSubmit({
         niveau_id: Number(niveauId),
         annee_academique_id: Number(anneeAcademiqueId),
+        professeur_principal_id: professeurPrincipalId ? Number(professeurPrincipalId) : null,
         libelle,
         effectif_max: Number(effectifMax),
       })
@@ -80,6 +86,14 @@ export default function ClasseFormModal({ classe, onClose, onSubmit }) {
             placeholder="Sélectionner une année"
             options={annees.map((a) => ({ value: a.id, label: a.libelle }))}
             required
+          />
+          <Select
+            id="professeur_principal_id"
+            label="Professeur principal (optionnel)"
+            value={professeurPrincipalId}
+            onChange={(e) => setProfesseurPrincipalId(e.target.value)}
+            placeholder="Aucun"
+            options={enseignants.map((e) => ({ value: e.id, label: e.name }))}
           />
           <Input id="libelle" label="Libellé" value={libelle} onChange={(e) => setLibelle(e.target.value)} required placeholder="6ème A" />
           <Input

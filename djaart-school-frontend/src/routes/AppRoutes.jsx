@@ -5,7 +5,9 @@ import ResetPasswordPage from '../features/auth/ResetPasswordPage'
 import ApprenantFichePage from '../features/apprenants/ApprenantFichePage'
 import ApprenantsListPage from '../features/apprenants/ApprenantsListPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
+import DocumentsMassePage from '../features/documents/DocumentsMassePage'
 import CaissePage from '../features/finance/caisse/CaissePage'
+import PrintRecuPage from '../features/finance/caisse/PrintRecuPage'
 import FraisScolaritePage from '../features/finance/fraisScolarite/FraisScolaritePage'
 import InscriptionsListPage from '../features/inscriptions/InscriptionsListPage'
 import AnneesAcademiquesPage from '../features/parametrage/annees/AnneesAcademiquesPage'
@@ -16,6 +18,7 @@ import MatieresPage from '../features/parametrage/matieres/MatieresPage'
 import NiveauxPage from '../features/parametrage/niveaux/NiveauxPage'
 import AffectationsPage from '../features/pedagogie/affectations/AffectationsPage'
 import BulletinsPage from '../features/pedagogie/bulletins/BulletinsPage'
+import SaisieConduitePage from '../features/pedagogie/conduite/SaisieConduitePage'
 import SaisieNotesPage from '../features/pedagogie/notes/SaisieNotesPage'
 import RelevesPage from '../features/pedagogie/releves/RelevesPage'
 import SemestresPage from '../features/pedagogie/semestres/SemestresPage'
@@ -38,6 +41,7 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/imprimer-recu/:recuId" element={<PrintRecuPage />} />
       </Route>
 
       <Route element={<ProtectedRoute roles={INSCRIPTION_ROLES} />}>
@@ -66,11 +70,16 @@ export default function AppRoutes() {
         <Route path="/pedagogie/notes" element={<SaisieNotesPage />} />
       </Route>
 
+      <Route element={<ProtectedRoute roles={[...PEDAGOGIE_ROLES, 'secretaire']} />}>
+        <Route path="/pedagogie/conduite" element={<SaisieConduitePage />} />
+      </Route>
+
       <Route element={<ProtectedRoute roles={BULLETINS_ROLES} />}>
         <Route path="/pedagogie/bulletins" element={<BulletinsPage />} />
         <Route path="/pedagogie/releves" element={<RelevesPage />} />
         <Route path="/apprenants" element={<ApprenantsListPage />} />
         <Route path="/apprenants/:id" element={<ApprenantFichePage />} />
+        <Route path="/documents/masse" element={<DocumentsMassePage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

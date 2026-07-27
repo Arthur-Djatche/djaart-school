@@ -8,6 +8,7 @@ export const NAVIGATION = [
   { label: 'Tableau de bord', to: '/dashboard', roles: null },
   { label: 'Inscriptions', to: '/inscriptions', roles: INSCRIPTION_ROLES },
   { label: 'Apprenants', to: '/apprenants', roles: BULLETINS_ROLES },
+  { label: 'Documents en masse', to: '/documents/masse', roles: BULLETINS_ROLES },
   {
     label: 'Paramétrage',
     roles: PARAMETRAGE_ROLES,
@@ -35,6 +36,7 @@ export const NAVIGATION = [
       { label: 'Séquences', to: '/pedagogie/sequences', roles: PARAMETRAGE_ROLES },
       { label: 'Semestres', to: '/pedagogie/semestres', roles: PARAMETRAGE_ROLES },
       { label: 'Saisie des notes', to: '/pedagogie/notes', roles: PEDAGOGIE_ROLES },
+      { label: 'Saisie de la conduite', to: '/pedagogie/conduite', roles: [...PEDAGOGIE_ROLES, 'secretaire'] },
       { label: 'Bulletins', to: '/pedagogie/bulletins', roles: BULLETINS_ROLES },
       { label: 'Relevés de notes', to: '/pedagogie/releves', roles: BULLETINS_ROLES },
     ],

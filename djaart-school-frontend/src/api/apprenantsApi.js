@@ -18,3 +18,10 @@ export const fetchCartesScolaires = (apprenantId) => axiosClient.get(`/api/appre
 export const createCarteScolaire = (apprenantId) =>
   axiosClient.post(`/api/apprenants/${apprenantId}/cartes-scolaires`)
 export const carteScolaireDownloadUrl = (id) => `${import.meta.env.VITE_API_URL}/api/cartes-scolaires/${id}/telecharger`
+
+export const genererAttestationsMasse = (classeId, type, apprenantIds) =>
+  axiosClient.post(`/api/classes/${classeId}/attestations/masse`, { type, apprenant_ids: apprenantIds })
+export const genererCartesScolairesMasse = (classeId, apprenantIds) =>
+  axiosClient.post(`/api/classes/${classeId}/cartes-scolaires/masse`, { apprenant_ids: apprenantIds })
+export const attestationsZipUrl = (ids) => `${import.meta.env.VITE_API_URL}/api/attestations/zip?ids=${ids.join(',')}`
+export const cartesScolairesZipUrl = (ids) => `${import.meta.env.VITE_API_URL}/api/cartes-scolaires/zip?ids=${ids.join(',')}`
