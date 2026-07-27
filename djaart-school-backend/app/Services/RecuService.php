@@ -25,7 +25,12 @@ class RecuService
             $numero = $etablissement->next_recu_sequence;
             $etablissement->update(['next_recu_sequence' => $numero + 1]);
 
-            $paiement->loadMissing(['tranche.fraisScolarite', 'inscription.apprenant', 'inscription.classe']);
+            $paiement->loadMissing([
+                'tranche.fraisScolarite',
+                'inscription.apprenant',
+                'inscription.classe',
+                'inscription.anneeAcademique',
+            ]);
 
             $recu = Recu::create([
                 'etablissement_id' => $paiement->etablissement_id,
@@ -39,6 +44,7 @@ class RecuService
                 'etablissement' => $etablissement,
                 'apprenant' => $paiement->inscription->apprenant,
                 'classe' => $paiement->inscription->classe,
+                'anneeAcademique' => $paiement->inscription->anneeAcademique,
                 'tranche' => $paiement->tranche,
                 'paiement' => $paiement,
                 'modeLabel' => self::MODE_LABELS[$paiement->mode_paiement] ?? $paiement->mode_paiement,

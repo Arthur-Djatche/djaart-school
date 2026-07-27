@@ -17,6 +17,7 @@ class UpdateFraisScolariteRequest extends FormRequest
     {
         return [
             'montant_total' => ['required', 'numeric', 'min:0.01'],
+            'frais_inscription' => ['required', 'numeric', 'min:0', 'lte:montant_total'],
             'mode' => ['required', Rule::in(['comptant', 'tranches'])],
             'tranches' => ['required_if:mode,tranches', 'array', 'min:1'],
             'tranches.*.numero' => ['required_with:tranches', 'integer', 'min:1'],

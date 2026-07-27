@@ -65,6 +65,7 @@ class PaiementTest extends TestCase
             'niveau_id' => $niveau->id,
             'annee_academique_id' => $annee->id,
             'montant_total' => 100000,
+            'frais_inscription' => 40000,
             'nombre_tranches' => 2,
         ]);
         $tranche1 = Tranche::create([
@@ -154,6 +155,26 @@ class PaiementTest extends TestCase
 
         $this->assertSame('partielle', $trancheData['statut']);
         $this->assertEquals(30000, $trancheData['solde']);
+    }
+
+    public function test_paiement_couvrant_les_frais_dinscription_valide_sans_solder_la_tranche(): void
+    {
+        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        $comptable = $this->makeUser($etablissement, 'comptable');
+
+        // 45 000 sur une tranche de 50 000 : la tranche reste "partielle" (solde 5 000),
+        // mais 45 000 >= les 40 000 de frais d'inscription paramétrés sur la grille ->
+        // l'inscription doit tout de même passer à "validee".
+        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 45000));
+
+        $response->assertCreated();
+        $this->assertSame('validee', $inscription->fresh()->statut);
+
+        $echeancier = $this->actingAs($comptable)->getJson("/api/apprenants/{$inscription->apprenant_id}/echeancier");
+        $tranches = collect($echeancier->json('data.inscriptions.0.tranches'));
+        $trancheData = $tranches->firstWhere('id', $tranche1->id);
+
+        $this->assertSame('partielle', $trancheData['statut']);
     }
 
     public function test_paiement_depassant_le_solde_est_rejete(): void

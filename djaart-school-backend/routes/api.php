@@ -59,7 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/apprenants/{apprenant}/echeancier', [ApprenantController::class, 'echeancier']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|secretaire')->group(function () {
+    Route::middleware('role:super_admin|admin_etablissement|secretaire|comptable')->group(function () {
         Route::get('/inscriptions', [InscriptionController::class, 'index']);
         Route::post('/inscriptions', [InscriptionController::class, 'store']);
         Route::post('/inscriptions/{inscription}/annuler', [InscriptionController::class, 'cancel']);

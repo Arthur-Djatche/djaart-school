@@ -12,10 +12,10 @@ class ClassePolicy
 
     public function viewAny(User $user): bool
     {
-        // Lecture seule ouverte a la secretaire (choix de classe dans le
-        // formulaire d'inscription) ; creation/modification/suppression
+        // Lecture seule ouverte a la secretaire et au comptable (choix de classe
+        // dans le formulaire d'inscription) ; creation/modification/suppression
         // restent reservees aux admins (cf. create/update/delete).
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable']);
     }
 
     public function view(User $user, Classe $classe): bool

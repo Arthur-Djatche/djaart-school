@@ -19,6 +19,7 @@ class FraisScolariteService
                 'niveau_id' => $data['niveau_id'],
                 'annee_academique_id' => $data['annee_academique_id'],
                 'montant_total' => $data['montant_total'],
+                'frais_inscription' => $data['frais_inscription'],
                 'nombre_tranches' => count($tranches),
             ]);
 
@@ -44,6 +45,7 @@ class FraisScolariteService
 
             $fraisScolarite->update([
                 'montant_total' => $data['montant_total'],
+                'frais_inscription' => $data['frais_inscription'],
                 'nombre_tranches' => count($tranches),
             ]);
 

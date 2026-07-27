@@ -15,6 +15,7 @@ class FraisScolariteResource extends JsonResource
             'niveau_id' => $this->niveau_id,
             'annee_academique_id' => $this->annee_academique_id,
             'montant_total' => $this->montant_total,
+            'frais_inscription' => $this->frais_inscription,
             'nombre_tranches' => $this->nombre_tranches,
             'mode' => $this->nombre_tranches > 1 ? 'tranches' : 'comptant',
             'niveau' => $this->whenLoaded('niveau', fn () => [

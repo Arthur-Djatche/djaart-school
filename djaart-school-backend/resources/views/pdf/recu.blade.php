@@ -26,12 +26,24 @@
 
     <table class="details">
         <tr>
-            <td class="label">Apprenant</td>
-            <td>{{ $apprenant->prenom }} {{ $apprenant->nom }} ({{ $apprenant->matricule }})</td>
+            <td class="label">Nom</td>
+            <td>{{ $apprenant->nom }}</td>
+        </tr>
+        <tr>
+            <td class="label">Prénom</td>
+            <td>{{ $apprenant->prenom }}</td>
+        </tr>
+        <tr>
+            <td class="label">Matricule</td>
+            <td>{{ $apprenant->matricule }}</td>
         </tr>
         <tr>
             <td class="label">Classe</td>
             <td>{{ $classe->libelle }}</td>
+        </tr>
+        <tr>
+            <td class="label">Année académique</td>
+            <td>{{ $anneeAcademique->libelle }}</td>
         </tr>
         <tr>
             <td class="label">Tranche</td>

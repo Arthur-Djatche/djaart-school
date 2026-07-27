@@ -10,23 +10,23 @@ use Illuminate\Database\Seeder;
 
 class FraisScolariteSeeder extends Seeder
 {
-    /** @var array<string, array<int, array{niveau: string, montant: float, mode: string, nombre_tranches?: int}>> */
+    /** @var array<string, array<int, array{niveau: string, montant: float, frais_inscription: float, mode: string, nombre_tranches?: int}>> */
     private const BAREMES = [
         'Lycée Démo DJAART' => [
-            ['niveau' => '6ème', 'montant' => 150000, 'mode' => 'tranches', 'nombre_tranches' => 3],
-            ['niveau' => '5ème', 'montant' => 140000, 'mode' => 'comptant'],
+            ['niveau' => '6ème', 'montant' => 150000, 'frais_inscription' => 25000, 'mode' => 'tranches', 'nombre_tranches' => 3],
+            ['niveau' => '5ème', 'montant' => 140000, 'frais_inscription' => 20000, 'mode' => 'comptant'],
         ],
         'École Primaire Démo DJAART' => [
-            ['niveau' => 'CP1', 'montant' => 100000, 'mode' => 'comptant'],
-            ['niveau' => 'CP2', 'montant' => 120000, 'mode' => 'tranches', 'nombre_tranches' => 2],
+            ['niveau' => 'CP1', 'montant' => 100000, 'frais_inscription' => 15000, 'mode' => 'comptant'],
+            ['niveau' => 'CP2', 'montant' => 120000, 'frais_inscription' => 20000, 'mode' => 'tranches', 'nombre_tranches' => 2],
         ],
         'Université Démo DJAART' => [
-            ['niveau' => 'Licence 1', 'montant' => 300000, 'mode' => 'tranches', 'nombre_tranches' => 2],
-            ['niveau' => 'Licence 2', 'montant' => 300000, 'mode' => 'comptant'],
+            ['niveau' => 'Licence 1', 'montant' => 300000, 'frais_inscription' => 30000, 'mode' => 'tranches', 'nombre_tranches' => 2],
+            ['niveau' => 'Licence 2', 'montant' => 300000, 'frais_inscription' => 30000, 'mode' => 'comptant'],
         ],
         'Centre de Formation Démo DJAART' => [
-            ['niveau' => 'CQP Électricien', 'montant' => 80000, 'mode' => 'comptant'],
-            ['niveau' => 'DQP Électricien', 'montant' => 90000, 'mode' => 'tranches', 'nombre_tranches' => 2],
+            ['niveau' => 'CQP Électricien', 'montant' => 80000, 'frais_inscription' => 10000, 'mode' => 'comptant'],
+            ['niveau' => 'DQP Électricien', 'montant' => 90000, 'frais_inscription' => 10000, 'mode' => 'tranches', 'nombre_tranches' => 2],
         ],
     ];
 
@@ -48,6 +48,7 @@ class FraisScolariteSeeder extends Seeder
                     'niveau_id' => $niveau->id,
                     'annee_academique_id' => $annee->id,
                     'montant_total' => $bareme['montant'],
+                    'frais_inscription' => $bareme['frais_inscription'],
                     'mode' => $bareme['mode'],
                 ];
 

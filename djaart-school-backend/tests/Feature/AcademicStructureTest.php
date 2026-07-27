@@ -157,4 +157,15 @@ class AcademicStructureTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_comptable_can_list_classes(): void
+    {
+        $etablissement = Etablissement::factory()->create();
+        $comptable = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $comptable->assignRole('comptable');
+
+        $response = $this->actingAs($comptable)->getJson('/api/classes');
+
+        $response->assertOk();
+    }
 }

@@ -19,6 +19,7 @@ class FraisScolarite extends Model
         'niveau_id',
         'annee_academique_id',
         'montant_total',
+        'frais_inscription',
         'nombre_tranches',
     ];
 

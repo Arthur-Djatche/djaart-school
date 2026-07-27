@@ -60,6 +60,7 @@ class FraisScolariteTest extends TestCase
             'niveau_id' => $niveau->id,
             'annee_academique_id' => $annee->id,
             'montant_total' => 100000,
+            'frais_inscription' => 15000,
             'mode' => 'tranches',
             'tranches' => [
                 ['numero' => 1, 'montant' => 40000, 'date_echeance' => '2025-09-01'],
@@ -79,6 +80,7 @@ class FraisScolariteTest extends TestCase
             'niveau_id' => $niveau->id,
             'annee_academique_id' => $annee->id,
             'montant_total' => 100000,
+            'frais_inscription' => 15000,
             'mode' => 'comptant',
         ]);
 
@@ -96,6 +98,7 @@ class FraisScolariteTest extends TestCase
             'niveau_id' => $niveau->id,
             'annee_academique_id' => $annee->id,
             'montant_total' => 100000,
+            'frais_inscription' => 15000,
             'mode' => 'tranches',
             'tranches' => [
                 ['numero' => 1, 'montant' => 40000, 'date_echeance' => '2025-09-01'],
@@ -115,6 +118,7 @@ class FraisScolariteTest extends TestCase
             'niveau_id' => $niveau->id,
             'annee_academique_id' => $annee->id,
             'montant_total' => 100000,
+            'frais_inscription' => 15000,
             'mode' => 'comptant',
         ])->assertCreated();
 
@@ -122,6 +126,23 @@ class FraisScolariteTest extends TestCase
             'niveau_id' => $niveau->id,
             'annee_academique_id' => $annee->id,
             'montant_total' => 120000,
+            'frais_inscription' => 15000,
+            'mode' => 'comptant',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_frais_inscription_superieur_au_montant_total_est_rejete(): void
+    {
+        [$etablissement, $niveau, $annee] = $this->makeStructure();
+        $admin = $this->makeAdmin($etablissement);
+
+        $response = $this->actingAs($admin)->postJson('/api/frais-scolarite', [
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'montant_total' => 100000,
+            'frais_inscription' => 150000,
             'mode' => 'comptant',
         ]);
 
@@ -138,10 +159,22 @@ class FraisScolariteTest extends TestCase
             'niveau_id' => $niveauA->id,
             'annee_academique_id' => $anneeA->id,
             'montant_total' => 100000,
+            'frais_inscription' => 15000,
             'mode' => 'comptant',
         ]);
 
         $response->assertStatus(422);
+    }
+
+    public function test_comptable_can_list_frais_scolarite(): void
+    {
+        [$etablissement] = $this->makeStructure();
+        $comptable = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $comptable->assignRole('comptable');
+
+        $response = $this->actingAs($comptable)->getJson('/api/frais-scolarite');
+
+        $response->assertOk();
     }
 
     public function test_update_replaces_tranches(): void
@@ -153,11 +186,13 @@ class FraisScolariteTest extends TestCase
             'niveau_id' => $niveau->id,
             'annee_academique_id' => $annee->id,
             'montant_total' => 100000,
+            'frais_inscription' => 15000,
             'mode' => 'comptant',
         ])->json('data');
 
         $response = $this->actingAs($admin)->putJson("/api/frais-scolarite/{$created['id']}", [
             'montant_total' => 90000,
+            'frais_inscription' => 15000,
             'mode' => 'tranches',
             'tranches' => [
                 ['numero' => 1, 'montant' => 45000, 'date_echeance' => '2025-09-01'],

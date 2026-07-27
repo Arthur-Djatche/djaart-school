@@ -56,19 +56,28 @@ class PaiementService
 
             $this->recuService->genererPour($paiement);
 
-            $this->validerInscriptionSiPremiereTrancheSoldee($tranche, $inscription, $montantDejaPaye + $montant);
+            $this->validerInscriptionSiFraisInscriptionCouverts($inscription);
 
             return $paiement->load(['tranche', 'inscription.apprenant', 'inscription.classe', 'recu']);
         });
     }
 
-    private function validerInscriptionSiPremiereTrancheSoldee(Tranche $tranche, Inscription $inscription, float $nouveauTotalPaye): void
+    /**
+     * Les frais d'inscription sont un montant paramétré sur la grille de frais
+     * (inclus dans la pension, pas un supplément), qui valide l'inscription dès
+     * que le cumul des paiements de l'apprenant l'atteint — sans attendre que la
+     * tranche en cours soit intégralement soldée.
+     */
+    private function validerInscriptionSiFraisInscriptionCouverts(Inscription $inscription): void
     {
-        if ($tranche->numero !== 1 || $nouveauTotalPaye < $tranche->montant) {
+        if ($inscription->statut !== 'en_cours') {
             return;
         }
 
-        if ($inscription->statut === 'en_cours') {
+        $fraisInscription = (float) $inscription->fraisScolarite->frais_inscription;
+        $totalPaye = (float) Paiement::where('inscription_id', $inscription->id)->sum('montant');
+
+        if ($totalPaye >= $fraisInscription) {
             $inscription->update(['statut' => 'validee']);
         }
     }

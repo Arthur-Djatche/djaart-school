@@ -174,6 +174,19 @@ class InscriptionTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_comptable_can_create_inscription(): void
+    {
+        [$etablissement, $classe] = $this->makeStructure();
+        $comptable = $this->makeUser($etablissement, 'comptable');
+
+        $response = $this->actingAs($comptable)->postJson('/api/inscriptions', [
+            'classe_id' => $classe->id,
+            'apprenant' => $this->apprenantPayload(),
+        ]);
+
+        $response->assertCreated()->assertJsonPath('data.statut', 'en_cours');
+    }
+
     public function test_secretaire_cannot_inscribe_into_another_etablissement_classe(): void
     {
         [, $classeA] = $this->makeStructure();
