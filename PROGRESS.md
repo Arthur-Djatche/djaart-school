@@ -239,5 +239,26 @@ Retour utilisateur après la Phase 5 : le comptable doit pouvoir lui-même crée
 - **Génération en lot par classe** (pas apprenant par apprenant) pour bulletins et relevés — le rang et la vérification de complétude s'évaluent naturellement à l'échelle de la classe.
 - **Portail apprenant/parent hors périmètre** : consultation réservée à secrétariat/admin (aucune authentification apprenant/parent n'existe dans ce projet, cf. même remarque en Phase 5 pour les reçus).
 
+## Phase 8 — Effets académiques (attestations et cartes)
+- Statut : **terminée**
+
+### Réalisé
+- Backend :
+  - Dépendance `endroid/qr-code` ajoutée (génération de QR en PNG via le backend GD déjà activé depuis la Phase 0), sans conflit avec la contrainte PHP 8.2 du projet.
+  - Modèles `Attestation` (`type` scolarité/fréquentation/réussite, `numero` séquentiel par établissement) et `CarteScolaire` (`numero` séquentiel + `numero_duplicata` par apprenant, `date_emission`/`date_expiration`).
+  - `AttestationService::generer()` et `CarteScolaireService::generer()` : vérifient qu'une inscription `validee` existe pour l'apprenant sur l'année académique `en_cours` de son établissement (sinon bloquent) ; réutilisent le pattern de compteur atomique déjà posé en Phases 4/5/7 (`next_attestation_sequence`, `next_carte_sequence`) ; génèrent un PDF (dompdf, même charte DJAART SCHOOL) avec un QR code auto-porteur (`QrCodeService`, encode les données d'identification du document en texte, pas une URL de vérification publique).
+  - `CarteScolaireService` bloque en plus si l'apprenant n'a pas de photo, et calcule `numero_duplicata` (0 pour la première carte, incrémenté à chaque réémission) tout en donnant systématiquement un `numero` séquentiel neuf.
+  - **Premier upload de fichier du projet** : `ApprenantController::updatePhoto()` (disque `public`, `php artisan storage:link` exécuté une fois pour exposer les fichiers) — remplace l'ancienne photo si une nouvelle est téléversée.
+  - `ApprenantPolicy::gererDocuments()` (nouvelle capacité) : secrétariat/admins uniquement (pas le comptable, hors de son ressort financier).
+  - Tests Feature : `AttestationTest` (blocage si inscription non validée, numérotation séquentielle, téléchargement PDF, rôles enseignant/comptable rejetés, isolation multi-établissement), `CarteScolaireTest` (blocage si pas de photo, génération réussie après upload, réémission incrémentant `numero_duplicata` avec un nouveau `numero`, isolation multi-établissement) — 94/94 tests OK au total (suite complète).
+- Frontend :
+  - **Première "fiche apprenant" du projet** (`ApprenantsListPage` + `ApprenantFichePage`, nouveau lien de navigation top-level "Apprenants") : jusqu'ici la recherche d'apprenant n'existait qu'en ligne dans des modales (inscription, caisse), sans page de profil autonome.
+  - `ApprenantFichePage` : affichage/upload de photo, génération d'attestation (sélection du type) et de carte scolaire en un clic, historique combiné des documents déjà émis avec lien de téléchargement et badge de duplicata.
+- Vérification bout-en-bout (Playwright), connecté `secretaire@djaart.school` : upload de photo pour Aïcha Traoré, génération d'une attestation de scolarité (PDF téléchargé réel, non vide), génération d'une carte scolaire (PDF avec QR et photo intégrés), réémission d'une seconde carte → badge "Duplicata 1" confirmé ; création en direct d'une nouvelle inscription non payée → tentative de génération d'attestation correctement bloquée avec message clair.
+
+### Hypothèses / écarts documentés
+- **QR auto-porteur, pas d'URL de vérification publique** : aucun portail de consultation/vérification externe n'existe dans ce projet (même remarque que le portail apprenant différé en Phases 5/7) — le QR encode directement les données d'identification du document.
+- **Blocage strict** (pas d'attestation "sous réserve") si l'inscription n'est pas validée, cohérent avec le choix déjà fait en Phases 5/7.
+
 ## Phases suivantes
-Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 8 à 11. Prochaine étape : **Phase 8 — Effets académiques (attestations et cartes)**.
+Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 9 à 11. Prochaine étape : **Phase 9 — Tableaux de bord et rapports**.
