@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\UserController;
+use App\Http\Controllers\Api\Dashboard\DashboardController;
+use App\Http\Controllers\Api\Dashboard\RapportController;
 use App\Http\Controllers\Api\Documents\AttestationController;
 use App\Http\Controllers\Api\Documents\CarteScolaireController;
 use App\Http\Controllers\Api\Finance\FraisScolariteController;
@@ -31,6 +33,7 @@ Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::middleware('role:super_admin|admin_etablissement')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
@@ -83,6 +86,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/paiements', [PaiementController::class, 'index']);
         Route::post('/paiements', [PaiementController::class, 'store']);
         Route::get('/recus/{recu}/telecharger', [RecuController::class, 'telecharger']);
+
+        Route::get('/rapports/impayes', [RapportController::class, 'impayes']);
+        Route::get('/rapports/statistiques-reussite', [RapportController::class, 'statistiquesReussite']);
     });
 
     Route::middleware('role:super_admin|admin_etablissement|enseignant')->group(function () {
