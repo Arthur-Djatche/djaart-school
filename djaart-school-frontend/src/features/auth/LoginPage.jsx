@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import logo from '../../assets/logo.png'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import useAuth from '../../hooks/useAuth'
 import useToast from '../../hooks/useToast'
+import AuthLayout from './AuthLayout'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -31,38 +31,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-lg">
-        <div className="mb-8 flex flex-col items-center gap-2">
-          <img src={logo} alt="DJAART SCHOOL" className="h-20 w-auto" />
-        </div>
-
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <Input
-            id="email"
-            type="email"
-            label="Adresse e-mail"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-          <Input
-            id="password"
-            type="password"
-            label="Mot de passe"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" loading={loading} className="w-full justify-center">
-            Se connecter
-          </Button>
-          <Link to="/forgot-password" className="text-center text-sm text-brand-blue hover:underline">
-            Mot de passe oublié ?
-          </Link>
-        </form>
-      </div>
-    </div>
+    <AuthLayout title="Connexion" subtitle="Accédez à votre espace DJAART SCHOOL.">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <Input
+          id="email"
+          type="email"
+          label="Adresse e-mail"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+        />
+        <Input
+          id="password"
+          type="password"
+          label="Mot de passe"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+        />
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <Button type="submit" loading={loading} className="w-full justify-center">
+          Se connecter
+        </Button>
+        <Link to="/forgot-password" className="text-center text-sm text-brand-blue hover:underline">
+          Mot de passe oublié ?
+        </Link>
+      </form>
+    </AuthLayout>
   )
 }

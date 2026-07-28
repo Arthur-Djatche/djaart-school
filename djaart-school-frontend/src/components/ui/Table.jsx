@@ -28,14 +28,14 @@ export default function Table({
         />
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-soft">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-brand-navy">
+          <thead className="bg-brand-blue-tint text-brand-navy">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-4 py-3 font-semibold ${column.sortable ? 'cursor-pointer select-none' : ''}`}
+                  className={`whitespace-nowrap px-4 py-3 font-semibold ${column.sortable ? 'cursor-pointer select-none hover:text-brand-blue' : ''}`}
                   onClick={() => column.sortable && onSortChange?.(column.key)}
                 >
                   {column.label}
@@ -53,7 +53,7 @@ export default function Table({
               </tr>
             )}
             {rows.map((row) => (
-              <tr key={row[rowKey]} className="hover:bg-slate-50">
+              <tr key={row[rowKey]} className="transition-colors hover:bg-brand-blue-tint/60">
                 {columns.map((column) => (
                   <td key={column.key} className="px-4 py-3">
                     {column.render ? column.render(row) : row[column.key]}

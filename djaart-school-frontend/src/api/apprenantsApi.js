@@ -19,6 +19,14 @@ export const createCarteScolaire = (apprenantId) =>
   axiosClient.post(`/api/apprenants/${apprenantId}/cartes-scolaires`)
 export const carteScolaireDownloadUrl = (id) => `${import.meta.env.VITE_API_URL}/api/cartes-scolaires/${id}/telecharger`
 
+export const listePhotosSeanceUrl = (classeId) => `${import.meta.env.VITE_API_URL}/api/classes/${classeId}/photos/liste`
+
+export const importerPhotosMasse = (classeId, files) => {
+  const formData = new FormData()
+  files.forEach((file) => formData.append('photos[]', file))
+  return axiosClient.post(`/api/classes/${classeId}/apprenants/photos-masse`, formData)
+}
+
 export const genererAttestationsMasse = (classeId, type, apprenantIds) =>
   axiosClient.post(`/api/classes/${classeId}/attestations/masse`, { type, apprenant_ids: apprenantIds })
 export const genererCartesScolairesMasse = (classeId, apprenantIds) =>

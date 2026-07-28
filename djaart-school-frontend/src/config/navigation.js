@@ -11,6 +11,7 @@ export const NAVIGATION = [
   { label: 'Tableau de bord', to: '/dashboard', roles: null },
   { label: 'Inscriptions', to: '/inscriptions', roles: INSCRIPTION_ROLES },
   { label: 'Apprenants', to: '/apprenants', roles: BULLETINS_ROLES },
+  { label: 'Séance photo', to: '/apprenants/seance-photo', roles: BULLETINS_ROLES },
   { label: 'Documents en masse', to: '/documents/masse', roles: BULLETINS_ROLES },
   {
     label: 'Paramétrage',
@@ -47,6 +48,7 @@ export const NAVIGATION = [
     ],
   },
   { label: 'Comptes utilisateurs', to: '/users', roles: ['super_admin', 'admin_etablissement'] },
+  { label: 'Demandes de démo', to: '/demandes-demo', roles: ['super_admin'] },
 ]
 
 function allowed(roles, userRoles) {

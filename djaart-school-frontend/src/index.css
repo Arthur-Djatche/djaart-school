@@ -2,14 +2,46 @@
 
 @theme {
   --color-brand-navy: #001335;
+  --color-brand-navy-soft: #0b1f4d;
   --color-brand-blue: #003fa2;
   --color-brand-blue-light: #009bec;
+  --color-brand-blue-tint: #eaf3ff;
   --color-brand-orange: #fe9605;
+  --color-brand-orange-light: #ffb648;
+  --color-brand-orange-tint: #fff4e2;
   --color-brand-teal: #009ca0;
+  --color-brand-teal-light: #4fc6c9;
+  --color-brand-teal-tint: #e6f7f7;
 
   --font-sans: 'Segoe UI', system-ui, Roboto, sans-serif;
+
+  --shadow-soft: 0 1px 2px rgb(2 6 23 / 0.04), 0 8px 24px -8px rgb(2 6 23 / 0.10);
+  --shadow-brand: 0 10px 30px -8px rgb(0 63 162 / 0.35);
+  --shadow-glow-orange: 0 10px 30px -8px rgb(254 150 5 / 0.45);
 }
 
 body {
   @apply bg-slate-50 text-brand-navy antialiased;
+}
+
+/* Motif de fond discret pour les sections de marque (hero, bandeaux d'auth) —
+   points espacés, pas d'image externe. */
+.brand-mesh {
+  background-image: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 200ms ease-out;
 }

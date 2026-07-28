@@ -129,7 +129,7 @@ export default function CaissePage() {
 
       {apprenant && (
         <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between rounded-lg bg-slate-50 p-3 text-sm">
+          <div className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <span className="font-medium text-brand-navy">
               {apprenant.matricule} — {apprenant.prenom} {apprenant.nom}
             </span>
@@ -138,7 +138,7 @@ export default function CaissePage() {
                 href={dernierRecuUrl}
                 target="_blank"
                 rel="noopener"
-                className="rounded-lg bg-brand-teal px-4 py-2 text-sm font-medium text-white hover:brightness-95"
+                className="rounded-lg bg-brand-teal px-4 py-2 text-center text-sm font-medium text-white hover:brightness-95"
               >
                 Télécharger le reçu du dernier paiement
               </a>
@@ -150,12 +150,12 @@ export default function CaissePage() {
           ) : (
             inscriptions.map((inscription) => (
               <div key={inscription.id} className="rounded-lg border border-slate-200 bg-white p-4">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="font-medium text-brand-navy">
                     {inscription.classe.libelle} — {inscription.annee_academique.libelle}
                   </p>
                   {inscription.solde_total_pension > 0 && (
-                    <Button variant="accent" onClick={() => setInscriptionAEncaisser(inscription)}>
+                    <Button variant="accent" onClick={() => setInscriptionAEncaisser(inscription)} className="justify-center">
                       Encaisser un paiement
                     </Button>
                   )}
@@ -170,12 +170,12 @@ export default function CaissePage() {
                   {inscription.tranches.map((tranche) => (
                     <div
                       key={tranche.id}
-                      className="flex items-center justify-between rounded border border-slate-100 px-3 py-2 text-sm"
+                      className="flex flex-col gap-1 rounded border border-slate-100 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-2"
                     >
                       <span>
                         Tranche {tranche.numero} — {tranche.montant} (échéance {tranche.date_echeance})
                       </span>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUT_BADGES[tranche.statut]}`}>
+                      <span className={`w-fit rounded-full px-2 py-0.5 text-xs font-medium ${STATUT_BADGES[tranche.statut]}`}>
                         {STATUT_LABELS[tranche.statut]}
                       </span>
                     </div>
@@ -192,7 +192,7 @@ export default function CaissePage() {
             ) : (
               <ul className="flex flex-col divide-y divide-slate-100 text-sm">
                 {historique.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between py-2">
+                  <li key={p.id} className="flex flex-col gap-1 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
                     <span>
                       {p.date_paiement} — {p.montant} ({MODE_LABELS[p.mode_paiement]})
                     </span>

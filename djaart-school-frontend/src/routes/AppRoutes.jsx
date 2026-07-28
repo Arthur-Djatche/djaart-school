@@ -2,8 +2,11 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
 import LoginPage from '../features/auth/LoginPage'
 import ResetPasswordPage from '../features/auth/ResetPasswordPage'
+import DemandesDemoPage from '../features/landing/DemandesDemoPage'
+import LandingPage from '../features/landing/LandingPage'
 import ApprenantFichePage from '../features/apprenants/ApprenantFichePage'
 import ApprenantsListPage from '../features/apprenants/ApprenantsListPage'
+import SeancePhotoPage from '../features/apprenants/seance-photo/SeancePhotoPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
 import DocumentsMassePage from '../features/documents/DocumentsMassePage'
 import CaissePage from '../features/finance/caisse/CaissePage'
@@ -37,6 +40,7 @@ const BULLETINS_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
 export default function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -48,6 +52,10 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute roles={INSCRIPTION_ROLES} />}>
         <Route path="/inscriptions" element={<InscriptionsListPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={['super_admin']} />}>
+        <Route path="/demandes-demo" element={<DemandesDemoPage />} />
       </Route>
 
       <Route element={<ProtectedRoute roles={ADMIN_ROLES} />}>
@@ -83,10 +91,11 @@ export default function AppRoutes() {
         <Route path="/pedagogie/releves" element={<RelevesPage />} />
         <Route path="/apprenants" element={<ApprenantsListPage />} />
         <Route path="/apprenants/:id" element={<ApprenantFichePage />} />
+        <Route path="/apprenants/seance-photo" element={<SeancePhotoPage />} />
         <Route path="/documents/masse" element={<DocumentsMassePage />} />
       </Route>
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
