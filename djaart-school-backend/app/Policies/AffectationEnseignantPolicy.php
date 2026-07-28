@@ -12,7 +12,9 @@ class AffectationEnseignantPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'enseignant']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'enseignant'])
+            || $user->can('acces.affectations')
+            || $user->can('acces.notes');
     }
 
     public function view(User $user, AffectationEnseignant $affectation): bool
@@ -22,7 +24,8 @@ class AffectationEnseignantPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement'])
+            || $user->can('acces.affectations');
     }
 
     public function delete(User $user, AffectationEnseignant $affectation): bool

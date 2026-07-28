@@ -12,7 +12,8 @@ class ApprenantPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable'])
+            || $user->can('acces.apprenants');
     }
 
     public function view(User $user, Apprenant $apprenant): bool
@@ -27,7 +28,12 @@ class ApprenantPolicy
      */
     public function gererDocuments(User $user, Apprenant $apprenant): bool
     {
-        if (! $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire'])) {
+        $autorise = $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire'])
+            || $user->can('acces.apprenants')
+            || $user->can('acces.seance_photo')
+            || $user->can('acces.documents_masse');
+
+        if (! $autorise) {
             return false;
         }
 

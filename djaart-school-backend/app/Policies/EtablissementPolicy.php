@@ -9,7 +9,8 @@ class EtablissementPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement'])
+            || $user->can('acces.parametrage_etablissement');
     }
 
     public function view(User $user, Etablissement $etablissement): bool
@@ -38,6 +39,10 @@ class EtablissementPolicy
             return true;
         }
 
-        return $user->hasRole('admin_etablissement') && $user->etablissement_id === $etablissement->id;
+        if ($user->etablissement_id !== $etablissement->id) {
+            return false;
+        }
+
+        return $user->hasRole('admin_etablissement') || $user->can('acces.parametrage_etablissement');
     }
 }

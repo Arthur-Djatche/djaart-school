@@ -8,7 +8,10 @@ use App\Http\Requests\Auth\StoreUserRequest;
 use App\Http\Requests\Auth\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Support\GrantablePermissions;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -80,6 +83,32 @@ class UserController extends Controller
         }
 
         return $this->success(new UserResource($user->load('etablissement')), 'Utilisateur mis à jour.');
+    }
+
+    /**
+     * Droits supplementaires accordes individuellement, en complement du
+     * role de l'utilisateur cible (cf. App\Support\GrantablePermissions).
+     * "Comptes utilisateurs" et "Demandes de demo" restent hors catalogue :
+     * jamais synchronisables ici.
+     */
+    public function updatePermissions(Request $request, User $user)
+    {
+        $acteur = $request->user();
+
+        if (! $acteur->hasRole('super_admin') && $acteur->etablissement_id !== $user->etablissement_id) {
+            throw ValidationException::withMessages([
+                'permissions' => "Vous ne pouvez modifier les droits que des acteurs de votre établissement.",
+            ]);
+        }
+
+        $data = $request->validate([
+            'permissions' => ['present', 'array'],
+            'permissions.*' => [Rule::in(GrantablePermissions::cles())],
+        ]);
+
+        $user->syncPermissions($data['permissions']);
+
+        return $this->success(new UserResource($user->load('etablissement')), 'Droits d\'accès mis à jour.');
     }
 
     public function destroy(Request $request, User $user)

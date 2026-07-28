@@ -47,16 +47,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/demandes-demo', [DemandeDemoController::class, 'index']);
     });
 
+    // Gestion des comptes/roles : jamais delegable via une permission (risque
+    // d'auto-elevation de privileges), reste strictement liee au role.
     Route::middleware('role:super_admin|admin_etablissement')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
         Route::post('/users', [UserController::class, 'store']);
         Route::put('/users/{user}', [UserController::class, 'update']);
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
+        Route::put('/users/{user}/permissions', [UserController::class, 'updatePermissions']);
+    });
 
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|acces.parametrage_etablissement')->group(function () {
         Route::apiResource('etablissements', EtablissementController::class)->except('show');
         Route::post('/etablissements/{etablissement}/logo', [EtablissementController::class, 'updateLogo']);
         Route::post('/etablissements/{etablissement}/signature', [EtablissementController::class, 'updateSignature']);
         Route::post('/etablissements/{etablissement}/entete', [EtablissementController::class, 'updateEntete']);
+    });
+
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|acces.parametrage_academique')->group(function () {
         Route::apiResource('annees-academiques', AnneeAcademiqueController::class)->except('show')
             ->parameters(['annees-academiques' => 'anneeAcademique']);
         Route::apiResource('departements', DepartementController::class)->except(['show', 'index']);
@@ -71,38 +79,49 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/niveaux', [NiveauController::class, 'store']);
         Route::put('/niveaux/{niveau}', [NiveauController::class, 'update']);
         Route::delete('/niveaux/{niveau}', [NiveauController::class, 'destroy']);
+    });
 
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|acces.frais_scolarite')->group(function () {
         Route::apiResource('frais-scolarite', FraisScolariteController::class)->except(['show', 'index'])
             ->parameters(['frais-scolarite' => 'fraisScolarite']);
+    });
 
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|acces.sequences')->group(function () {
         Route::apiResource('sequences', SequenceController::class)->except(['show', 'index']);
+    });
+
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|acces.semestres')->group(function () {
         Route::apiResource('semestres', SemestreController::class)->except(['show', 'index']);
+    });
+
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|acces.affectations')->group(function () {
         Route::post('/affectations', [AffectationController::class, 'store']);
         Route::delete('/affectations/{affectation}', [AffectationController::class, 'destroy']);
         Route::post('/affectations/{affectation}/notes/deverrouiller', [NoteController::class, 'deverrouiller']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|secretaire|comptable')->group(function () {
-        // Lecture seule : necessaire a la secretaire (inscription) et au comptable
-        // (caisse) pour choisir une classe / consulter la grille de frais, sans
-        // leur donner les droits de creation/modification reserves aux admins.
+    // Lectures partagees par plusieurs ecrans (listes deroulantes) : le OR
+    // s'elargit avec toutes les permissions des ecrans qui en dependent.
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.inscriptions|acces.caisse|acces.frais_scolarite|acces.parametrage_academique')->group(function () {
         Route::get('/classes', [ClasseController::class, 'index']);
         Route::get('/frais-scolarite', [FraisScolariteController::class, 'index']);
         Route::get('/departements', [DepartementController::class, 'index']);
         Route::get('/semestres/{semestre}/unites-enseignement', [UniteEnseignementController::class, 'index']);
+    });
 
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.apprenants')->group(function () {
         Route::get('/apprenants', [ApprenantController::class, 'index']);
         Route::get('/apprenants/{apprenant}', [ApprenantController::class, 'show']);
         Route::get('/apprenants/{apprenant}/echeancier', [ApprenantController::class, 'echeancier']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|secretaire|comptable')->group(function () {
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.inscriptions')->group(function () {
         Route::get('/inscriptions', [InscriptionController::class, 'index']);
         Route::post('/inscriptions', [InscriptionController::class, 'store']);
         Route::post('/inscriptions/{inscription}/annuler', [InscriptionController::class, 'cancel']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|comptable')->group(function () {
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|comptable|acces.caisse')->group(function () {
         Route::get('/paiements', [PaiementController::class, 'index']);
         Route::post('/paiements', [PaiementController::class, 'store']);
         Route::get('/recus/{recu}/telecharger', [RecuController::class, 'telecharger']);
@@ -111,38 +130,47 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/rapports/statistiques-reussite', [RapportController::class, 'statistiquesReussite']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|enseignant|secretaire')->group(function () {
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|enseignant|secretaire|acces.sequences|acces.semestres|acces.notes|acces.conduite|acces.bulletins|acces.releves')->group(function () {
         Route::get('/sequences', [SequenceController::class, 'index']);
         Route::get('/semestres', [SemestreController::class, 'index']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|enseignant')->group(function () {
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|enseignant|acces.affectations|acces.notes')->group(function () {
         Route::get('/affectations', [AffectationController::class, 'index']);
         Route::get('/affectations/{affectation}/notes', [NoteController::class, 'show']);
         Route::post('/affectations/{affectation}/notes', [NoteController::class, 'store']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|enseignant|secretaire')->group(function () {
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|enseignant|secretaire|acces.notes')->group(function () {
         Route::get('/affectations/{affectation}/sequences/{sequence}/pv', [PvController::class, 'pourSequence']);
         Route::get('/affectations/{affectation}/semestres/{semestre}/pv', [PvController::class, 'pourSemestre']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|secretaire|enseignant')->group(function () {
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|enseignant|acces.conduite')->group(function () {
         Route::get('/classes/{classe}/sequences/{sequence}/conduite', [ConduiteController::class, 'show']);
         Route::post('/classes/{classe}/sequences/{sequence}/conduite', [ConduiteController::class, 'store']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|secretaire')->group(function () {
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|acces.bulletins')->group(function () {
         Route::get('/bulletins', [BulletinController::class, 'index']);
         Route::post('/classes/{classe}/sequences/{sequence}/cloturer', [BulletinController::class, 'store']);
         Route::get('/bulletins/{bulletin}/telecharger', [BulletinController::class, 'telecharger']);
+    });
 
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|acces.releves')->group(function () {
         Route::get('/releves', [ReleveController::class, 'index']);
         Route::post('/classes/{classe}/releves/annuel', [ReleveController::class, 'storeAnnuel']);
         Route::get('/releves/{releve}/telecharger', [ReleveController::class, 'telecharger']);
+    });
 
+    // Photo apprenant : partagee par la fiche Apprenant et la Seance photo.
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|acces.apprenants|acces.seance_photo')->group(function () {
         Route::post('/apprenants/{apprenant}/photo', [ApprenantController::class, 'updatePhoto']);
+    });
 
+    // Attestations/cartes scolaires : generation individuelle (fiche Apprenant)
+    // et en masse (Documents en masse) partagent les memes routes.
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|acces.apprenants|acces.documents_masse')->group(function () {
         Route::get('/apprenants/{apprenant}/attestations', [AttestationController::class, 'index']);
         Route::post('/apprenants/{apprenant}/attestations', [AttestationController::class, 'store']);
         Route::get('/attestations/{attestation}/telecharger', [AttestationController::class, 'telecharger']);
@@ -154,7 +182,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/cartes-scolaires/{carte}/telecharger', [CarteScolaireController::class, 'telecharger']);
         Route::post('/classes/{classe}/cartes-scolaires/masse', [CarteScolaireController::class, 'storeMasse']);
         Route::get('/cartes-scolaires/zip', [CarteScolaireController::class, 'zip']);
+    });
 
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|acces.seance_photo')->group(function () {
         Route::get('/classes/{classe}/photos/liste', [PhotoSeanceController::class, 'liste']);
         Route::post('/classes/{classe}/apprenants/photos-masse', [PhotoMasseController::class, 'store']);
     });

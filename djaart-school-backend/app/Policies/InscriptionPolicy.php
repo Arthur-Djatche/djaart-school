@@ -12,7 +12,8 @@ class InscriptionPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable'])
+            || $user->can('acces.inscriptions');
     }
 
     public function view(User $user, Inscription $inscription): bool
@@ -22,7 +23,8 @@ class InscriptionPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable'])
+            || $user->can('acces.inscriptions');
     }
 
     public function update(User $user, Inscription $inscription): bool

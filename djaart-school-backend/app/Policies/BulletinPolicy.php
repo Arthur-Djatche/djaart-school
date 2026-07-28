@@ -12,7 +12,8 @@ class BulletinPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire'])
+            || $user->can('acces.bulletins');
     }
 
     public function view(User $user, Bulletin $bulletin): bool
@@ -22,6 +23,7 @@ class BulletinPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire'])
+            || $user->can('acces.bulletins');
     }
 }

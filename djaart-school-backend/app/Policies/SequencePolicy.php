@@ -15,7 +15,13 @@ class SequencePolicy
         // Lecture seule ouverte a l'enseignant (selection de la sequence en cours
         // pour la saisie des notes) et a la secretaire (cloture des bulletins) ;
         // create/update/delete restent reserves aux admins.
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'enseignant', 'secretaire']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'enseignant', 'secretaire'])
+            || $user->can('acces.sequences')
+            || $user->can('acces.semestres')
+            || $user->can('acces.notes')
+            || $user->can('acces.conduite')
+            || $user->can('acces.bulletins')
+            || $user->can('acces.releves');
     }
 
     public function view(User $user, Sequence $sequence): bool
@@ -25,7 +31,8 @@ class SequencePolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement'])
+            || $user->can('acces.sequences');
     }
 
     public function update(User $user, Sequence $sequence): bool

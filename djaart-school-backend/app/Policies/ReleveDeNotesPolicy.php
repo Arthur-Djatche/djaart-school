@@ -12,7 +12,8 @@ class ReleveDeNotesPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire'])
+            || $user->can('acces.releves');
     }
 
     public function view(User $user, ReleveDeNotes $releve): bool
@@ -22,6 +23,7 @@ class ReleveDeNotesPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire'])
+            || $user->can('acces.releves');
     }
 }

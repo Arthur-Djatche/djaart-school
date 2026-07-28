@@ -45,7 +45,7 @@ class ConduiteController extends Controller
         $user = $request->user();
 
         $autorise = $user->hasRole('super_admin')
-            || ($user->hasAnyRole(['admin_etablissement', 'secretaire']) && $classe->etablissement_id === $user->etablissement_id)
+            || (($user->hasAnyRole(['admin_etablissement', 'secretaire']) || $user->can('acces.conduite')) && $classe->etablissement_id === $user->etablissement_id)
             || ((int) $classe->professeur_principal_id === (int) $user->id);
 
         abort_unless($autorise, 403);

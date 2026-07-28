@@ -29,7 +29,7 @@ class PhotoSeanceController extends Controller
     {
         $user = $request->user();
 
-        $autorise = $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire'])
+        $autorise = ($user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire']) || $user->can('acces.seance_photo'))
             && ($user->hasRole('super_admin') || $user->etablissement_id === $classe->etablissement_id);
 
         abort_unless($autorise, 403);

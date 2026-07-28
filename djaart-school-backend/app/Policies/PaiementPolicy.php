@@ -12,7 +12,8 @@ class PaiementPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'comptable']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'comptable'])
+            || $user->can('acces.caisse');
     }
 
     public function view(User $user, Paiement $paiement): bool
@@ -22,6 +23,7 @@ class PaiementPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'comptable']);
+        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'comptable'])
+            || $user->can('acces.caisse');
     }
 }
