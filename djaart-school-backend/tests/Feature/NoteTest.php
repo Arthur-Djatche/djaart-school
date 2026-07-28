@@ -324,6 +324,153 @@ class NoteTest extends TestCase
         $this->assertEquals(12, $noteSn->valeur);
     }
 
+    /** @return array{0: Etablissement, 1: AffectationEnseignant, 2: array{0: Semestre, 1: Semestre}, 3: Apprenant} */
+    private function makeStructureLmdDeuxSemestres(): array
+    {
+        $etablissement = Etablissement::factory()->create();
+        $filiere = Filiere::create(['etablissement_id' => $etablissement->id, 'nom' => 'Informatique', 'code' => 'INFO']);
+        $niveau = Niveau::create([
+            'etablissement_id' => $etablissement->id, 'filiere_id' => $filiere->id,
+            'libelle' => 'Licence 1', 'ordre' => 1, 'type_systeme' => 'lmd',
+        ]);
+        $annee = AnneeAcademique::create([
+            'etablissement_id' => $etablissement->id, 'libelle' => '2025-2026',
+            'date_debut' => '2025-09-01', 'date_fin' => '2026-07-31',
+        ]);
+        $classe = Classe::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id, 'libelle' => 'L1 A', 'effectif_max' => 30,
+        ]);
+        $semestre1 = Semestre::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id, 'numero' => 1, 'libelle' => 'Semestre 1',
+        ]);
+        $semestre2 = Semestre::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id, 'numero' => 2, 'libelle' => 'Semestre 2',
+        ]);
+        $matiereS1 = Matiere::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id, 'semestre_id' => $semestre1->id,
+            'nom' => 'Algorithmique', 'credits_ects' => 6, 'ponderation_cc' => 40, 'ponderation_session_normale' => 60,
+        ]);
+        $matiereS2 = Matiere::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id, 'semestre_id' => $semestre2->id,
+            'nom' => 'Bases de données', 'credits_ects' => 6, 'ponderation_cc' => 40, 'ponderation_session_normale' => 60,
+        ]);
+        $enseignant = $this->makeUser($etablissement, 'enseignant');
+        $affectationS1 = AffectationEnseignant::create([
+            'etablissement_id' => $etablissement->id, 'classe_id' => $classe->id,
+            'matiere_id' => $matiereS1->id, 'enseignant_id' => $enseignant->id, 'annee_academique_id' => $annee->id,
+        ]);
+        $affectationS2 = AffectationEnseignant::create([
+            'etablissement_id' => $etablissement->id, 'classe_id' => $classe->id,
+            'matiere_id' => $matiereS2->id, 'enseignant_id' => $enseignant->id, 'annee_academique_id' => $annee->id,
+        ]);
+        $fraisScolarite = FraisScolarite::create([
+            'etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id, 'montant_total' => 300000,
+            'frais_inscription' => 30000, 'nombre_tranches' => 1,
+        ]);
+        $apprenant = Apprenant::create([
+            'etablissement_id' => $etablissement->id, 'matricule' => 'ETB-00001',
+            'nom' => 'Diallo', 'prenom' => 'Kadiatou', 'date_naissance' => '2005-01-01', 'sexe' => 'F',
+        ]);
+        Inscription::create([
+            'etablissement_id' => $etablissement->id, 'apprenant_id' => $apprenant->id,
+            'classe_id' => $classe->id, 'annee_academique_id' => $annee->id,
+            'frais_scolarite_id' => $fraisScolarite->id, 'statut' => 'en_cours',
+            'type_inscription' => 'nouvelle', 'date_inscription' => now()->toDateString(),
+        ]);
+
+        return [$etablissement, $affectationS1, [$semestre1, $semestre2], $apprenant, $affectationS2];
+    }
+
+    public function test_semestre_2_bloque_tant_que_le_semestre_1_nest_pas_complet(): void
+    {
+        [, $affectationS1, $semestres, $apprenant, $affectationS2] = $this->makeStructureLmdDeuxSemestres();
+        $enseignant = $affectationS1->enseignant;
+
+        // Semestre 1 incomplet (rien soumis) : la saisie du Semestre 2 doit etre bloquee.
+        $response = $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS2->id}/notes", [
+            'semestre_id' => $semestres[1]->id,
+            'type_evaluation' => 'cc',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 10]],
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_semestre_2_accepte_une_fois_le_semestre_1_complet(): void
+    {
+        [, $affectationS1, $semestres, $apprenant, $affectationS2] = $this->makeStructureLmdDeuxSemestres();
+        $enseignant = $affectationS1->enseignant;
+
+        $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS1->id}/notes", [
+            'semestre_id' => $semestres[0]->id, 'type_evaluation' => 'cc',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 14]],
+        ])->assertCreated();
+        $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS1->id}/notes", [
+            'semestre_id' => $semestres[0]->id, 'type_evaluation' => 'session_normale',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 15]],
+        ])->assertCreated();
+
+        $response = $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS2->id}/notes", [
+            'semestre_id' => $semestres[1]->id,
+            'type_evaluation' => 'cc',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 10]],
+        ]);
+
+        $response->assertCreated();
+    }
+
+    public function test_rattrapage_rejete_si_lec_est_deja_validee(): void
+    {
+        [, $affectationS1, $semestres, $apprenant] = $this->makeStructureLmdDeuxSemestres();
+        $enseignant = $affectationS1->enseignant;
+
+        // CC 14, SN 16 -> (14*40+16*60)/100 = 15.20, validee.
+        $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS1->id}/notes", [
+            'semestre_id' => $semestres[0]->id, 'type_evaluation' => 'cc',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 14]],
+        ])->assertCreated();
+        $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS1->id}/notes", [
+            'semestre_id' => $semestres[0]->id, 'type_evaluation' => 'session_normale',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 16]],
+        ])->assertCreated();
+
+        $response = $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS1->id}/notes", [
+            'semestre_id' => $semestres[0]->id, 'type_evaluation' => 'rattrapage',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 18]],
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_rattrapage_accepte_si_lec_nest_pas_validee(): void
+    {
+        [, $affectationS1, $semestres, $apprenant] = $this->makeStructureLmdDeuxSemestres();
+        $enseignant = $affectationS1->enseignant;
+
+        // CC 6, SN 5 -> (6*40+5*60)/100 = 5.40, non validee.
+        $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS1->id}/notes", [
+            'semestre_id' => $semestres[0]->id, 'type_evaluation' => 'cc',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 6]],
+        ])->assertCreated();
+        $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS1->id}/notes", [
+            'semestre_id' => $semestres[0]->id, 'type_evaluation' => 'session_normale',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 5]],
+        ])->assertCreated();
+
+        $response = $this->actingAs($enseignant)->postJson("/api/affectations/{$affectationS1->id}/notes", [
+            'semestre_id' => $semestres[0]->id, 'type_evaluation' => 'rattrapage',
+            'notes' => [['apprenant_id' => $apprenant->id, 'valeur' => 14]],
+        ]);
+
+        $response->assertCreated();
+        $noteRattrapage = Note::where('affectation_id', $affectationS1->id)->where('type_evaluation', 'rattrapage')->first();
+        $this->assertEquals(14, $noteRattrapage->valeur);
+    }
+
     public function test_secretaire_ne_peut_pas_acceder_aux_notes(): void
     {
         [$etablissement, $affectation, $sequence, $a1, $a2] = $this->makeStructureClassique();

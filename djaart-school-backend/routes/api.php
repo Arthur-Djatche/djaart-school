@@ -14,14 +14,17 @@ use App\Http\Controllers\Api\Inscription\ApprenantController;
 use App\Http\Controllers\Api\Inscription\InscriptionController;
 use App\Http\Controllers\Api\Parametrage\AnneeAcademiqueController;
 use App\Http\Controllers\Api\Parametrage\ClasseController;
+use App\Http\Controllers\Api\Parametrage\DepartementController;
 use App\Http\Controllers\Api\Parametrage\EtablissementController;
 use App\Http\Controllers\Api\Parametrage\FiliereController;
 use App\Http\Controllers\Api\Parametrage\MatiereController;
 use App\Http\Controllers\Api\Parametrage\NiveauController;
+use App\Http\Controllers\Api\Parametrage\UniteEnseignementController;
 use App\Http\Controllers\Api\Pedagogie\AffectationController;
 use App\Http\Controllers\Api\Pedagogie\BulletinController;
 use App\Http\Controllers\Api\Pedagogie\ConduiteController;
 use App\Http\Controllers\Api\Pedagogie\NoteController;
+use App\Http\Controllers\Api\Pedagogie\PvController;
 use App\Http\Controllers\Api\Pedagogie\ReleveController;
 use App\Http\Controllers\Api\Pedagogie\SemestreController;
 use App\Http\Controllers\Api\Pedagogie\SequenceController;
@@ -48,10 +51,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/etablissements/{etablissement}/entete', [EtablissementController::class, 'updateEntete']);
         Route::apiResource('annees-academiques', AnneeAcademiqueController::class)->except('show')
             ->parameters(['annees-academiques' => 'anneeAcademique']);
+        Route::apiResource('departements', DepartementController::class)->except(['show', 'index']);
         Route::apiResource('filieres', FiliereController::class)->except('show');
         Route::apiResource('classes', ClasseController::class)->except(['show', 'index'])
             ->parameters(['classes' => 'classe']);
         Route::apiResource('matieres', MatiereController::class)->except('show');
+        Route::apiResource('unites-enseignement', UniteEnseignementController::class)->except(['show', 'index'])
+            ->parameters(['unites-enseignement' => 'uniteEnseignement']);
 
         Route::get('/filieres/{filiere}/niveaux', [NiveauController::class, 'index']);
         Route::post('/niveaux', [NiveauController::class, 'store']);
@@ -74,6 +80,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // leur donner les droits de creation/modification reserves aux admins.
         Route::get('/classes', [ClasseController::class, 'index']);
         Route::get('/frais-scolarite', [FraisScolariteController::class, 'index']);
+        Route::get('/departements', [DepartementController::class, 'index']);
+        Route::get('/semestres/{semestre}/unites-enseignement', [UniteEnseignementController::class, 'index']);
 
         Route::get('/apprenants', [ApprenantController::class, 'index']);
         Route::get('/apprenants/{apprenant}', [ApprenantController::class, 'show']);
@@ -106,6 +114,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/affectations/{affectation}/notes', [NoteController::class, 'store']);
     });
 
+    Route::middleware('role:super_admin|admin_etablissement|enseignant|secretaire')->group(function () {
+        Route::get('/affectations/{affectation}/sequences/{sequence}/pv', [PvController::class, 'pourSequence']);
+        Route::get('/affectations/{affectation}/semestres/{semestre}/pv', [PvController::class, 'pourSemestre']);
+    });
+
     Route::middleware('role:super_admin|admin_etablissement|secretaire|enseignant')->group(function () {
         Route::get('/classes/{classe}/sequences/{sequence}/conduite', [ConduiteController::class, 'show']);
         Route::post('/classes/{classe}/sequences/{sequence}/conduite', [ConduiteController::class, 'store']);
@@ -118,7 +131,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/releves', [ReleveController::class, 'index']);
         Route::post('/classes/{classe}/releves/annuel', [ReleveController::class, 'storeAnnuel']);
-        Route::post('/classes/{classe}/semestres/{semestre}/releves', [ReleveController::class, 'storeSemestriel']);
         Route::get('/releves/{releve}/telecharger', [ReleveController::class, 'telecharger']);
 
         Route::post('/apprenants/{apprenant}/photo', [ApprenantController::class, 'updatePhoto']);

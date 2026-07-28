@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToEtablissement;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Semestre extends Model
 {
@@ -27,5 +28,15 @@ class Semestre extends Model
     public function anneeAcademique(): BelongsTo
     {
         return $this->belongsTo(AnneeAcademique::class);
+    }
+
+    public function unitesEnseignement(): HasMany
+    {
+        return $this->hasMany(UniteEnseignement::class, 'semestre_id');
+    }
+
+    public function matieres(): HasMany
+    {
+        return $this->hasMany(Matiere::class, 'semestre_id');
     }
 }

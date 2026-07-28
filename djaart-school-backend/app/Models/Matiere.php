@@ -14,6 +14,9 @@ class Matiere extends Model
     protected $fillable = [
         'etablissement_id',
         'niveau_id',
+        'semestre_id',
+        'unite_enseignement_id',
+        'code',
         'nom',
         'groupe',
         'coefficient',
@@ -25,5 +28,15 @@ class Matiere extends Model
     public function niveau(): BelongsTo
     {
         return $this->belongsTo(Niveau::class);
+    }
+
+    public function semestre(): BelongsTo
+    {
+        return $this->belongsTo(Semestre::class);
+    }
+
+    public function uniteEnseignement(): BelongsTo
+    {
+        return $this->belongsTo(UniteEnseignement::class, 'unite_enseignement_id');
     }
 }

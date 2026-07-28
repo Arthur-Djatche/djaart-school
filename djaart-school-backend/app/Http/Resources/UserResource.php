@@ -14,10 +14,11 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'roles' => $this->getRoleNames(),
-            'etablissement' => $this->whenLoaded('etablissement', fn () => [
+            'etablissement' => $this->whenLoaded('etablissement', fn () => $this->etablissement ? [
                 'id' => $this->etablissement->id,
                 'nom' => $this->etablissement->nom,
-            ]),
+                'type_etablissement' => $this->etablissement->type_etablissement,
+            ] : null),
         ];
     }
 }

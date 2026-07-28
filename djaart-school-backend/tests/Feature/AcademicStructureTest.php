@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AnneeAcademique;
+use App\Models\Departement;
 use App\Models\Etablissement;
 use App\Models\Filiere;
 use App\Models\Niveau;
@@ -129,8 +130,11 @@ class AcademicStructureTest extends TestCase
 
     public function test_filiere_code_unique_per_etablissement_but_allowed_across_etablissements(): void
     {
-        $etablissementA = Etablissement::factory()->create();
-        $etablissementB = Etablissement::factory()->create();
+        // Type fixe (non universitaire) : evite que le type aleatoire du
+        // factory ne tombe sur 'universitaire' et exige un departement_id,
+        // non pertinent pour ce test (unicite du code de filiere).
+        $etablissementA = Etablissement::factory()->create(['type_etablissement' => 'secondaire']);
+        $etablissementB = Etablissement::factory()->create(['type_etablissement' => 'secondaire']);
         $adminA = $this->makeAdmin($etablissementA);
         $adminB = $this->makeAdmin($etablissementB);
 
@@ -143,15 +147,15 @@ class AcademicStructureTest extends TestCase
         $otherEtablissement->assertCreated();
     }
 
-    public function test_filiere_peut_avoir_un_chef_de_departement_enseignant(): void
+    public function test_departement_peut_avoir_un_chef_enseignant(): void
     {
-        $etablissement = Etablissement::factory()->create();
+        $etablissement = Etablissement::factory()->create(['type_etablissement' => 'universitaire']);
         $admin = $this->makeAdmin($etablissement);
         $enseignant = User::factory()->create(['etablissement_id' => $etablissement->id]);
         $enseignant->assignRole('enseignant');
 
-        $response = $this->actingAs($admin)->postJson('/api/filieres', [
-            'nom' => 'Informatique', 'code' => 'INFO', 'chef_departement_id' => $enseignant->id,
+        $response = $this->actingAs($admin)->postJson('/api/departements', [
+            'nom' => 'GTIC', 'code' => 'GTIC', 'chef_departement_id' => $enseignant->id,
         ]);
 
         $response->assertCreated();
@@ -161,13 +165,13 @@ class AcademicStructureTest extends TestCase
 
     public function test_chef_de_departement_doit_avoir_le_role_enseignant(): void
     {
-        $etablissement = Etablissement::factory()->create();
+        $etablissement = Etablissement::factory()->create(['type_etablissement' => 'universitaire']);
         $admin = $this->makeAdmin($etablissement);
         $comptable = User::factory()->create(['etablissement_id' => $etablissement->id]);
         $comptable->assignRole('comptable');
 
-        $response = $this->actingAs($admin)->postJson('/api/filieres', [
-            'nom' => 'Informatique', 'code' => 'INFO', 'chef_departement_id' => $comptable->id,
+        $response = $this->actingAs($admin)->postJson('/api/departements', [
+            'nom' => 'GTIC', 'code' => 'GTIC', 'chef_departement_id' => $comptable->id,
         ]);
 
         $response->assertStatus(422);
@@ -175,14 +179,37 @@ class AcademicStructureTest extends TestCase
 
     public function test_chef_de_departement_doit_appartenir_au_meme_etablissement(): void
     {
-        $etablissement = Etablissement::factory()->create();
+        $etablissement = Etablissement::factory()->create(['type_etablissement' => 'universitaire']);
         $autreEtablissement = Etablissement::factory()->create();
         $admin = $this->makeAdmin($etablissement);
         $enseignantAutreEtablissement = User::factory()->create(['etablissement_id' => $autreEtablissement->id]);
         $enseignantAutreEtablissement->assignRole('enseignant');
 
+        $response = $this->actingAs($admin)->postJson('/api/departements', [
+            'nom' => 'GTIC', 'code' => 'GTIC', 'chef_departement_id' => $enseignantAutreEtablissement->id,
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_filiere_universitaire_requiert_un_departement(): void
+    {
+        $etablissement = Etablissement::factory()->create(['type_etablissement' => 'universitaire']);
+        $admin = $this->makeAdmin($etablissement);
+
+        $response = $this->actingAs($admin)->postJson('/api/filieres', ['nom' => 'Informatique', 'code' => 'INFO']);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_filiere_non_universitaire_rejette_un_departement(): void
+    {
+        $etablissement = Etablissement::factory()->create(['type_etablissement' => 'secondaire']);
+        $admin = $this->makeAdmin($etablissement);
+        $departement = Departement::create(['etablissement_id' => $etablissement->id, 'nom' => 'GTIC', 'code' => 'GTIC']);
+
         $response = $this->actingAs($admin)->postJson('/api/filieres', [
-            'nom' => 'Informatique', 'code' => 'INFO', 'chef_departement_id' => $enseignantAutreEtablissement->id,
+            'nom' => 'Général', 'code' => 'GEN', 'departement_id' => $departement->id,
         ]);
 
         $response->assertStatus(422);

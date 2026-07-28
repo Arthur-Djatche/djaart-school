@@ -13,6 +13,9 @@ class MatiereResource extends JsonResource
             'id' => $this->id,
             'etablissement_id' => $this->etablissement_id,
             'niveau_id' => $this->niveau_id,
+            'semestre_id' => $this->semestre_id,
+            'unite_enseignement_id' => $this->unite_enseignement_id,
+            'code' => $this->code,
             'nom' => $this->nom,
             'groupe' => $this->groupe,
             'coefficient' => $this->coefficient,
@@ -23,6 +26,15 @@ class MatiereResource extends JsonResource
                 'id' => $this->niveau->id,
                 'libelle' => $this->niveau->libelle,
             ]),
+            'semestre' => $this->whenLoaded('semestre', fn () => $this->semestre ? [
+                'id' => $this->semestre->id,
+                'libelle' => $this->semestre->libelle,
+            ] : null),
+            'unite_enseignement' => $this->whenLoaded('uniteEnseignement', fn () => $this->uniteEnseignement ? [
+                'id' => $this->uniteEnseignement->id,
+                'code' => $this->uniteEnseignement->code,
+                'nom' => $this->uniteEnseignement->nom,
+            ] : null),
         ];
     }
 }

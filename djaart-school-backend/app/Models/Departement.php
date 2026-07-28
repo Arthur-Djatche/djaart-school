@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Filiere extends Model
+class Departement extends Model
 {
     use BelongsToEtablissement, HasFactory;
 
@@ -16,16 +16,16 @@ class Filiere extends Model
         'etablissement_id',
         'nom',
         'code',
-        'departement_id',
+        'chef_departement_id',
     ];
 
-    public function niveaux(): HasMany
+    public function chefDepartement(): BelongsTo
     {
-        return $this->hasMany(Niveau::class);
+        return $this->belongsTo(User::class, 'chef_departement_id');
     }
 
-    public function departement(): BelongsTo
+    public function filieres(): HasMany
     {
-        return $this->belongsTo(Departement::class);
+        return $this->hasMany(Filiere::class);
     }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Parametrage;
 
+use App\Models\Etablissement;
 use App\Models\Filiere;
-use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -29,9 +29,9 @@ class StoreFiliereRequest extends FormRequest
                 'max:50',
                 Rule::unique('filieres', 'code')->where('etablissement_id', $etablissementId),
             ],
-            'chef_departement_id' => [
+            'departement_id' => [
                 'nullable',
-                Rule::exists('users', 'id')->where('etablissement_id', $etablissementId),
+                Rule::exists('departements', 'id')->where('etablissement_id', $etablissementId),
             ],
             'etablissement_id' => $this->user()->hasRole('super_admin')
                 ? ['required', 'exists:etablissements,id']
@@ -42,19 +42,25 @@ class StoreFiliereRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $chefDepartementId = $this->input('chef_departement_id');
+            $etablissementId = $this->user()->hasRole('super_admin')
+                ? $this->input('etablissement_id')
+                : $this->user()->etablissement_id;
 
-            if (! $chefDepartementId) {
+            $etablissement = Etablissement::find($etablissementId);
+
+            if (! $etablissement) {
                 return;
             }
 
-            $chefDepartement = User::find($chefDepartementId);
+            $estUniversitaire = $etablissement->type_etablissement === 'universitaire';
+            $departementId = $this->input('departement_id');
 
-            if ($chefDepartement && ! $chefDepartement->hasRole('enseignant')) {
-                $validator->errors()->add(
-                    'chef_departement_id',
-                    "L'utilisateur sélectionné n'a pas le rôle enseignant.",
-                );
+            if ($estUniversitaire && ! $departementId) {
+                $validator->errors()->add('departement_id', 'Le département est obligatoire pour une filière universitaire.');
+            }
+
+            if (! $estUniversitaire && $departementId) {
+                $validator->errors()->add('departement_id', "Le département ne s'applique qu'aux établissements universitaires.");
             }
         });
     }

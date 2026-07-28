@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Parametrage;
 
-use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -27,9 +26,9 @@ class UpdateFiliereRequest extends FormRequest
                 'max:50',
                 Rule::unique('filieres', 'code')->where('etablissement_id', $filiere->etablissement_id)->ignore($filiere->id),
             ],
-            'chef_departement_id' => [
+            'departement_id' => [
                 'nullable',
-                Rule::exists('users', 'id')->where('etablissement_id', $filiere->etablissement_id),
+                Rule::exists('departements', 'id')->where('etablissement_id', $filiere->etablissement_id),
             ],
         ];
     }
@@ -37,19 +36,16 @@ class UpdateFiliereRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $chefDepartementId = $this->input('chef_departement_id');
+            $filiere = $this->route('filiere');
+            $estUniversitaire = $filiere->etablissement->type_etablissement === 'universitaire';
+            $departementId = $this->input('departement_id', $filiere->departement_id);
 
-            if (! $chefDepartementId) {
-                return;
+            if ($estUniversitaire && ! $departementId) {
+                $validator->errors()->add('departement_id', 'Le département est obligatoire pour une filière universitaire.');
             }
 
-            $chefDepartement = User::find($chefDepartementId);
-
-            if ($chefDepartement && ! $chefDepartement->hasRole('enseignant')) {
-                $validator->errors()->add(
-                    'chef_departement_id',
-                    "L'utilisateur sélectionné n'a pas le rôle enseignant.",
-                );
+            if (! $estUniversitaire && $departementId) {
+                $validator->errors()->add('departement_id', "Le département ne s'applique qu'aux établissements universitaires.");
             }
         });
     }

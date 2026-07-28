@@ -19,7 +19,7 @@ class MatiereController extends Controller
         $this->authorize('viewAny', Matiere::class);
 
         $matieres = Matiere::query()
-            ->with('niveau')
+            ->with(['niveau', 'semestre', 'uniteEnseignement'])
             ->when($request->string('search')->trim()->isNotEmpty(), function ($query) use ($request) {
                 $query->where('nom', 'like', '%'.$request->string('search')->trim().'%');
             })
@@ -41,14 +41,14 @@ class MatiereController extends Controller
 
         $matiere = Matiere::create($data);
 
-        return $this->success(new MatiereResource($matiere->load('niveau')), 'Matière créée.', 201);
+        return $this->success(new MatiereResource($matiere->load(['niveau', 'semestre', 'uniteEnseignement'])), 'Matière créée.', 201);
     }
 
     public function update(UpdateMatiereRequest $request, Matiere $matiere)
     {
         $matiere->update($request->validated());
 
-        return $this->success(new MatiereResource($matiere->load('niveau')), 'Matière mise à jour.');
+        return $this->success(new MatiereResource($matiere->load(['niveau', 'semestre', 'uniteEnseignement'])), 'Matière mise à jour.');
     }
 
     public function destroy(Matiere $matiere)

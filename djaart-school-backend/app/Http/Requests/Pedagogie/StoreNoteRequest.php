@@ -32,7 +32,7 @@ class StoreNoteRequest extends FormRequest
                     ->where('niveau_id', $affectation->classe->niveau_id)
                     ->where('annee_academique_id', $affectation->annee_academique_id),
             ],
-            'type_evaluation' => ['required', Rule::in(['sequence', 'cc', 'session_normale'])],
+            'type_evaluation' => ['required', Rule::in(['sequence', 'cc', 'session_normale', 'rattrapage'])],
             'notes' => ['required', 'array', 'min:1'],
             'notes.*.apprenant_id' => [
                 'required',
@@ -60,8 +60,8 @@ class StoreNoteRequest extends FormRequest
                 $validator->errors()->add('type_evaluation', "Une séquence attend le type d'évaluation \"sequence\".");
             }
 
-            if ($aSemestre && ! in_array($typeEvaluation, ['cc', 'session_normale'], true)) {
-                $validator->errors()->add('type_evaluation', "Un semestre attend le type d'évaluation \"cc\" ou \"session_normale\".");
+            if ($aSemestre && ! in_array($typeEvaluation, ['cc', 'session_normale', 'rattrapage'], true)) {
+                $validator->errors()->add('type_evaluation', "Un semestre attend le type d'évaluation \"cc\", \"session_normale\" ou \"rattrapage\".");
             }
         });
     }

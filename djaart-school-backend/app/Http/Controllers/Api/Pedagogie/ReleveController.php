@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ReleveDeNotesResource;
 use App\Models\Classe;
 use App\Models\ReleveDeNotes;
-use App\Models\Semestre;
 use App\Services\ReleveService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -52,27 +51,14 @@ class ReleveController extends Controller
         $this->authorize('create', ReleveDeNotes::class);
         $this->assertOwnership($request, $classe);
 
-        $releves = $this->releveService->genererAnnuelClassique($classe);
+        $releves = $classe->niveau->type_systeme === 'lmd'
+            ? $this->releveService->genererAnnuelLmd($classe)
+            : $this->releveService->genererAnnuelClassique($classe);
         $releves->each->load(['inscription.apprenant']);
 
         return $this->success(
             ReleveDeNotesResource::collection($releves),
             'Relevés annuels générés.',
-            201,
-        );
-    }
-
-    public function storeSemestriel(Request $request, Classe $classe, Semestre $semestre)
-    {
-        $this->authorize('create', ReleveDeNotes::class);
-        $this->assertOwnership($request, $classe);
-
-        $releves = $this->releveService->genererSemestrielLmd($classe, $semestre);
-        $releves->each->load(['inscription.apprenant', 'semestre']);
-
-        return $this->success(
-            ReleveDeNotesResource::collection($releves),
-            'Relevés semestriels générés.',
             201,
         );
     }
