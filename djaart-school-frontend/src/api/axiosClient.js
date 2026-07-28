@@ -13,10 +13,17 @@ const axiosClient = axios.create({
 
 export const ensureCsrfCookie = () => axios.get(`${apiUrl}/sanctum/csrf-cookie`, { withCredentials: true })
 
+// Pages accessibles sans session : y recevoir un 401 (ex. l'appel /api/me
+// silencieux d'AuthContext sur la landing page, pour savoir si un visiteur
+// est deja connecte) est un etat normal, pas une session expiree — forcer une
+// redirection vers /login y renverrait a tort un visiteur non connecte qui
+// n'a jamais quitte une page publique.
+const PAGES_PUBLIQUES = ['/', '/login', '/forgot-password', '/reset-password']
+
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && window.location.pathname !== '/login') {
+    if (error.response?.status === 401 && !PAGES_PUBLIQUES.includes(window.location.pathname)) {
       window.location.href = '/login'
     }
     return Promise.reject(error)

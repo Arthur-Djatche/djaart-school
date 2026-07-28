@@ -106,7 +106,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="brand-mesh relative overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy-soft to-brand-blue px-4 py-20 text-white sm:px-6">
+      <section className="brand-mesh relative overflow-hidden px-4 py-20 text-white sm:px-6">
         <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
           <div>
             <span className="inline-block rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-brand-orange-light">

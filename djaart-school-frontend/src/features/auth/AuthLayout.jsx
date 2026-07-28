@@ -9,7 +9,7 @@ const HIGHLIGHTS = [
 export default function AuthLayout({ title, subtitle, children }) {
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <div className="brand-mesh relative hidden flex-col justify-between bg-gradient-to-br from-brand-navy via-brand-navy-soft to-brand-blue p-10 text-white md:flex md:w-1/2 lg:w-2/5">
+      <div className="brand-mesh relative hidden flex-col justify-between p-10 text-white md:flex md:w-1/2 lg:w-2/5">
         <div className="inline-flex w-fit items-center rounded-2xl bg-white p-3 shadow-2xl">
           <img src={logo} alt="DJAART SCHOOL" className="h-10 w-auto" />
         </div>
