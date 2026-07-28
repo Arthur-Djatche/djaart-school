@@ -1,16 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../../components/layout/DashboardLayout'
 import Button from '../../../components/ui/Button'
 import Table from '../../../components/ui/Table'
 import * as parametrageApi from '../../../api/parametrageApi'
 import useToast from '../../../hooks/useToast'
-import FiliereFormModal from './FiliereFormModal'
+import DepartementFormModal from './DepartementFormModal'
 
-export default function FilieresPage() {
+export default function DepartementsPage() {
   const { showToast } = useToast()
-  const navigate = useNavigate()
-  const [filieres, setFilieres] = useState([])
+  const [departements, setDepartements] = useState([])
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1 })
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -20,8 +18,8 @@ export default function FilieresPage() {
   const load = useCallback(async (page = 1) => {
     setLoading(true)
     try {
-      const { data } = await parametrageApi.fetchFilieres({ search, page })
-      setFilieres(data.data)
+      const { data } = await parametrageApi.fetchDepartements({ search, page })
+      setDepartements(data.data)
       setMeta({ current_page: data.meta.current_page, last_page: data.meta.last_page })
     } finally {
       setLoading(false)
@@ -34,35 +32,32 @@ export default function FilieresPage() {
 
   const handleSubmit = async (payload) => {
     if (editing) {
-      await parametrageApi.updateFiliere(editing.id, payload)
-      showToast('Filière mise à jour.', 'success')
+      await parametrageApi.updateDepartement(editing.id, payload)
+      showToast('Département mis à jour.', 'success')
     } else {
-      await parametrageApi.createFiliere(payload)
-      showToast('Filière créée.', 'success')
+      await parametrageApi.createDepartement(payload)
+      showToast('Département créé.', 'success')
     }
     setShowForm(false)
     load(meta.current_page)
   }
 
-  const handleDelete = async (filiere) => {
-    if (!window.confirm(`Supprimer ${filiere.nom} ?`)) return
-    await parametrageApi.deleteFiliere(filiere.id)
-    showToast('Filière supprimée.', 'success')
+  const handleDelete = async (departement) => {
+    if (!window.confirm(`Supprimer ${departement.nom} ?`)) return
+    await parametrageApi.deleteDepartement(departement.id)
+    showToast('Département supprimé.', 'success')
     load(meta.current_page)
   }
 
   const columns = [
     { key: 'nom', label: 'Nom' },
     { key: 'code', label: 'Code' },
-    { key: 'departement', label: 'Département', render: (row) => row.departement?.nom ?? '—' },
+    { key: 'chef_departement', label: 'Chef de département', render: (row) => row.chef_departement?.name ?? '—' },
     {
       key: 'actions',
       label: 'Actions',
       render: (row) => (
         <div className="flex gap-2">
-          <Button variant="ghost" onClick={() => navigate(`/parametrage/filieres/${row.id}/niveaux`)}>
-            Niveaux
-          </Button>
           <Button variant="ghost" onClick={() => { setEditing(row); setShowForm(true) }}>
             Modifier
           </Button>
@@ -77,8 +72,8 @@ export default function FilieresPage() {
   return (
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-brand-navy">Filières</h1>
-        <Button onClick={() => { setEditing(null); setShowForm(true) }}>Nouvelle filière</Button>
+        <h1 className="text-2xl font-semibold text-brand-navy">Départements</h1>
+        <Button onClick={() => { setEditing(null); setShowForm(true) }}>Nouveau département</Button>
       </div>
 
       {loading ? (
@@ -86,10 +81,10 @@ export default function FilieresPage() {
       ) : (
         <Table
           columns={columns}
-          rows={filieres}
+          rows={departements}
           searchValue={search}
           onSearchChange={setSearch}
-          searchPlaceholder="Rechercher une filière…"
+          searchPlaceholder="Rechercher un département…"
           page={meta.current_page}
           totalPages={meta.last_page}
           onPageChange={(page) => load(page)}
@@ -97,7 +92,7 @@ export default function FilieresPage() {
       )}
 
       {showForm && (
-        <FiliereFormModal filiere={editing} onClose={() => setShowForm(false)} onSubmit={handleSubmit} />
+        <DepartementFormModal departement={editing} onClose={() => setShowForm(false)} onSubmit={handleSubmit} />
       )}
     </DashboardLayout>
   )

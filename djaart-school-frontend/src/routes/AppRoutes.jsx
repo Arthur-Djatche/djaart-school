@@ -12,10 +12,12 @@ import FraisScolaritePage from '../features/finance/fraisScolarite/FraisScolarit
 import InscriptionsListPage from '../features/inscriptions/InscriptionsListPage'
 import AnneesAcademiquesPage from '../features/parametrage/annees/AnneesAcademiquesPage'
 import ClassesPage from '../features/parametrage/classes/ClassesPage'
+import DepartementsPage from '../features/parametrage/departements/DepartementsPage'
 import EtablissementsPage from '../features/parametrage/etablissements/EtablissementsPage'
 import FilieresPage from '../features/parametrage/filieres/FilieresPage'
 import MatieresPage from '../features/parametrage/matieres/MatieresPage'
 import NiveauxPage from '../features/parametrage/niveaux/NiveauxPage'
+import UnitesEnseignementPage from '../features/parametrage/unites-enseignement/UnitesEnseignementPage'
 import AffectationsPage from '../features/pedagogie/affectations/AffectationsPage'
 import BulletinsPage from '../features/pedagogie/bulletins/BulletinsPage'
 import SaisieConduitePage from '../features/pedagogie/conduite/SaisieConduitePage'
@@ -52,10 +54,12 @@ export default function AppRoutes() {
         <Route path="/users" element={<UsersListPage />} />
         <Route path="/parametrage/etablissements" element={<EtablissementsPage />} />
         <Route path="/parametrage/annees-academiques" element={<AnneesAcademiquesPage />} />
+        <Route path="/parametrage/departements" element={<DepartementsPage />} />
         <Route path="/parametrage/filieres" element={<FilieresPage />} />
         <Route path="/parametrage/filieres/:filiereId/niveaux" element={<NiveauxPage />} />
         <Route path="/parametrage/classes" element={<ClassesPage />} />
         <Route path="/parametrage/matieres" element={<MatieresPage />} />
+        <Route path="/parametrage/unites-enseignement" element={<UnitesEnseignementPage />} />
         <Route path="/finance/frais-scolarite" element={<FraisScolaritePage />} />
         <Route path="/pedagogie/affectations" element={<AffectationsPage />} />
         <Route path="/pedagogie/sequences" element={<SequencesPage />} />

@@ -52,6 +52,8 @@ export default function MatieresPage() {
   const columns = [
     { key: 'nom', label: 'Nom' },
     { key: 'niveau', label: 'Niveau', render: (row) => row.niveau?.libelle ?? '—' },
+    { key: 'semestre', label: 'Semestre', render: (row) => row.semestre?.libelle ?? '—' },
+    { key: 'unite_enseignement', label: 'UE', render: (row) => row.unite_enseignement ? `${row.unite_enseignement.code} — ${row.unite_enseignement.nom}` : '—' },
     { key: 'groupe', label: 'Groupe', render: (row) => row.groupe ?? '—' },
     { key: 'coefficient', label: 'Coefficient' },
     { key: 'credits_ects', label: 'Crédits ECTS', render: (row) => row.credits_ects ?? '—' },

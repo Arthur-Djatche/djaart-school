@@ -4,6 +4,9 @@ const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
 const PEDAGOGIE_ROLES = ['super_admin', 'admin_etablissement', 'enseignant']
 const BULLETINS_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
 
+const CLASSIQUE = ['primaire', 'secondaire', 'centre_formation']
+const UNIVERSITAIRE = ['universitaire']
+
 export const NAVIGATION = [
   { label: 'Tableau de bord', to: '/dashboard', roles: null },
   { label: 'Inscriptions', to: '/inscriptions', roles: INSCRIPTION_ROLES },
@@ -15,9 +18,11 @@ export const NAVIGATION = [
     children: [
       { label: 'Établissement(s)', to: '/parametrage/etablissements' },
       { label: 'Années académiques', to: '/parametrage/annees-academiques' },
+      { label: 'Départements', to: '/parametrage/departements', etablissementTypes: UNIVERSITAIRE },
       { label: 'Filières', to: '/parametrage/filieres' },
       { label: 'Classes', to: '/parametrage/classes' },
       { label: 'Matières', to: '/parametrage/matieres' },
+      { label: "Unités d'enseignement", to: '/parametrage/unites-enseignement', etablissementTypes: UNIVERSITAIRE },
     ],
   },
   {
@@ -33,11 +38,11 @@ export const NAVIGATION = [
     roles: [...PEDAGOGIE_ROLES, 'secretaire'],
     children: [
       { label: 'Affectations', to: '/pedagogie/affectations', roles: PARAMETRAGE_ROLES },
-      { label: 'Séquences', to: '/pedagogie/sequences', roles: PARAMETRAGE_ROLES },
-      { label: 'Semestres', to: '/pedagogie/semestres', roles: PARAMETRAGE_ROLES },
+      { label: 'Séquences', to: '/pedagogie/sequences', roles: PARAMETRAGE_ROLES, etablissementTypes: CLASSIQUE },
+      { label: 'Semestres', to: '/pedagogie/semestres', roles: PARAMETRAGE_ROLES, etablissementTypes: UNIVERSITAIRE },
       { label: 'Saisie des notes', to: '/pedagogie/notes', roles: PEDAGOGIE_ROLES },
-      { label: 'Saisie de la conduite', to: '/pedagogie/conduite', roles: [...PEDAGOGIE_ROLES, 'secretaire'] },
-      { label: 'Bulletins', to: '/pedagogie/bulletins', roles: BULLETINS_ROLES },
+      { label: 'Saisie de la conduite', to: '/pedagogie/conduite', roles: [...PEDAGOGIE_ROLES, 'secretaire'], etablissementTypes: CLASSIQUE },
+      { label: 'Bulletins', to: '/pedagogie/bulletins', roles: BULLETINS_ROLES, etablissementTypes: CLASSIQUE },
       { label: 'Relevés de notes', to: '/pedagogie/releves', roles: BULLETINS_ROLES },
     ],
   },
@@ -48,8 +53,14 @@ function allowed(roles, userRoles) {
   return !roles || roles.some((role) => userRoles.includes(role))
 }
 
-export function navigationForRoles(userRoles = []) {
-  return NAVIGATION.filter((item) => allowed(item.roles, userRoles))
-    .map((item) => (item.children ? { ...item, children: item.children.filter((child) => allowed(child.roles, userRoles)) } : item))
+function allowedForType(etablissementTypes, etablissementType) {
+  return !etablissementTypes || !etablissementType || etablissementTypes.includes(etablissementType)
+}
+
+export function navigationForRoles(userRoles = [], etablissementType = null) {
+  return NAVIGATION.filter((item) => allowed(item.roles, userRoles) && allowedForType(item.etablissementTypes, etablissementType))
+    .map((item) => (item.children
+      ? { ...item, children: item.children.filter((child) => allowed(child.roles, userRoles) && allowedForType(child.etablissementTypes, etablissementType)) }
+      : item))
     .filter((item) => !item.children || item.children.length > 0)
 }

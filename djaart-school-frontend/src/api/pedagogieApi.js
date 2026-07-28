@@ -20,3 +20,8 @@ export const soumettreNotes = (affectationId, payload) =>
   axiosClient.post(`/api/affectations/${affectationId}/notes`, payload)
 export const deverrouillerNotes = (affectationId, payload) =>
   axiosClient.post(`/api/affectations/${affectationId}/notes/deverrouiller`, payload)
+
+export const pvSequenceUrl = (affectationId, sequenceId) =>
+  `${import.meta.env.VITE_API_URL}/api/affectations/${affectationId}/sequences/${sequenceId}/pv`
+export const pvSemestreUrl = (affectationId, semestreId) =>
+  `${import.meta.env.VITE_API_URL}/api/affectations/${affectationId}/semestres/${semestreId}/pv`

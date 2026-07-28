@@ -4,6 +4,7 @@ import Input from '../../../components/ui/Input'
 import Modal from '../../../components/ui/Modal'
 import Select from '../../../components/ui/Select'
 import * as parametrageApi from '../../../api/parametrageApi'
+import * as pedagogieApi from '../../../api/pedagogieApi'
 
 async function loadAllNiveaux() {
   const { data: filieresResponse } = await parametrageApi.fetchFilieres({ page: 1 })
@@ -19,12 +20,17 @@ async function loadAllNiveaux() {
 export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
   const [niveaux, setNiveaux] = useState([])
   const [niveauId, setNiveauId] = useState(matiere?.niveau_id ?? '')
+  const [code, setCode] = useState(matiere?.code ?? '')
   const [nom, setNom] = useState(matiere?.nom ?? '')
   const [groupe, setGroupe] = useState(matiere?.groupe ?? '')
   const [coefficient, setCoefficient] = useState(matiere?.coefficient ?? 1)
   const [creditsEcts, setCreditsEcts] = useState(matiere?.credits_ects ?? '')
   const [ponderationCc, setPonderationCc] = useState(matiere?.ponderation_cc ?? 40)
   const [ponderationSn, setPonderationSn] = useState(matiere?.ponderation_session_normale ?? 60)
+  const [semestres, setSemestres] = useState([])
+  const [semestreId, setSemestreId] = useState(matiere?.semestre_id ?? '')
+  const [unites, setUnites] = useState([])
+  const [uniteEnseignementId, setUniteEnseignementId] = useState(matiere?.unite_enseignement_id ?? '')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [loadingOptions, setLoadingOptions] = useState(true)
@@ -36,6 +42,27 @@ export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
     })()
   }, [])
 
+  const niveau = niveaux.find((n) => n.id === Number(niveauId))
+  const estLmd = niveau?.type_systeme === 'lmd'
+
+  useEffect(() => {
+    setSemestres([])
+    if (!estLmd || !niveauId) return
+    (async () => {
+      const { data } = await pedagogieApi.fetchSemestres({ niveau_id: niveauId })
+      setSemestres(data.data)
+    })()
+  }, [niveauId, estLmd])
+
+  useEffect(() => {
+    setUnites([])
+    if (!estLmd || !semestreId) return
+    (async () => {
+      const { data } = await parametrageApi.fetchUnitesEnseignementBySemestre(semestreId)
+      setUnites(data.data)
+    })()
+  }, [semestreId, estLmd])
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
@@ -43,12 +70,15 @@ export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
     try {
       await onSubmit({
         niveau_id: Number(niveauId),
+        code: code || null,
         nom,
         groupe: groupe || null,
         coefficient: Number(coefficient),
         credits_ects: creditsEcts ? Number(creditsEcts) : null,
         ponderation_cc: Number(ponderationCc),
         ponderation_session_normale: Number(ponderationSn),
+        semestre_id: estLmd && semestreId ? Number(semestreId) : null,
+        unite_enseignement_id: estLmd && uniteEnseignementId ? Number(uniteEnseignementId) : null,
       })
     } catch (err) {
       setError(err.response?.data?.message ?? 'Une erreur est survenue.')
@@ -67,11 +97,38 @@ export default function MatiereFormModal({ matiere, onClose, onSubmit }) {
             id="niveau_id"
             label="Niveau"
             value={niveauId}
-            onChange={(e) => setNiveauId(e.target.value)}
+            onChange={(e) => { setNiveauId(e.target.value); setSemestreId(''); setUniteEnseignementId('') }}
             placeholder="Sélectionner un niveau"
             options={niveaux.map((n) => ({ value: n.id, label: `${n.filiereNom} — ${n.libelle}` }))}
             required
           />
+
+          {estLmd && (
+            <>
+              <Select
+                id="semestre_id"
+                label="Semestre (EC propre à ce semestre)"
+                value={semestreId}
+                onChange={(e) => { setSemestreId(e.target.value); setUniteEnseignementId('') }}
+                placeholder="Sélectionner un semestre"
+                options={semestres.map((s) => ({ value: s.id, label: s.libelle }))}
+                required
+              />
+              {semestreId && (
+                <Select
+                  id="unite_enseignement_id"
+                  label="Unité d'enseignement"
+                  value={uniteEnseignementId}
+                  onChange={(e) => setUniteEnseignementId(e.target.value)}
+                  placeholder="Sélectionner une UE"
+                  options={unites.map((u) => ({ value: u.id, label: `${u.code} — ${u.nom}` }))}
+                  required
+                />
+              )}
+              <Input id="code" label="Code EC (ex. IGL1111)" value={code} onChange={(e) => setCode(e.target.value)} />
+            </>
+          )}
+
           <Input id="nom" label="Nom" value={nom} onChange={(e) => setNom(e.target.value)} required />
           <Input
             id="groupe"

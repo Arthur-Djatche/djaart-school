@@ -7,7 +7,7 @@ const linkClasses = ({ isActive }) =>
 
 export default function Sidebar() {
   const { user } = useAuth()
-  const items = navigationForRoles(user?.roles ?? [])
+  const items = navigationForRoles(user?.roles ?? [], user?.etablissement?.type_etablissement ?? null)
 
   return (
     <aside className="hidden w-60 shrink-0 bg-brand-navy text-white md:block">

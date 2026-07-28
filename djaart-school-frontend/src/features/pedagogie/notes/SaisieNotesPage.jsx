@@ -9,6 +9,7 @@ import useToast from '../../../hooks/useToast'
 const TYPES_EVALUATION_LMD = [
   { value: 'cc', label: 'Contrôle Continu (CC)' },
   { value: 'session_normale', label: 'Session Normale (SN)' },
+  { value: 'rattrapage', label: 'Rattrapage (SN)' },
 ]
 
 export default function SaisieNotesPage() {
@@ -137,6 +138,16 @@ export default function SaisieNotesPage() {
                 className="md:flex-1"
               />
             )}
+            {affectation && decoupageId && (
+              <a
+                href={estLmd ? pedagogieApi.pvSemestreUrl(affectationId, decoupageId) : pedagogieApi.pvSequenceUrl(affectationId, decoupageId)}
+                target="_blank"
+                rel="noopener"
+                className="whitespace-nowrap rounded-lg border border-brand-blue px-4 py-2 text-sm font-medium text-brand-blue hover:bg-brand-blue/5"
+              >
+                Imprimer le PV
+              </a>
+            )}
             {affectation && estLmd && (
               <Select
                 id="type_evaluation"
@@ -148,6 +159,12 @@ export default function SaisieNotesPage() {
               />
             )}
           </div>
+
+          {affectation && estLmd && typeEvaluation === 'rattrapage' && (
+            <p className="text-sm text-brand-orange">
+              Le rattrapage n'est saisissable que pour un apprenant dont la moyenne CC/SN est inférieure à 10, une fois CC et SN verrouillés.
+            </p>
+          )}
 
           {loadingGrille && <p className="text-slate-500">Chargement de la grille…</p>}
 

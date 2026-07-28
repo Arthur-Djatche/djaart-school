@@ -7,6 +7,4 @@ export const bulletinDownloadUrl = (bulletinId) => `${import.meta.env.VITE_API_U
 
 export const fetchReleves = (params) => axiosClient.get('/api/releves', { params })
 export const genererRelevesAnnuels = (classeId) => axiosClient.post(`/api/classes/${classeId}/releves/annuel`)
-export const genererRelevesSemestriels = (classeId, semestreId) =>
-  axiosClient.post(`/api/classes/${classeId}/semestres/${semestreId}/releves`)
 export const releveDownloadUrl = (releveId) => `${import.meta.env.VITE_API_URL}/api/releves/${releveId}/telecharger`
