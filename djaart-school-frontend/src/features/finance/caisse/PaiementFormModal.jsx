@@ -11,8 +11,8 @@ const MODES = [
   { value: 'cheque', label: 'Chèque' },
 ]
 
-export default function PaiementFormModal({ tranche, onClose, onSubmit }) {
-  const [montant, setMontant] = useState(tranche.solde)
+export default function PaiementFormModal({ inscription, onClose, onSubmit }) {
+  const [montant, setMontant] = useState(inscription.solde_total_pension)
   const [modePaiement, setModePaiement] = useState('especes')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,9 +20,16 @@ export default function PaiementFormModal({ tranche, onClose, onSubmit }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
+
+    const montantSaisi = Number(montant)
+    if (montantSaisi > inscription.solde_total_pension) {
+      setError(`Le montant saisi (${montantSaisi}) dépasse le solde restant de la pension (${inscription.solde_total_pension}).`)
+      return
+    }
+
     setLoading(true)
     try {
-      await onSubmit({ montant: Number(montant), mode_paiement: modePaiement })
+      await onSubmit({ montant: montantSaisi, mode_paiement: modePaiement })
     } catch (err) {
       setError(err.response?.data?.message ?? 'Une erreur est survenue.')
     } finally {
@@ -31,12 +38,11 @@ export default function PaiementFormModal({ tranche, onClose, onSubmit }) {
   }
 
   return (
-    <Modal title={`Encaisser — Tranche ${tranche.numero}`} onClose={onClose}>
+    <Modal title={`Encaisser — ${inscription.classe.libelle}`} onClose={onClose}>
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <div className="rounded-lg bg-slate-50 p-3 text-sm">
-          <p>Montant de la tranche : {tranche.montant}</p>
-          <p>Déjà versé : {tranche.montant_paye}</p>
-          <p className="font-medium text-brand-navy">Solde dû : {tranche.solde}</p>
+          <p className="font-medium text-brand-navy">Solde restant sur la pension : {inscription.solde_total_pension}</p>
+          <p className="text-slate-500">Le montant peut couvrir plusieurs tranches ou une seule partiellement, tant qu'il ne dépasse pas ce solde.</p>
         </div>
 
         <Input
@@ -44,6 +50,7 @@ export default function PaiementFormModal({ tranche, onClose, onSubmit }) {
           type="number"
           step="0.01"
           min="0.01"
+          max={inscription.solde_total_pension}
           label="Montant encaissé"
           value={montant}
           onChange={(e) => setMontant(e.target.value)}

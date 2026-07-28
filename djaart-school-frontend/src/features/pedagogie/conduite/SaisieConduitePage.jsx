@@ -87,6 +87,7 @@ export default function SaisieConduitePage() {
         absences: Number(ligne.absences) || 0,
         absences_non_justifiees: Number(ligne.absences_non_justifiees) || 0,
         retards: Number(ligne.retards) || 0,
+        retards_non_justifies: Number(ligne.retards_non_justifies) || 0,
         mention_travail: ligne.mention_travail || null,
         mention_conduite: ligne.mention_conduite || null,
       }))
@@ -149,6 +150,7 @@ export default function SaisieConduitePage() {
                     <th className="px-3 py-2 font-semibold">Absences</th>
                     <th className="px-3 py-2 font-semibold">Dont NJ</th>
                     <th className="px-3 py-2 font-semibold">Retards</th>
+                    <th className="px-3 py-2 font-semibold">Dont NJ</th>
                     <th className="px-3 py-2 font-semibold">Mention travail</th>
                     <th className="px-3 py-2 font-semibold">Mention conduite</th>
                   </tr>
@@ -186,6 +188,16 @@ export default function SaisieConduitePage() {
                           aria-label={`Retards ${ligne.apprenant.nom}`}
                           value={ligne.retards}
                           onChange={(e) => updateLigne(ligne.inscription_id, 'retards', e.target.value)}
+                          className="w-20"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          aria-label={`Retards non justifiés ${ligne.apprenant.nom}`}
+                          value={ligne.retards_non_justifies}
+                          onChange={(e) => updateLigne(ligne.inscription_id, 'retards_non_justifies', e.target.value)}
                           className="w-20"
                         />
                       </td>

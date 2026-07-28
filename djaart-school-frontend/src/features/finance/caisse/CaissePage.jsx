@@ -37,8 +37,7 @@ export default function CaissePage() {
   const [inscriptions, setInscriptions] = useState([])
   const [historique, setHistorique] = useState([])
   const [loadingEcheancier, setLoadingEcheancier] = useState(false)
-  const [selectedTranche, setSelectedTranche] = useState(null)
-  const [selectedInscriptionId, setSelectedInscriptionId] = useState(null)
+  const [inscriptionAEncaisser, setInscriptionAEncaisser] = useState(null)
   const [dernierRecuUrl, setDernierRecuUrl] = useState(null)
 
   const loadEcheancier = async (apprenantId) => {
@@ -80,12 +79,11 @@ export default function CaissePage() {
     const fenetreImpression = window.open('', '_blank')
 
     const { data } = await paiementApi.createPaiement({
-      inscription_id: selectedInscriptionId,
-      tranche_id: selectedTranche.id,
+      inscription_id: inscriptionAEncaisser.id,
       ...payload,
     })
     showToast('Paiement enregistré.', 'success')
-    setSelectedTranche(null)
+    setInscriptionAEncaisser(null)
     setDernierRecuUrl(paiementApi.recuDownloadUrl(data.data.recu.id))
     if (fenetreImpression) {
       fenetreImpression.location = `${window.location.origin}/imprimer-recu/${data.data.recu.id}`
@@ -98,7 +96,7 @@ export default function CaissePage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-brand-navy">Caisse</h1>
         <p className="text-sm text-slate-500">
-          Recherchez un apprenant pour consulter son échéancier et encaisser une tranche.
+          Recherchez un apprenant pour consulter son échéancier et encaisser un paiement (n'importe quel montant, tant qu'il ne dépasse pas le solde de la pension).
         </p>
       </div>
 
@@ -152,8 +150,21 @@ export default function CaissePage() {
           ) : (
             inscriptions.map((inscription) => (
               <div key={inscription.id} className="rounded-lg border border-slate-200 bg-white p-4">
-                <p className="mb-3 font-medium text-brand-navy">
-                  {inscription.classe.libelle} — {inscription.annee_academique.libelle}
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="font-medium text-brand-navy">
+                    {inscription.classe.libelle} — {inscription.annee_academique.libelle}
+                  </p>
+                  {inscription.solde_total_pension > 0 && (
+                    <Button variant="accent" onClick={() => setInscriptionAEncaisser(inscription)}>
+                      Encaisser un paiement
+                    </Button>
+                  )}
+                </div>
+                <p className="mb-3 text-sm text-slate-600">
+                  Solde restant sur la pension :{' '}
+                  <span className={inscription.solde_total_pension > 0 ? 'font-semibold text-red-600' : 'font-semibold text-brand-teal'}>
+                    {inscription.solde_total_pension}
+                  </span>
                 </p>
                 <div className="flex flex-col gap-2">
                   {inscription.tranches.map((tranche) => (
@@ -161,25 +172,12 @@ export default function CaissePage() {
                       key={tranche.id}
                       className="flex items-center justify-between rounded border border-slate-100 px-3 py-2 text-sm"
                     >
-                      <div className="flex items-center gap-3">
-                        <span>
-                          Tranche {tranche.numero} — {tranche.montant} (échéance {tranche.date_echeance})
-                        </span>
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUT_BADGES[tranche.statut]}`}>
-                          {STATUT_LABELS[tranche.statut]}
-                        </span>
-                      </div>
-                      {tranche.solde > 0 && (
-                        <Button
-                          variant="accent"
-                          onClick={() => {
-                            setSelectedInscriptionId(inscription.id)
-                            setSelectedTranche(tranche)
-                          }}
-                        >
-                          Encaisser
-                        </Button>
-                      )}
+                      <span>
+                        Tranche {tranche.numero} — {tranche.montant} (échéance {tranche.date_echeance})
+                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUT_BADGES[tranche.statut]}`}>
+                        {STATUT_LABELS[tranche.statut]}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -196,7 +194,7 @@ export default function CaissePage() {
                 {historique.map((p) => (
                   <li key={p.id} className="flex items-center justify-between py-2">
                     <span>
-                      {p.date_paiement} — Tranche {p.tranche.numero} — {p.montant} ({MODE_LABELS[p.mode_paiement]})
+                      {p.date_paiement} — {p.montant} ({MODE_LABELS[p.mode_paiement]})
                     </span>
                     {p.recu && (
                       <a
@@ -216,8 +214,12 @@ export default function CaissePage() {
         </div>
       )}
 
-      {selectedTranche && (
-        <PaiementFormModal tranche={selectedTranche} onClose={() => setSelectedTranche(null)} onSubmit={handleEncaisser} />
+      {inscriptionAEncaisser && (
+        <PaiementFormModal
+          inscription={inscriptionAEncaisser}
+          onClose={() => setInscriptionAEncaisser(null)}
+          onSubmit={handleEncaisser}
+        />
       )}
     </DashboardLayout>
   )
