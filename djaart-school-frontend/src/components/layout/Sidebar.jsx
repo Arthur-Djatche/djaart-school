@@ -7,7 +7,7 @@ const linkClasses = ({ isActive }) =>
 
 export default function Sidebar({ open = false, onClose }) {
   const { user } = useAuth()
-  const items = navigationForRoles(user?.roles ?? [], user?.etablissement?.type_etablissement ?? null)
+  const items = navigationForRoles(user?.roles ?? [], user?.etablissement?.type_etablissement ?? null, user?.permissions ?? [])
 
   return (
     <>

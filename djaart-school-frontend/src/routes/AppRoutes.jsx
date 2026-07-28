@@ -50,7 +50,7 @@ export default function AppRoutes() {
         <Route path="/imprimer-recu/:recuId" element={<PrintRecuPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={INSCRIPTION_ROLES} />}>
+      <Route element={<ProtectedRoute roles={INSCRIPTION_ROLES} permission="acces.inscriptions" />}>
         <Route path="/inscriptions" element={<InscriptionsListPage />} />
       </Route>
 
@@ -60,7 +60,13 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute roles={ADMIN_ROLES} />}>
         <Route path="/users" element={<UsersListPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.parametrage_etablissement" />}>
         <Route path="/parametrage/etablissements" element={<EtablissementsPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.parametrage_academique" />}>
         <Route path="/parametrage/annees-academiques" element={<AnneesAcademiquesPage />} />
         <Route path="/parametrage/departements" element={<DepartementsPage />} />
         <Route path="/parametrage/filieres" element={<FilieresPage />} />
@@ -68,30 +74,54 @@ export default function AppRoutes() {
         <Route path="/parametrage/classes" element={<ClassesPage />} />
         <Route path="/parametrage/matieres" element={<MatieresPage />} />
         <Route path="/parametrage/unites-enseignement" element={<UnitesEnseignementPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.frais_scolarite" />}>
         <Route path="/finance/frais-scolarite" element={<FraisScolaritePage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.affectations" />}>
         <Route path="/pedagogie/affectations" element={<AffectationsPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.sequences" />}>
         <Route path="/pedagogie/sequences" element={<SequencesPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.semestres" />}>
         <Route path="/pedagogie/semestres" element={<SemestresPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={FINANCE_ROLES} />}>
+      <Route element={<ProtectedRoute roles={FINANCE_ROLES} permission="acces.caisse" />}>
         <Route path="/finance/caisse" element={<CaissePage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={PEDAGOGIE_ROLES} />}>
+      <Route element={<ProtectedRoute roles={PEDAGOGIE_ROLES} permission="acces.notes" />}>
         <Route path="/pedagogie/notes" element={<SaisieNotesPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={[...PEDAGOGIE_ROLES, 'secretaire']} />}>
+      <Route element={<ProtectedRoute roles={[...PEDAGOGIE_ROLES, 'secretaire']} permission="acces.conduite" />}>
         <Route path="/pedagogie/conduite" element={<SaisieConduitePage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={BULLETINS_ROLES} />}>
+      <Route element={<ProtectedRoute roles={BULLETINS_ROLES} permission="acces.bulletins" />}>
         <Route path="/pedagogie/bulletins" element={<BulletinsPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={BULLETINS_ROLES} permission="acces.releves" />}>
         <Route path="/pedagogie/releves" element={<RelevesPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={BULLETINS_ROLES} permission="acces.apprenants" />}>
         <Route path="/apprenants" element={<ApprenantsListPage />} />
         <Route path="/apprenants/:id" element={<ApprenantFichePage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={BULLETINS_ROLES} permission="acces.seance_photo" />}>
         <Route path="/apprenants/seance-photo" element={<SeancePhotoPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={BULLETINS_ROLES} permission="acces.documents_masse" />}>
         <Route path="/documents/masse" element={<DocumentsMassePage />} />
       </Route>
 

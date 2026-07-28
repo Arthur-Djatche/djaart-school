@@ -5,6 +5,7 @@ import Table from '../../components/ui/Table'
 import * as usersApi from '../../api/usersApi'
 import useToast from '../../hooks/useToast'
 import UserFormModal from './UserFormModal'
+import UserPermissionsModal from './UserPermissionsModal'
 
 export default function UsersListPage() {
   const { showToast } = useToast()
@@ -14,6 +15,7 @@ export default function UsersListPage() {
   const [loading, setLoading] = useState(true)
   const [editingUser, setEditingUser] = useState(null)
   const [showForm, setShowForm] = useState(false)
+  const [permissionsUser, setPermissionsUser] = useState(null)
 
   const loadUsers = useCallback(async (page = 1, searchTerm = search) => {
     setLoading(true)
@@ -47,6 +49,13 @@ export default function UsersListPage() {
     loadUsers(meta.current_page)
   }
 
+  const handleSubmitPermissions = async (permissions) => {
+    await usersApi.updateUserPermissions(permissionsUser.id, permissions)
+    showToast("Droits d'accès mis à jour.", 'success')
+    setPermissionsUser(null)
+    loadUsers(meta.current_page)
+  }
+
   const handleSubmit = async (payload) => {
     if (editingUser) {
       await usersApi.updateUser(editingUser.id, payload)
@@ -75,6 +84,9 @@ export default function UsersListPage() {
         <div className="flex gap-2">
           <Button variant="ghost" onClick={() => handleEdit(row)}>
             Modifier
+          </Button>
+          <Button variant="ghost" onClick={() => setPermissionsUser(row)}>
+            Droits d'accès
           </Button>
           <Button variant="ghost" onClick={() => handleDelete(row)}>
             Supprimer
@@ -108,6 +120,14 @@ export default function UsersListPage() {
 
       {showForm && (
         <UserFormModal user={editingUser} onClose={() => setShowForm(false)} onSubmit={handleSubmit} />
+      )}
+
+      {permissionsUser && (
+        <UserPermissionsModal
+          user={permissionsUser}
+          onClose={() => setPermissionsUser(null)}
+          onSubmit={handleSubmitPermissions}
+        />
       )}
     </DashboardLayout>
   )
