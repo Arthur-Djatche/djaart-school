@@ -20,6 +20,7 @@ class ConduiteReleve extends Model
         'absences',
         'absences_non_justifiees',
         'retards',
+        'retards_non_justifies',
         'mention_travail',
         'mention_conduite',
     ];

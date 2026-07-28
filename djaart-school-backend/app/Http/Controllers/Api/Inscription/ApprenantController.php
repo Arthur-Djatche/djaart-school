@@ -6,12 +6,17 @@ use App\Http\Controllers\Concerns\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ApprenantResource;
 use App\Models\Apprenant;
+use App\Services\EcheancierService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ApprenantController extends Controller
 {
     use ApiResponse;
+
+    public function __construct(private readonly EcheancierService $echeancierService)
+    {
+    }
 
     public function index(Request $request)
     {
@@ -49,36 +54,15 @@ class ApprenantController extends Controller
             ->with(['classe', 'anneeAcademique', 'fraisScolarite.tranches', 'paiements'])
             ->get();
 
-        $data = $inscriptions->map(function ($inscription) {
-            $paiementsParTranche = $inscription->paiements->groupBy('tranche_id');
-
-            return [
-                'id' => $inscription->id,
-                'statut' => $inscription->statut,
-                'type_inscription' => $inscription->type_inscription,
-                'classe' => ['id' => $inscription->classe->id, 'libelle' => $inscription->classe->libelle],
-                'annee_academique' => ['id' => $inscription->anneeAcademique->id, 'libelle' => $inscription->anneeAcademique->libelle],
-                'tranches' => $inscription->fraisScolarite->tranches->map(function ($tranche) use ($paiementsParTranche) {
-                    $montantPaye = (float) ($paiementsParTranche->get($tranche->id, collect())->sum('montant'));
-                    $solde = round($tranche->montant - $montantPaye, 2);
-                    $statut = $solde <= 0
-                        ? 'payee'
-                        : ($montantPaye > 0
-                            ? 'partielle'
-                            : ($tranche->date_echeance->isPast() ? 'en_retard' : 'en_attente'));
-
-                    return [
-                        'id' => $tranche->id,
-                        'numero' => $tranche->numero,
-                        'montant' => $tranche->montant,
-                        'date_echeance' => $tranche->date_echeance->toDateString(),
-                        'montant_paye' => $montantPaye,
-                        'solde' => $solde,
-                        'statut' => $statut,
-                    ];
-                }),
-            ];
-        });
+        $data = $inscriptions->map(fn ($inscription) => [
+            'id' => $inscription->id,
+            'statut' => $inscription->statut,
+            'type_inscription' => $inscription->type_inscription,
+            'classe' => ['id' => $inscription->classe->id, 'libelle' => $inscription->classe->libelle],
+            'annee_academique' => ['id' => $inscription->anneeAcademique->id, 'libelle' => $inscription->anneeAcademique->libelle],
+            'solde_total_pension' => $this->echeancierService->soldeTotalPension($inscription),
+            'tranches' => $this->echeancierService->calculerTranches($inscription),
+        ]);
 
         return $this->success([
             'apprenant' => new ApprenantResource($apprenant),

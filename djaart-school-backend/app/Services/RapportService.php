@@ -6,6 +6,7 @@ use App\Models\Etablissement;
 use App\Models\Inscription;
 use App\Models\ReleveDeNotes;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class RapportService
@@ -13,10 +14,17 @@ class RapportService
     private const MENTIONS_CLASSIQUE = ['Excellent', 'Bien', 'Assez Bien', 'Passable', 'Insuffisant'];
     private const MENTIONS_LMD = ['Admis', 'Ajourné'];
 
+    public function __construct(private readonly EcheancierService $echeancierService)
+    {
+    }
+
     /**
      * Tranches en retard (echeance depassee, solde encore positif), agregees
-     * par apprenant plutot que calculees une inscription a la fois (cf.
-     * ApprenantController::echeancier, meme methode de calcul du solde).
+     * par apprenant plutot que calculees une inscription a la fois — le detail
+     * par tranche est desormais derive via EcheancierService (cascade sur le
+     * total paye, cf. correctif encaissement flexible), plus calcule a partir
+     * des paiements groupes par tranche_id (devenu non fiable, tranche_id est
+     * NULL sur les nouveaux paiements).
      */
     public function listerImpayes(?int $etablissementId): Collection
     {
@@ -29,20 +37,22 @@ class RapportService
         $lignes = collect();
 
         foreach ($inscriptions as $inscription) {
-            $paiementsParTranche = $inscription->paiements->groupBy('tranche_id');
+            $tranches = $this->echeancierService->calculerTranches($inscription);
 
-            foreach ($inscription->fraisScolarite->tranches as $tranche) {
-                $montantPaye = (float) $paiementsParTranche->get($tranche->id, collect())->sum('montant');
-                $solde = round($tranche->montant - $montantPaye, 2);
+            foreach ($tranches as $tranche) {
+                $dateEcheance = Carbon::parse($tranche['date_echeance']);
 
-                if ($solde > 0 && $tranche->date_echeance->isPast()) {
+                // En retard = echeance depassee ET solde encore positif, que la
+                // tranche soit "partielle" ou "en_attente" (un paiement partiel
+                // ne l'exempte pas d'etre en retard sur le reste).
+                if ($tranche['solde'] > 0 && $dateEcheance->isPast()) {
                     $lignes->push([
                         'apprenant' => "{$inscription->apprenant->nom} {$inscription->apprenant->prenom}",
                         'matricule' => $inscription->apprenant->matricule,
                         'classe' => $inscription->classe->libelle,
-                        'tranche_numero' => $tranche->numero,
-                        'solde' => $solde,
-                        'jours_retard' => (int) $tranche->date_echeance->diffInDays(now()),
+                        'tranche_numero' => $tranche['numero'],
+                        'solde' => $tranche['solde'],
+                        'jours_retard' => (int) $dateEcheance->diffInDays(now()),
                     ]);
                 }
             }

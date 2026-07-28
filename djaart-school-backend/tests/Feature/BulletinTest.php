@@ -274,6 +274,7 @@ class BulletinTest extends TestCase
             'absences' => 4,
             'absences_non_justifiees' => 2,
             'retards' => 1,
+            'retards_non_justifies' => 1,
             'mention_travail' => 'encouragements',
             'mention_conduite' => 'encouragements',
         ]);
@@ -289,10 +290,12 @@ class BulletinTest extends TestCase
         $bulletinMoussa = Bulletin::where('inscription_id', $inscriptions[1]->id)->first();
 
         $this->assertSame(4, $bulletinAicha->absences);
+        $this->assertSame(1, $bulletinAicha->retards_non_justifies);
         $this->assertSame('encouragements', $bulletinAicha->mention_travail);
 
         // Aucune conduite saisie pour Moussa -> valeurs par defaut, non bloquant.
         $this->assertSame(0, $bulletinMoussa->absences);
+        $this->assertSame(0, $bulletinMoussa->retards_non_justifies);
         $this->assertNull($bulletinMoussa->mention_travail);
     }
 

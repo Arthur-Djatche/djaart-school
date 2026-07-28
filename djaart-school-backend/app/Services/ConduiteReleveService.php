@@ -30,6 +30,7 @@ class ConduiteReleveService
                 'absences' => $conduite->absences ?? 0,
                 'absences_non_justifiees' => $conduite->absences_non_justifiees ?? 0,
                 'retards' => $conduite->retards ?? 0,
+                'retards_non_justifies' => $conduite->retards_non_justifies ?? 0,
                 'mention_travail' => $conduite->mention_travail ?? null,
                 'mention_conduite' => $conduite->mention_conduite ?? null,
             ];
@@ -53,6 +54,7 @@ class ConduiteReleveService
                         'absences' => $ligne['absences'] ?? 0,
                         'absences_non_justifiees' => $ligne['absences_non_justifiees'] ?? 0,
                         'retards' => $ligne['retards'] ?? 0,
+                        'retards_non_justifies' => $ligne['retards_non_justifies'] ?? 0,
                         'mention_travail' => $ligne['mention_travail'] ?? null,
                         'mention_conduite' => $ligne['mention_conduite'] ?? null,
                     ],

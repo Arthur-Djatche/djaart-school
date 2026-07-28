@@ -21,6 +21,10 @@ class RecuService
         'cheque' => 'Chèque',
     ];
 
+    public function __construct(private readonly EcheancierService $echeancierService)
+    {
+    }
+
     public function genererPour(Paiement $paiement): Recu
     {
         return DB::transaction(function () use ($paiement) {
@@ -29,10 +33,10 @@ class RecuService
             $etablissement->update(['next_recu_sequence' => $numero + 1]);
 
             $paiement->loadMissing([
-                'tranche.fraisScolarite',
                 'inscription.apprenant',
                 'inscription.classe',
                 'inscription.anneeAcademique',
+                'inscription.fraisScolarite',
             ]);
 
             $recu = Recu::create([
@@ -42,10 +46,9 @@ class RecuService
                 'fichier_pdf' => '',
             ]);
 
-            $totalPayeSurTranche = (float) Paiement::where('inscription_id', $paiement->inscription_id)
-                ->where('tranche_id', $paiement->tranche_id)
-                ->sum('montant');
-            $soldeRestant = round((float) $paiement->tranche->montant - $totalPayeSurTranche, 2);
+            $montantTotalPension = (float) $paiement->inscription->fraisScolarite->montant_total;
+            $totalPayeACejour = $this->echeancierService->totalPaye($paiement->inscription);
+            $soldeRestant = $this->echeancierService->soldeTotalPension($paiement->inscription);
 
             $pdf = Pdf::loadView('pdf.recu', [
                 'recu' => $recu,
@@ -53,8 +56,9 @@ class RecuService
                 'apprenant' => $paiement->inscription->apprenant,
                 'classe' => $paiement->inscription->classe,
                 'anneeAcademique' => $paiement->inscription->anneeAcademique,
-                'tranche' => $paiement->tranche,
                 'paiement' => $paiement,
+                'montantTotalPension' => $montantTotalPension,
+                'totalPayeACejour' => $totalPayeACejour,
                 'soldeRestant' => $soldeRestant,
                 'modeLabel' => self::MODE_LABELS[$paiement->mode_paiement] ?? $paiement->mode_paiement,
                 'logoDataUri' => $this->logoDataUri($etablissement),

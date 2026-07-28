@@ -14,10 +14,10 @@ class PaiementResource extends JsonResource
             'montant' => $this->montant,
             'mode_paiement' => $this->mode_paiement,
             'date_paiement' => $this->date_paiement?->toDateString(),
-            'tranche' => $this->whenLoaded('tranche', fn () => [
+            'tranche' => $this->whenLoaded('tranche', fn () => $this->tranche ? [
                 'id' => $this->tranche->id,
                 'numero' => $this->tranche->numero,
-            ]),
+            ] : null),
             'apprenant' => $this->whenLoaded('inscription', fn () => [
                 'id' => $this->inscription->apprenant->id,
                 'matricule' => $this->inscription->apprenant->matricule,

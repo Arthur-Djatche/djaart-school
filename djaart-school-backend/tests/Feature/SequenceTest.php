@@ -122,4 +122,23 @@ class SequenceTest extends TestCase
         $response->assertOk();
         $this->assertCount(1, $response->json('data'));
     }
+
+    public function test_secretaire_can_list_sequences(): void
+    {
+        [$etablissement, $niveau, $annee] = $this->makeStructure();
+        $secretaire = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $secretaire->assignRole('secretaire');
+
+        $this->actingAs($this->makeAdmin($etablissement))->postJson('/api/sequences', [
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'numero' => 1,
+            'libelle' => 'Séquence 1',
+        ])->assertCreated();
+
+        $response = $this->actingAs($secretaire)->getJson('/api/sequences');
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json('data'));
+    }
 }

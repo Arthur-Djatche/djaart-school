@@ -143,7 +143,7 @@
             <div class="encadre">
                 <h3>Conduite</h3>
                 <p>Absences : {{ $bulletin->absences }} (dont {{ $bulletin->absences_non_justifiees }} non justifiées)</p>
-                <p>Retards : {{ $bulletin->retards }}</p>
+                <p>Retards : {{ $bulletin->retards }} (dont {{ $bulletin->retards_non_justifies }} non justifiés)</p>
                 <p>Mention : {{ $bulletin->mention_conduite ? ucfirst(str_replace('_', ' ', $bulletin->mention_conduite)) : '—' }}</p>
             </div>
         </div>

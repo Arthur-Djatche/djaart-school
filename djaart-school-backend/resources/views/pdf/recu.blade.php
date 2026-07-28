@@ -19,7 +19,7 @@
         table.details td { padding: 8px; border: 1px solid #cbd5e1; }
         table.details td.label { background-color: #f1f5f9; font-weight: bold; width: 40%; color: #003fa2; }
         .montant { font-size: 18px; font-weight: bold; color: #009ca0; margin-top: 20px; }
-        .solde { font-size: 12px; color: {{ $soldeRestant > 0 ? '#fe9605' : '#009ca0' }}; margin-top: 4px; }
+        .solde { font-size: 13px; font-weight: bold; color: {{ $soldeRestant > 0 ? '#dc2626' : '#009ca0' }}; margin-top: 6px; }
         .signature { margin-top: 40px; display: table; width: 100%; }
         .signature .zone { display: table-cell; width: 50%; text-align: center; vertical-align: bottom; }
         .signature .ligne { display: inline-block; width: 160px; border-bottom: 1px solid #001335; margin-bottom: 4px; }
@@ -72,10 +72,6 @@
             <td>{{ $anneeAcademique->libelle }}</td>
         </tr>
         <tr>
-            <td class="label">Tranche</td>
-            <td>Tranche n°{{ $tranche->numero }}</td>
-        </tr>
-        <tr>
             <td class="label">Mode de paiement</td>
             <td>{{ $modeLabel }}</td>
         </tr>
@@ -86,11 +82,21 @@
     </table>
 
     <p class="montant">Montant encaissé : {{ number_format($paiement->montant, 2, ',', ' ') }}</p>
+    <table class="details">
+        <tr>
+            <td class="label">Montant total de la pension</td>
+            <td>{{ number_format($montantTotalPension, 2, ',', ' ') }}</td>
+        </tr>
+        <tr>
+            <td class="label">Total payé à ce jour</td>
+            <td>{{ number_format($totalPayeACejour, 2, ',', ' ') }}</td>
+        </tr>
+    </table>
     <p class="solde">
         @if($soldeRestant > 0)
-            Solde restant sur cette tranche : {{ number_format($soldeRestant, 2, ',', ' ') }}
+            Solde restant sur la pension : {{ number_format($soldeRestant, 2, ',', ' ') }}
         @else
-            Tranche intégralement soldée
+            Pension intégralement soldée
         @endif
     </p>
 

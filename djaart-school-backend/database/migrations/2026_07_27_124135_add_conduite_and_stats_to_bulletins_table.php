@@ -20,7 +20,8 @@ return new class extends Migration
             $table->unsignedInteger('absences')->default(0)->after('moyenne_min');
             $table->unsignedInteger('absences_non_justifiees')->default(0)->after('absences');
             $table->unsignedInteger('retards')->default(0)->after('absences_non_justifiees');
-            $table->string('mention_travail')->nullable()->after('retards');
+            $table->unsignedInteger('retards_non_justifies')->default(0)->after('retards');
+            $table->string('mention_travail')->nullable()->after('retards_non_justifies');
             $table->string('mention_conduite')->nullable()->after('mention_travail');
         });
     }
@@ -33,7 +34,7 @@ return new class extends Migration
         Schema::table('bulletins', function (Blueprint $table) {
             $table->dropColumn([
                 'details_groupes', 'moyenne_classe', 'taux_reussite', 'moyenne_max', 'moyenne_min',
-                'absences', 'absences_non_justifiees', 'retards', 'mention_travail', 'mention_conduite',
+                'absences', 'absences_non_justifiees', 'retards', 'retards_non_justifies', 'mention_travail', 'mention_conduite',
             ]);
         });
     }

@@ -144,6 +144,7 @@ class BulletinService
                     'absences' => $conduite->absences ?? 0,
                     'absences_non_justifiees' => $conduite->absences_non_justifiees ?? 0,
                     'retards' => $conduite->retards ?? 0,
+                    'retards_non_justifies' => $conduite->retards_non_justifies ?? 0,
                     'mention_travail' => $conduite->mention_travail ?? null,
                     'mention_conduite' => $conduite->mention_conduite ?? null,
                     'tableau_honneur' => $moyennes[$inscription->id] >= 12,

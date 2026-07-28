@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedInteger('absences')->default(0);
             $table->unsignedInteger('absences_non_justifiees')->default(0);
             $table->unsignedInteger('retards')->default(0);
+            $table->unsignedInteger('retards_non_justifies')->default(0);
             $table->enum('mention_travail', ['tableau_honneur', 'encouragements', 'avertissement', 'blame'])->nullable();
             $table->enum('mention_conduite', ['tableau_honneur', 'encouragements', 'avertissement', 'blame'])->nullable();
             $table->timestamps();

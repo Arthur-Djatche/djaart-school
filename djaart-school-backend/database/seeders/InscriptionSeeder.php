@@ -41,6 +41,16 @@ class InscriptionSeeder extends Seeder
             ],
         ],
         [
+            'etablissement' => 'École Primaire Démo DJAART',
+            'classe' => 'CP1 A',
+            'apprenant' => [
+                'nom' => 'Bamba',
+                'prenom' => 'Souleymane',
+                'date_naissance' => '2019-04-22',
+                'sexe' => 'M',
+            ],
+        ],
+        [
             'etablissement' => 'Université Démo DJAART',
             'classe' => 'Licence 1 A',
             'apprenant' => [
@@ -48,6 +58,36 @@ class InscriptionSeeder extends Seeder
                 'prenom' => 'Ibrahim',
                 'date_naissance' => '2005-11-30',
                 'sexe' => 'M',
+            ],
+        ],
+        [
+            'etablissement' => 'Université Démo DJAART',
+            'classe' => 'Licence 1 A',
+            'apprenant' => [
+                'nom' => 'Kaboré',
+                'prenom' => 'Awa',
+                'date_naissance' => '2005-07-18',
+                'sexe' => 'F',
+            ],
+        ],
+        [
+            'etablissement' => 'Centre de Formation Démo DJAART',
+            'classe' => 'CQP Électricien A',
+            'apprenant' => [
+                'nom' => 'Zongo',
+                'prenom' => 'Boubacar',
+                'date_naissance' => '2001-03-05',
+                'sexe' => 'M',
+            ],
+        ],
+        [
+            'etablissement' => 'Centre de Formation Démo DJAART',
+            'classe' => 'CQP Électricien A',
+            'apprenant' => [
+                'nom' => 'Sawadogo',
+                'prenom' => 'Aminata',
+                'date_naissance' => '2000-12-16',
+                'sexe' => 'F',
             ],
         ],
     ];

@@ -22,6 +22,8 @@ class ParametrageSeeder extends Seeder
             sigle: 'EPD',
             adminEmail: 'admin.primaire@djaart.school',
             adminName: 'Admin École Primaire',
+            enseignantEmail: 'enseignant.primaire@djaart.school',
+            enseignantName: 'Enseignant Primaire Démo',
             filiereNom: 'Primaire',
             filiereCode: 'PRIM',
             typeSysteme: 'classique',
@@ -29,7 +31,10 @@ class ParametrageSeeder extends Seeder
                 ['libelle' => 'CP1', 'ordre' => 1],
                 ['libelle' => 'CP2', 'ordre' => 2],
             ],
-            matieres: ['Lecture', 'Calcul', 'Éveil scientifique'],
+            matieres: [
+                'Lecture', 'Calcul', 'Éveil scientifique', 'Écriture',
+                'Expression orale', 'Éducation civique', 'Arts plastiques', 'Éducation physique',
+            ],
         );
         $this->seedEtablissement(
             nom: 'Université Démo DJAART',
@@ -37,6 +42,8 @@ class ParametrageSeeder extends Seeder
             sigle: 'UDD',
             adminEmail: 'admin.universite@djaart.school',
             adminName: 'Admin Université',
+            enseignantEmail: 'enseignant.universite@djaart.school',
+            enseignantName: 'Enseignant Université Démo',
             filiereNom: 'Informatique',
             filiereCode: 'INFO',
             typeSysteme: 'lmd',
@@ -44,7 +51,10 @@ class ParametrageSeeder extends Seeder
                 ['libelle' => 'Licence 1', 'ordre' => 1],
                 ['libelle' => 'Licence 2', 'ordre' => 2],
             ],
-            matieres: ['Algorithmique', 'Réseaux', 'Bases de données'],
+            matieres: [
+                'Algorithmique', 'Réseaux', 'Bases de données', 'Systèmes d\'exploitation',
+                'Génie logiciel', 'Mathématiques appliquées', 'Anglais technique', 'Architecture des ordinateurs',
+            ],
             creditsEcts: 6,
         );
         $this->seedEtablissement(
@@ -53,6 +63,8 @@ class ParametrageSeeder extends Seeder
             sigle: 'CFD',
             adminEmail: 'admin.centreformation@djaart.school',
             adminName: 'Admin Centre de Formation',
+            enseignantEmail: 'enseignant.centreformation@djaart.school',
+            enseignantName: 'Enseignant Centre de Formation Démo',
             filiereNom: 'Électricité',
             filiereCode: 'ELEC',
             typeSysteme: 'classique',
@@ -60,7 +72,10 @@ class ParametrageSeeder extends Seeder
                 ['libelle' => 'CQP Électricien', 'ordre' => 1],
                 ['libelle' => 'DQP Électricien', 'ordre' => 2],
             ],
-            matieres: ['Électricité générale', 'Sécurité électrique'],
+            matieres: [
+                'Électricité générale', 'Sécurité électrique', 'Électronique', 'Automatisme',
+                'Lecture de plans', 'Normes NF C 15-100', 'Habilitation électrique', 'Maintenance industrielle',
+            ],
         );
     }
 
@@ -83,8 +98,13 @@ class ParametrageSeeder extends Seeder
         // pour illustrer les sous-totaux par groupe sur le bulletin classique.
         $groupesParMatiere = [
             'Mathématiques' => 'Groupe I',
+            'Physique-Chimie' => 'Groupe I',
+            'SVT' => 'Groupe I',
             'Français' => 'Groupe II',
+            'Anglais' => 'Groupe II',
             'Histoire-Géographie' => 'Groupe II',
+            'EPS' => 'Groupe II',
+            'Arts Plastiques' => 'Groupe II',
         ];
 
         foreach ([['libelle' => '6ème', 'ordre' => 1], ['libelle' => '5ème', 'ordre' => 2]] as $data) {
@@ -102,7 +122,7 @@ class ParametrageSeeder extends Seeder
                 $classe->update(['professeur_principal_id' => $enseignant->id]);
             }
 
-            foreach (['Mathématiques', 'Français', 'Histoire-Géographie'] as $matiereNom) {
+            foreach (array_keys($groupesParMatiere) as $matiereNom) {
                 Matiere::firstOrCreate(
                     ['etablissement_id' => $etablissement->id, 'niveau_id' => $niveau->id, 'nom' => $matiereNom],
                     ['coefficient' => 2, 'groupe' => $groupesParMatiere[$matiereNom]],
@@ -119,6 +139,8 @@ class ParametrageSeeder extends Seeder
         string $sigle,
         string $adminEmail,
         string $adminName,
+        string $enseignantEmail,
+        string $enseignantName,
         string $filiereNom,
         string $filiereCode,
         string $typeSysteme,
@@ -136,6 +158,12 @@ class ParametrageSeeder extends Seeder
             ['name' => $adminName, 'password' => 'password', 'etablissement_id' => $etablissement->id],
         );
         $admin->syncRoles(['admin_etablissement']);
+
+        $enseignant = User::updateOrCreate(
+            ['email' => $enseignantEmail],
+            ['name' => $enseignantName, 'password' => 'password', 'etablissement_id' => $etablissement->id],
+        );
+        $enseignant->syncRoles(['enseignant']);
 
         $annee = AnneeAcademique::firstOrCreate(
             ['etablissement_id' => $etablissement->id, 'libelle' => '2025-2026'],

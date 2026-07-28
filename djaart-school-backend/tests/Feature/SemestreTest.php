@@ -103,4 +103,23 @@ class SemestreTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_secretaire_can_list_semestres(): void
+    {
+        [$etablissement, $niveau, $annee] = $this->makeStructure();
+        $secretaire = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $secretaire->assignRole('secretaire');
+
+        $this->actingAs($this->makeAdmin($etablissement))->postJson('/api/semestres', [
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'numero' => 1,
+            'libelle' => 'Semestre 1',
+        ])->assertCreated();
+
+        $response = $this->actingAs($secretaire)->getJson('/api/semestres');
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json('data'));
+    }
 }

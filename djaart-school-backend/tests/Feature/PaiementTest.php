@@ -104,11 +104,10 @@ class PaiementTest extends TestCase
         return [$etablissement, $inscription, $tranche1, $tranche2];
     }
 
-    private function paiementPayload(Inscription $inscription, Tranche $tranche, float $montant, string $mode = 'especes'): array
+    private function paiementPayload(Inscription $inscription, float $montant, string $mode = 'especes'): array
     {
         return [
             'inscription_id' => $inscription->id,
-            'tranche_id' => $tranche->id,
             'montant' => $montant,
             'mode_paiement' => $mode,
         ];
@@ -116,12 +115,12 @@ class PaiementTest extends TestCase
 
     public function test_paiement_total_genere_un_recu_et_valide_linscription(): void
     {
-        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        [$etablissement, $inscription] = $this->makeInscriptionAvecDeuxTranches();
         $comptable = $this->makeUser($etablissement, 'comptable');
 
-        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 50000));
+        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 100000));
 
-        $response->assertCreated()->assertJsonPath('data.montant', 50000);
+        $response->assertCreated()->assertJsonPath('data.montant', 100000);
         $this->assertNotNull($response->json('data.recu.id'));
         $this->assertSame(1, $response->json('data.recu.numero_recu'));
         $this->assertSame('validee', $inscription->fresh()->statut);
@@ -129,11 +128,11 @@ class PaiementTest extends TestCase
 
     public function test_numeros_de_recu_sont_sequentiels_par_etablissement(): void
     {
-        [$etablissement, $inscription, $tranche1, $tranche2] = $this->makeInscriptionAvecDeuxTranches();
+        [$etablissement, $inscription] = $this->makeInscriptionAvecDeuxTranches();
         $comptable = $this->makeUser($etablissement, 'comptable');
 
-        $r1 = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 50000));
-        $r2 = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche2, 50000));
+        $r1 = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 50000));
+        $r2 = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 50000));
 
         $this->assertSame(1, $r1->json('data.recu.numero_recu'));
         $this->assertSame(2, $r2->json('data.recu.numero_recu'));
@@ -144,7 +143,7 @@ class PaiementTest extends TestCase
         [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
         $comptable = $this->makeUser($etablissement, 'comptable');
 
-        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 20000));
+        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 20000));
 
         $response->assertCreated();
         $this->assertSame('en_cours', $inscription->fresh()->statut);
@@ -165,7 +164,7 @@ class PaiementTest extends TestCase
         // 45 000 sur une tranche de 50 000 : la tranche reste "partielle" (solde 5 000),
         // mais 45 000 >= les 40 000 de frais d'inscription paramétrés sur la grille ->
         // l'inscription doit tout de même passer à "validee".
-        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 45000));
+        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 45000));
 
         $response->assertCreated();
         $this->assertSame('validee', $inscription->fresh()->statut);
@@ -177,25 +176,51 @@ class PaiementTest extends TestCase
         $this->assertSame('partielle', $trancheData['statut']);
     }
 
-    public function test_paiement_depassant_le_solde_est_rejete(): void
+    public function test_un_paiement_unique_peut_couvrir_deux_tranches_a_la_fois(): void
     {
-        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        [$etablissement, $inscription, $tranche1, $tranche2] = $this->makeInscriptionAvecDeuxTranches();
         $comptable = $this->makeUser($etablissement, 'comptable');
 
-        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 60000));
+        // 70 000 en un seul encaissement : solde la tranche 1 (50 000) et couvre
+        // partiellement la tranche 2 (20 000 sur 50 000) — repartition en cascade.
+        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 70000));
+
+        $response->assertCreated()->assertJsonPath('data.montant', 70000);
+        $this->assertSame(1, Paiement::count());
+        $this->assertNull(Paiement::first()->tranche_id);
+
+        $echeancier = $this->actingAs($comptable)->getJson("/api/apprenants/{$inscription->apprenant_id}/echeancier");
+        $tranches = collect($echeancier->json('data.inscriptions.0.tranches'));
+
+        $trancheData1 = $tranches->firstWhere('id', $tranche1->id);
+        $trancheData2 = $tranches->firstWhere('id', $tranche2->id);
+
+        $this->assertSame('payee', $trancheData1['statut']);
+        $this->assertEquals(0, $trancheData1['solde']);
+        $this->assertSame('partielle', $trancheData2['statut']);
+        $this->assertEquals(30000, $trancheData2['solde']);
+        $this->assertEquals(30000, $echeancier->json('data.inscriptions.0.solde_total_pension'));
+    }
+
+    public function test_paiement_depassant_le_solde_total_de_la_pension_est_rejete(): void
+    {
+        [$etablissement, $inscription] = $this->makeInscriptionAvecDeuxTranches();
+        $comptable = $this->makeUser($etablissement, 'comptable');
+
+        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 150000));
 
         $response->assertStatus(422);
         $this->assertSame(0, Paiement::count());
     }
 
-    public function test_paiement_sur_tranche_deja_soldee_est_rejete(): void
+    public function test_paiement_sur_pension_deja_soldee_est_rejete(): void
     {
-        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        [$etablissement, $inscription] = $this->makeInscriptionAvecDeuxTranches();
         $comptable = $this->makeUser($etablissement, 'comptable');
 
-        $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 50000))->assertCreated();
+        $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 100000))->assertCreated();
 
-        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 10000));
+        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 10000));
 
         $response->assertStatus(422);
         $this->assertSame(1, Paiement::count());
@@ -203,21 +228,21 @@ class PaiementTest extends TestCase
 
     public function test_enseignant_ne_peut_pas_encaisser(): void
     {
-        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        [$etablissement, $inscription] = $this->makeInscriptionAvecDeuxTranches();
         $enseignant = $this->makeUser($etablissement, 'enseignant');
 
-        $response = $this->actingAs($enseignant)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 50000));
+        $response = $this->actingAs($enseignant)->postJson('/api/paiements', $this->paiementPayload($inscription, 50000));
 
         $response->assertStatus(403);
     }
 
     public function test_comptable_ne_peut_pas_encaisser_pour_un_autre_etablissement(): void
     {
-        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        [$etablissement, $inscription] = $this->makeInscriptionAvecDeuxTranches();
         $autreEtablissement = Etablissement::factory()->create();
         $comptable = $this->makeUser($autreEtablissement, 'comptable');
 
-        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 50000));
+        $response = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 50000));
 
         $response->assertStatus(422);
         $this->assertSame(0, Paiement::count());
@@ -225,10 +250,10 @@ class PaiementTest extends TestCase
 
     public function test_telechargement_du_recu_refuse_a_un_autre_etablissement(): void
     {
-        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        [$etablissement, $inscription] = $this->makeInscriptionAvecDeuxTranches();
         $comptable = $this->makeUser($etablissement, 'comptable');
 
-        $created = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 50000))->json('data');
+        $created = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 50000))->json('data');
         $recuId = $created['recu']['id'];
 
         $autreEtablissement = Etablissement::factory()->create();
@@ -244,10 +269,10 @@ class PaiementTest extends TestCase
 
     public function test_telechargement_du_recu_fonctionne_pour_le_meme_etablissement(): void
     {
-        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        [$etablissement, $inscription] = $this->makeInscriptionAvecDeuxTranches();
         $comptable = $this->makeUser($etablissement, 'comptable');
 
-        $created = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 50000))->json('data');
+        $created = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 50000))->json('data');
         $recuId = $created['recu']['id'];
 
         $response = $this->actingAs($comptable)->getJson("/api/recus/{$recuId}/telecharger");
@@ -259,10 +284,10 @@ class PaiementTest extends TestCase
 
     public function test_telechargement_inline_du_recu_pour_limpression_automatique(): void
     {
-        [$etablissement, $inscription, $tranche1] = $this->makeInscriptionAvecDeuxTranches();
+        [$etablissement, $inscription] = $this->makeInscriptionAvecDeuxTranches();
         $comptable = $this->makeUser($etablissement, 'comptable');
 
-        $created = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, $tranche1, 50000))->json('data');
+        $created = $this->actingAs($comptable)->postJson('/api/paiements', $this->paiementPayload($inscription, 50000))->json('data');
         $recuId = $created['recu']['id'];
 
         $response = $this->actingAs($comptable)->getJson("/api/recus/{$recuId}/telecharger?inline=1");

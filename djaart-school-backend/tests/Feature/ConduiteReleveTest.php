@@ -91,7 +91,7 @@ class ConduiteReleveTest extends TestCase
 
         $response = $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/conduite", [
             'lignes' => [
-                ['inscription_id' => $inscription1->id, 'absences' => 3, 'absences_non_justifiees' => 1, 'retards' => 2, 'mention_travail' => 'encouragements', 'mention_conduite' => 'encouragements'],
+                ['inscription_id' => $inscription1->id, 'absences' => 3, 'absences_non_justifiees' => 1, 'retards' => 2, 'retards_non_justifies' => 1, 'mention_travail' => 'encouragements', 'mention_conduite' => 'encouragements'],
                 ['inscription_id' => $inscription2->id, 'absences' => 0],
             ],
         ]);
@@ -104,6 +104,8 @@ class ConduiteReleveTest extends TestCase
         $lignes = collect($grille->json('data'));
         $ligne1 = $lignes->firstWhere('inscription_id', $inscription1->id);
         $this->assertSame(3, $ligne1['absences']);
+        $this->assertSame(2, $ligne1['retards']);
+        $this->assertSame(1, $ligne1['retards_non_justifies']);
         $this->assertSame('encouragements', $ligne1['mention_travail']);
     }
 

@@ -95,9 +95,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/rapports/statistiques-reussite', [RapportController::class, 'statistiquesReussite']);
     });
 
-    Route::middleware('role:super_admin|admin_etablissement|enseignant')->group(function () {
+    Route::middleware('role:super_admin|admin_etablissement|enseignant|secretaire')->group(function () {
         Route::get('/sequences', [SequenceController::class, 'index']);
         Route::get('/semestres', [SemestreController::class, 'index']);
+    });
+
+    Route::middleware('role:super_admin|admin_etablissement|enseignant')->group(function () {
         Route::get('/affectations', [AffectationController::class, 'index']);
         Route::get('/affectations/{affectation}/notes', [NoteController::class, 'show']);
         Route::post('/affectations/{affectation}/notes', [NoteController::class, 'store']);

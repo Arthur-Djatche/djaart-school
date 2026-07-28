@@ -19,11 +19,9 @@ class PaiementSeeder extends Seeder
         // passe a "validee" alors meme que la tranche 1 reste "partielle".
         $aicha = Apprenant::where('matricule', 'LD00000001')->firstOrFail();
         $inscriptionAicha = $aicha->inscriptions()->firstOrFail();
-        $premiereTranche = $inscriptionAicha->fraisScolarite->tranches()->where('numero', 1)->firstOrFail();
 
         $service->encaisser([
             'inscription_id' => $inscriptionAicha->id,
-            'tranche_id' => $premiereTranche->id,
             'montant' => 30000,
             'mode_paiement' => 'especes',
         ], $caissier);
@@ -33,11 +31,9 @@ class PaiementSeeder extends Seeder
         // d'inscription -> inscription validée, tranche unique encore "partielle".
         $moussa = Apprenant::where('matricule', 'LD00000002')->firstOrFail();
         $inscriptionMoussa = $moussa->inscriptions()->firstOrFail();
-        $trancheMoussa = $inscriptionMoussa->fraisScolarite->tranches()->where('numero', 1)->firstOrFail();
 
         $service->encaisser([
             'inscription_id' => $inscriptionMoussa->id,
-            'tranche_id' => $trancheMoussa->id,
             'montant' => 50000,
             'mode_paiement' => 'mobile_money',
         ], $caissier);
