@@ -13,6 +13,7 @@ export const deleteSemestre = (id) => axiosClient.delete(`/api/semestres/${id}`)
 export const fetchAffectations = (params) => axiosClient.get('/api/affectations', { params })
 export const createAffectation = (payload) => axiosClient.post('/api/affectations', payload)
 export const deleteAffectation = (id) => axiosClient.delete(`/api/affectations/${id}`)
+export const fetchEnseignantsDisponibles = () => axiosClient.get('/api/affectations/enseignants')
 
 export const fetchNotes = (affectationId, params) =>
   axiosClient.get(`/api/affectations/${affectationId}/notes`, { params })

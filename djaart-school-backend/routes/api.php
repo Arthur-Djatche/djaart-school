@@ -43,6 +43,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
+    // Lectures structurelles/de reference (classes, filieres, niveaux, annees,
+    // matieres, departements, UE, sequences, semestres) : donnees non
+    // sensibles (aucune info financiere ni personnelle), scopees par
+    // etablissement via EtablissementScope. Ouvertes a tout utilisateur
+    // authentifie plutot que verrouillees permission par permission — de
+    // trop nombreux ecrans delegables differents en dependent (listes
+    // deroulantes) pour enumerer chaque combinaison sans en oublier une.
+    // L'ecriture (creation/modification/suppression) reste strictement
+    // gardee plus bas par role_or_permission.
+    Route::get('/classes', [ClasseController::class, 'index']);
+    Route::get('/filieres', [FiliereController::class, 'index']);
+    Route::get('/filieres/{filiere}/niveaux', [NiveauController::class, 'index']);
+    Route::get('/annees-academiques', [AnneeAcademiqueController::class, 'index']);
+    Route::get('/matieres', [MatiereController::class, 'index']);
+    Route::get('/departements', [DepartementController::class, 'index']);
+    Route::get('/semestres/{semestre}/unites-enseignement', [UniteEnseignementController::class, 'index']);
+    Route::get('/sequences', [SequenceController::class, 'index']);
+    Route::get('/semestres', [SemestreController::class, 'index']);
+
     Route::middleware('role:super_admin')->group(function () {
         Route::get('/demandes-demo', [DemandeDemoController::class, 'index']);
     });
@@ -65,17 +84,16 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role_or_permission:super_admin|admin_etablissement|acces.parametrage_academique')->group(function () {
-        Route::apiResource('annees-academiques', AnneeAcademiqueController::class)->except('show')
+        Route::apiResource('annees-academiques', AnneeAcademiqueController::class)->except(['show', 'index'])
             ->parameters(['annees-academiques' => 'anneeAcademique']);
         Route::apiResource('departements', DepartementController::class)->except(['show', 'index']);
-        Route::apiResource('filieres', FiliereController::class)->except('show');
+        Route::apiResource('filieres', FiliereController::class)->except(['show', 'index']);
         Route::apiResource('classes', ClasseController::class)->except(['show', 'index'])
             ->parameters(['classes' => 'classe']);
-        Route::apiResource('matieres', MatiereController::class)->except('show');
+        Route::apiResource('matieres', MatiereController::class)->except(['show', 'index']);
         Route::apiResource('unites-enseignement', UniteEnseignementController::class)->except(['show', 'index'])
             ->parameters(['unites-enseignement' => 'uniteEnseignement']);
 
-        Route::get('/filieres/{filiere}/niveaux', [NiveauController::class, 'index']);
         Route::post('/niveaux', [NiveauController::class, 'store']);
         Route::put('/niveaux/{niveau}', [NiveauController::class, 'update']);
         Route::delete('/niveaux/{niveau}', [NiveauController::class, 'destroy']);
@@ -86,6 +104,13 @@ Route::middleware('auth:sanctum')->group(function () {
             ->parameters(['frais-scolarite' => 'fraisScolarite']);
     });
 
+    // /frais-scolarite (lecture) contient des montants : reste gardee (pas
+    // dans la liste de reference ouverte plus haut), mais partagee par
+    // plusieurs ecrans (inscription, caisse, parametrage).
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.inscriptions|acces.caisse|acces.frais_scolarite|acces.parametrage_academique')->group(function () {
+        Route::get('/frais-scolarite', [FraisScolariteController::class, 'index']);
+    });
+
     Route::middleware('role_or_permission:super_admin|admin_etablissement|acces.sequences')->group(function () {
         Route::apiResource('sequences', SequenceController::class)->except(['show', 'index']);
     });
@@ -94,29 +119,33 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('semestres', SemestreController::class)->except(['show', 'index']);
     });
 
+    // /affectations/enseignants : liste minimale (id/nom/e-mail) des
+    // enseignants de l'etablissement, pour les selecteurs "enseignant" du
+    // formulaire de creation d'affectation ET du "professeur principal"
+    // d'une classe — volontairement distincte de GET /users (jamais
+    // delegable) pour ne pas exposer la liste complete des comptes.
+    Route::get('/affectations/enseignants', [AffectationController::class, 'enseignants'])
+        ->middleware('role_or_permission:super_admin|admin_etablissement|acces.affectations|acces.parametrage_academique');
+
     Route::middleware('role_or_permission:super_admin|admin_etablissement|acces.affectations')->group(function () {
         Route::post('/affectations', [AffectationController::class, 'store']);
         Route::delete('/affectations/{affectation}', [AffectationController::class, 'destroy']);
         Route::post('/affectations/{affectation}/notes/deverrouiller', [NoteController::class, 'deverrouiller']);
     });
 
-    // Lectures partagees par plusieurs ecrans (listes deroulantes) : le OR
-    // s'elargit avec toutes les permissions des ecrans qui en dependent.
-    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.inscriptions|acces.caisse|acces.frais_scolarite|acces.parametrage_academique')->group(function () {
-        Route::get('/classes', [ClasseController::class, 'index']);
-        Route::get('/frais-scolarite', [FraisScolariteController::class, 'index']);
-        Route::get('/departements', [DepartementController::class, 'index']);
-        Route::get('/semestres/{semestre}/unites-enseignement', [UniteEnseignementController::class, 'index']);
-    });
-
-    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.apprenants')->group(function () {
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.apprenants|acces.inscriptions|acces.caisse')->group(function () {
         Route::get('/apprenants', [ApprenantController::class, 'index']);
         Route::get('/apprenants/{apprenant}', [ApprenantController::class, 'show']);
         Route::get('/apprenants/{apprenant}/echeancier', [ApprenantController::class, 'echeancier']);
     });
 
-    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.inscriptions')->group(function () {
+    // /inscriptions (lecture) sert aussi a reconstituer l'effectif d'une
+    // classe pour la Seance photo et les Documents en masse.
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.inscriptions|acces.seance_photo|acces.documents_masse')->group(function () {
         Route::get('/inscriptions', [InscriptionController::class, 'index']);
+    });
+
+    Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|comptable|acces.inscriptions')->group(function () {
         Route::post('/inscriptions', [InscriptionController::class, 'store']);
         Route::post('/inscriptions/{inscription}/annuler', [InscriptionController::class, 'cancel']);
     });
@@ -128,11 +157,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/rapports/impayes', [RapportController::class, 'impayes']);
         Route::get('/rapports/statistiques-reussite', [RapportController::class, 'statistiquesReussite']);
-    });
-
-    Route::middleware('role_or_permission:super_admin|admin_etablissement|enseignant|secretaire|acces.sequences|acces.semestres|acces.notes|acces.conduite|acces.bulletins|acces.releves')->group(function () {
-        Route::get('/sequences', [SequenceController::class, 'index']);
-        Route::get('/semestres', [SemestreController::class, 'index']);
     });
 
     Route::middleware('role_or_permission:super_admin|admin_etablissement|enseignant|acces.affectations|acces.notes')->group(function () {

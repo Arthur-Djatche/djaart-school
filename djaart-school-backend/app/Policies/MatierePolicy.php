@@ -12,8 +12,9 @@ class MatierePolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement'])
-            || $user->can('acces.parametrage_academique');
+        // Donnee de reference non sensible : lecture ouverte a tout
+        // utilisateur authentifie de l'etablissement (cf. routes/api.php).
+        return true;
     }
 
     public function view(User $user, Matiere $matiere): bool

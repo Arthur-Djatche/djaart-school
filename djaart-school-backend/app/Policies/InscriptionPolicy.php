@@ -12,8 +12,12 @@ class InscriptionPolicy
 
     public function viewAny(User $user): bool
     {
+        // acces.seance_photo/acces.documents_masse en plus : ces deux ecrans
+        // reconstituent l'effectif d'une classe via GET /inscriptions.
         return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable'])
-            || $user->can('acces.inscriptions');
+            || $user->can('acces.inscriptions')
+            || $user->can('acces.seance_photo')
+            || $user->can('acces.documents_masse');
     }
 
     public function view(User $user, Inscription $inscription): bool

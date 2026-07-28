@@ -12,16 +12,9 @@ class SequencePolicy
 
     public function viewAny(User $user): bool
     {
-        // Lecture seule ouverte a l'enseignant (selection de la sequence en cours
-        // pour la saisie des notes) et a la secretaire (cloture des bulletins) ;
-        // create/update/delete restent reserves aux admins.
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'enseignant', 'secretaire'])
-            || $user->can('acces.sequences')
-            || $user->can('acces.semestres')
-            || $user->can('acces.notes')
-            || $user->can('acces.conduite')
-            || $user->can('acces.bulletins')
-            || $user->can('acces.releves');
+        // Donnee de reference non sensible : lecture ouverte a tout
+        // utilisateur authentifie de l'etablissement (cf. routes/api.php).
+        return true;
     }
 
     public function view(User $user, Sequence $sequence): bool

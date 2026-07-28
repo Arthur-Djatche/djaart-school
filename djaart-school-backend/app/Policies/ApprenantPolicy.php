@@ -12,8 +12,13 @@ class ApprenantPolicy
 
     public function viewAny(User $user): bool
     {
+        // acces.inscriptions/acces.caisse en plus : la recherche/fiche
+        // apprenant est aussi utilisee par les formulaires d'inscription et
+        // d'encaissement (choix de l'apprenant, echeancier).
         return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable'])
-            || $user->can('acces.apprenants');
+            || $user->can('acces.apprenants')
+            || $user->can('acces.inscriptions')
+            || $user->can('acces.caisse');
     }
 
     public function view(User $user, Apprenant $apprenant): bool

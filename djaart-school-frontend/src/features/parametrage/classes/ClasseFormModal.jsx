@@ -4,7 +4,7 @@ import Input from '../../../components/ui/Input'
 import Modal from '../../../components/ui/Modal'
 import Select from '../../../components/ui/Select'
 import * as parametrageApi from '../../../api/parametrageApi'
-import * as usersApi from '../../../api/usersApi'
+import * as pedagogieApi from '../../../api/pedagogieApi'
 
 async function loadAllNiveaux() {
   const { data: filieresResponse } = await parametrageApi.fetchFilieres({ page: 1 })
@@ -35,7 +35,7 @@ export default function ClasseFormModal({ classe, onClose, onSubmit }) {
       const [niveauxList, anneesResponse, enseignantsResponse] = await Promise.all([
         loadAllNiveaux(),
         parametrageApi.fetchAnneesAcademiques({ page: 1 }),
-        usersApi.fetchUsers({ role: 'enseignant', page: 1 }),
+        pedagogieApi.fetchEnseignantsDisponibles(),
       ])
       setNiveaux(niveauxList)
       setAnnees(anneesResponse.data.data)

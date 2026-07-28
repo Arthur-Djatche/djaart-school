@@ -12,11 +12,9 @@ class DepartementPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire'])
-            || $user->can('acces.inscriptions')
-            || $user->can('acces.caisse')
-            || $user->can('acces.frais_scolarite')
-            || $user->can('acces.parametrage_academique');
+        // Donnee de reference non sensible : lecture ouverte a tout
+        // utilisateur authentifie de l'etablissement (cf. routes/api.php).
+        return true;
     }
 
     public function view(User $user, Departement $departement): bool

@@ -12,16 +12,9 @@ class SemestrePolicy
 
     public function viewAny(User $user): bool
     {
-        // Lecture seule ouverte a l'enseignant (selection du semestre en cours
-        // pour la saisie CC/Session Normale) et a la secretaire (generation des
-        // releves) ; create/update/delete restent reserves aux admins.
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'enseignant', 'secretaire'])
-            || $user->can('acces.sequences')
-            || $user->can('acces.semestres')
-            || $user->can('acces.notes')
-            || $user->can('acces.conduite')
-            || $user->can('acces.bulletins')
-            || $user->can('acces.releves');
+        // Donnee de reference non sensible : lecture ouverte a tout
+        // utilisateur authentifie de l'etablissement (cf. routes/api.php).
+        return true;
     }
 
     public function view(User $user, Semestre $semestre): bool

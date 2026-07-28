@@ -3,7 +3,7 @@ import Button from '../../../components/ui/Button'
 import Modal from '../../../components/ui/Modal'
 import Select from '../../../components/ui/Select'
 import * as parametrageApi from '../../../api/parametrageApi'
-import * as usersApi from '../../../api/usersApi'
+import * as pedagogieApi from '../../../api/pedagogieApi'
 
 export default function AffectationFormModal({ onClose, onSubmit }) {
   const [classes, setClasses] = useState([])
@@ -22,7 +22,7 @@ export default function AffectationFormModal({ onClose, onSubmit }) {
       const [classesResponse, matieresResponse, enseignantsResponse] = await Promise.all([
         parametrageApi.fetchClasses({ page: 1 }),
         parametrageApi.fetchMatieres({ page: 1 }),
-        usersApi.fetchUsers({ role: 'enseignant', page: 1 }),
+        pedagogieApi.fetchEnseignantsDisponibles(),
       ])
       setClasses(classesResponse.data.data)
       setMatieres(matieresResponse.data.data)

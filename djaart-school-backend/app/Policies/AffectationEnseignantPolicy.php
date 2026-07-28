@@ -12,9 +12,13 @@ class AffectationEnseignantPolicy
 
     public function viewAny(User $user): bool
     {
+        // acces.parametrage_academique en plus : GET /affectations/enseignants
+        // (liste des enseignants) est aussi utilise par le formulaire Classe
+        // (choix du professeur principal).
         return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'enseignant'])
             || $user->can('acces.affectations')
-            || $user->can('acces.notes');
+            || $user->can('acces.notes')
+            || $user->can('acces.parametrage_academique');
     }
 
     public function view(User $user, AffectationEnseignant $affectation): bool

@@ -12,14 +12,9 @@ class UniteEnseignementPolicy
 
     public function viewAny(User $user): bool
     {
-        // Lecture seule ouverte a l'enseignant/secretaire pour la meme raison
-        // que SemestrePolicy (selection lors de la saisie de notes / parametrage
-        // des matieres) ; create/update/delete restent reserves aux admins.
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'enseignant', 'secretaire'])
-            || $user->can('acces.inscriptions')
-            || $user->can('acces.caisse')
-            || $user->can('acces.frais_scolarite')
-            || $user->can('acces.parametrage_academique');
+        // Donnee de reference non sensible : lecture ouverte a tout
+        // utilisateur authentifie de l'etablissement (cf. routes/api.php).
+        return true;
     }
 
     public function view(User $user, UniteEnseignement $uniteEnseignement): bool

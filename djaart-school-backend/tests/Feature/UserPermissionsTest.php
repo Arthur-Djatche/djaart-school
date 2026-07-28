@@ -9,6 +9,7 @@ use App\Models\Etablissement;
 use App\Models\Filiere;
 use App\Models\FraisScolarite;
 use App\Models\Inscription;
+use App\Models\Matiere;
 use App\Models\Niveau;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -159,6 +160,59 @@ class UserPermissionsTest extends TestCase
         ]);
 
         $response->assertStatus(422);
+    }
+
+    public function test_acces_affectations_donne_toutes_les_lectures_necessaires_au_formulaire(): void
+    {
+        $etablissement = Etablissement::factory()->create();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+        $enseignant = $this->makeUser($etablissement, 'enseignant');
+
+        $filiere = Filiere::create(['etablissement_id' => $etablissement->id, 'nom' => 'Filière', 'code' => 'F1']);
+        $niveau = Niveau::create([
+            'etablissement_id' => $etablissement->id,
+            'filiere_id' => $filiere->id,
+            'libelle' => 'Niveau 1',
+            'ordre' => 1,
+            'type_systeme' => 'classique',
+        ]);
+        $annee = AnneeAcademique::create([
+            'etablissement_id' => $etablissement->id,
+            'libelle' => '2025-2026',
+            'date_debut' => '2025-09-01',
+            'date_fin' => '2026-07-31',
+        ]);
+        Classe::create([
+            'etablissement_id' => $etablissement->id,
+            'niveau_id' => $niveau->id,
+            'annee_academique_id' => $annee->id,
+            'libelle' => 'Classe A',
+            'effectif_max' => 30,
+        ]);
+        Matiere::create([
+            'etablissement_id' => $etablissement->id,
+            'niveau_id' => $niveau->id,
+            'nom' => 'Mathématiques',
+            'coefficient' => 3,
+        ]);
+
+        // Avant l'octroi du droit : GET /classes et GET /matieres sont deja
+        // accessibles (donnees de reference non sensibles, ouvertes a tout
+        // authentifie), mais GET /affectations/enseignants (liste de comptes)
+        // reste refuse tant que le droit n'est pas accorde.
+        $this->actingAs($enseignant)->getJson('/api/matieres')->assertOk();
+        $this->actingAs($enseignant)->getJson('/api/affectations/enseignants')->assertStatus(403);
+
+        $this->actingAs($admin)->putJson("/api/users/{$enseignant->id}/permissions", [
+            'permissions' => ['acces.affectations'],
+        ])->assertOk();
+
+        $enseignant = $enseignant->fresh();
+        $this->actingAs($enseignant)->getJson('/api/classes')->assertOk();
+        $this->actingAs($enseignant)->getJson('/api/matieres')->assertOk();
+        $enseignantsResponse = $this->actingAs($enseignant)->getJson('/api/affectations/enseignants');
+        $enseignantsResponse->assertOk();
+        $this->assertContains($enseignant->email, collect($enseignantsResponse->json('data'))->pluck('email'));
     }
 
     public function test_admin_ne_peut_pas_modifier_les_droits_dun_acteur_dun_autre_etablissement(): void

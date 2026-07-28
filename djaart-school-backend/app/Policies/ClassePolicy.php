@@ -12,14 +12,10 @@ class ClassePolicy
 
     public function viewAny(User $user): bool
     {
-        // Lecture seule ouverte a la secretaire et au comptable (choix de classe
-        // dans le formulaire d'inscription) ; creation/modification/suppression
-        // restent reservees aux admins (cf. create/update/delete).
-        return $user->hasAnyRole(['super_admin', 'admin_etablissement', 'secretaire', 'comptable'])
-            || $user->can('acces.inscriptions')
-            || $user->can('acces.caisse')
-            || $user->can('acces.frais_scolarite')
-            || $user->can('acces.parametrage_academique');
+        // Donnee de reference non sensible (cf. commentaire routes/api.php) :
+        // lecture ouverte a tout utilisateur authentifie de l'etablissement ;
+        // creation/modification/suppression restent reservees (cf. create/update/delete).
+        return true;
     }
 
     public function view(User $user, Classe $classe): bool
