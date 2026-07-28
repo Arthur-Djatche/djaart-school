@@ -2,6 +2,12 @@ const VARIANTS = {
   primary: 'bg-brand-blue text-white shadow-soft hover:bg-brand-navy hover:shadow-brand',
   accent: 'bg-brand-orange text-white shadow-soft hover:brightness-95 hover:shadow-glow-orange',
   outline: 'border border-brand-blue text-brand-blue bg-white hover:bg-brand-blue-tint',
+  // Pour un bouton "outline" pose sur un fond sombre (hero, bandeau de marque) —
+  // ne pas reutiliser `outline` + des classes de surcharge : les classes
+  // Tailwind ont une specificite egale, la derniere definie dans la feuille de
+  // style compilee l'emporte (pas forcement celle ecrite en dernier dans le
+  // className), ce qui rendait le texte invisible tant que bg-white gagnait.
+  outlineOnDark: 'border border-white/70 text-white bg-transparent hover:bg-white/10 hover:border-white',
   ghost: 'bg-transparent text-brand-navy hover:bg-slate-100',
 }
 

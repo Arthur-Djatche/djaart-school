@@ -124,7 +124,7 @@ export default function LandingPage() {
                 Demander une démo gratuite
               </Button>
               <a href="#fonctionnalites">
-                <Button size="lg" variant="outline" className="w-full border-white text-white hover:bg-white/10 sm:w-auto">
+                <Button size="lg" variant="outlineOnDark" className="w-full sm:w-auto">
                   Découvrir les fonctionnalités
                 </Button>
               </a>
