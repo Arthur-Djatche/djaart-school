@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\Finance\PaiementController;
 use App\Http\Controllers\Api\Finance\RecuController;
 use App\Http\Controllers\Api\Inscription\ApprenantController;
 use App\Http\Controllers\Api\Inscription\InscriptionController;
+use App\Http\Controllers\Api\Inscription\PhotoMasseController;
+use App\Http\Controllers\Api\Inscription\PhotoSeanceController;
+use App\Http\Controllers\Api\Landing\DemandeDemoController;
 use App\Http\Controllers\Api\Parametrage\AnneeAcademiqueController;
 use App\Http\Controllers\Api\Parametrage\ClasseController;
 use App\Http\Controllers\Api\Parametrage\DepartementController;
@@ -33,11 +36,16 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:5,1');
+Route::post('/demandes-demo', [DemandeDemoController::class, 'store'])->middleware('throttle:5,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    Route::middleware('role:super_admin')->group(function () {
+        Route::get('/demandes-demo', [DemandeDemoController::class, 'index']);
+    });
 
     Route::middleware('role:super_admin|admin_etablissement')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
@@ -146,5 +154,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/cartes-scolaires/{carte}/telecharger', [CarteScolaireController::class, 'telecharger']);
         Route::post('/classes/{classe}/cartes-scolaires/masse', [CarteScolaireController::class, 'storeMasse']);
         Route::get('/cartes-scolaires/zip', [CarteScolaireController::class, 'zip']);
+
+        Route::get('/classes/{classe}/photos/liste', [PhotoSeanceController::class, 'liste']);
+        Route::post('/classes/{classe}/apprenants/photos-masse', [PhotoMasseController::class, 'store']);
     });
 });
