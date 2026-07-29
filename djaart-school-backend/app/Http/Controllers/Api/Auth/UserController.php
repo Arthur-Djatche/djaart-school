@@ -7,9 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\StoreUserRequest;
 use App\Http\Requests\Auth\UpdateUserRequest;
 use App\Http\Resources\UserResource;
+use App\Mail\CompteCreeMail;
+use App\Mail\DroitsAccesModifiesMail;
 use App\Models\User;
 use App\Support\GrantablePermissions;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -60,6 +63,8 @@ class UserController extends Controller
 
         $user->assignRole($data['role']);
 
+        Mail::to($user->email)->send(new CompteCreeMail($user));
+
         return $this->success(new UserResource($user->load('etablissement')), 'Utilisateur créé.', 201);
     }
 
@@ -107,6 +112,8 @@ class UserController extends Controller
         ]);
 
         $user->syncPermissions($data['permissions']);
+
+        Mail::to($user->email)->send(new DroitsAccesModifiesMail($user));
 
         return $this->success(new UserResource($user->load('etablissement')), 'Droits d\'accès mis à jour.');
     }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\ReleveDisponibleMail;
 use App\Models\AffectationEnseignant;
 use App\Models\Bulletin;
 use App\Models\Classe;
@@ -13,6 +14,7 @@ use App\Services\Concerns\EmbedsEtablissementBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -111,6 +113,12 @@ class ReleveService
                 $chemin = "releves/{$classe->etablissement_id}/annuel/{$inscription->id}.pdf";
                 Storage::disk('local')->put($chemin, $pdf->output());
                 $releve->update(['fichier_pdf' => $chemin]);
+
+                if ($inscription->apprenant->email) {
+                    Mail::to($inscription->apprenant->email)->send(
+                        new ReleveDisponibleMail($releve->setRelation('inscription', $inscription)),
+                    );
+                }
 
                 $releves->push($releve);
             }
@@ -344,6 +352,12 @@ class ReleveService
                 $chemin = "releves/{$classe->etablissement_id}/annuel/{$inscription->id}.pdf";
                 Storage::disk('local')->put($chemin, $pdf->output());
                 $releve->update(['fichier_pdf' => $chemin]);
+
+                if ($inscription->apprenant->email) {
+                    Mail::to($inscription->apprenant->email)->send(
+                        new ReleveDisponibleMail($releve->setRelation('inscription', $inscription)),
+                    );
+                }
 
                 $releves->push($releve);
             }

@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Mail\PaiementRecuMail;
 use App\Models\Etablissement;
 use App\Models\Paiement;
 use App\Models\Recu;
 use App\Services\Concerns\EmbedsEtablissementBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class RecuService
@@ -69,6 +71,10 @@ class RecuService
             Storage::disk('local')->put($chemin, $pdf->output());
 
             $recu->update(['fichier_pdf' => $chemin]);
+
+            if ($paiement->inscription->apprenant->email) {
+                Mail::to($paiement->inscription->apprenant->email)->send(new PaiementRecuMail($recu));
+            }
 
             return $recu;
         });

@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Mail\InscriptionValideeMail;
 use App\Models\Inscription;
 use App\Models\Paiement;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class PaiementService
@@ -78,6 +80,12 @@ class PaiementService
 
         if ($totalPaye >= $fraisInscription) {
             $inscription->update(['statut' => 'validee']);
+
+            $inscription->loadMissing('apprenant', 'classe.etablissement');
+
+            if ($inscription->apprenant->email) {
+                Mail::to($inscription->apprenant->email)->send(new InscriptionValideeMail($inscription));
+            }
         }
     }
 }

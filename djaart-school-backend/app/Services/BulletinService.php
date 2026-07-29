@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\BulletinPretMail;
 use App\Models\AffectationEnseignant;
 use App\Models\Bulletin;
 use App\Models\Classe;
@@ -12,6 +13,7 @@ use App\Services\Concerns\EmbedsEtablissementBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -169,6 +171,12 @@ class BulletinService
                 $chemin = "bulletins/{$classe->etablissement_id}/{$sequence->id}/{$inscription->id}.pdf";
                 Storage::disk('local')->put($chemin, $pdf->output());
                 $bulletin->update(['fichier_pdf' => $chemin]);
+
+                if ($inscription->apprenant->email) {
+                    Mail::to($inscription->apprenant->email)->send(
+                        new BulletinPretMail($bulletin->setRelation('inscription', $inscription), $sequence->libelle),
+                    );
+                }
 
                 $bulletins->push($bulletin);
             }

@@ -489,5 +489,33 @@ Retour utilisateur : après avoir accordé le droit `acces.affectations` à un c
 - **Leçon générale retenue** : quand un droit délégable "débloque" un écran, il faut auditer non seulement sa route principale mais **toute la chaîne de lectures que son formulaire déclenche** (`Promise.all` de listes déroulantes) — un seul appel manquant suffit à faire échouer tout le formulaire en silence côté utilisateur.
 - **Distinction assumée** : données structurelles de référence (classes, matières, années...) = lecture libre pour tout authentifié de l'établissement ; données personnelles/financières (apprenants, inscriptions, frais de scolarité, comptes utilisateurs) = restent strictement gardées par rôle/permission au cas par cas.
 
+## Correctif — Menus Paramétrage visibles par tous, sidebar en groupes déroulables, notifications par e-mail
+- Statut : **terminé**
+
+### Contexte
+Deux demandes combinées : (1) un compte `enseignant` (droits `acces.inscriptions`/`acces.seance_photo`/`acces.affectations` accordés) voyait apparaître tout le sous-menu Paramétrage (Établissement(s), Années académiques, Départements, Filières, Classes, Matières, Unités d'enseignement), alors qu'il n'a aucun de ces droits — l'utilisateur a aussi demandé que les grands groupes de menu (Paramétrage/Finance/Pédagogie) deviennent des listes déroulantes plutôt que d'afficher tous leurs enfants en permanence ; (2) mise en place de notifications par e-mail (SMTP Gmail fourni par l'utilisateur) pour que chaque acteur soit informé aux moments clés.
+
+### Réalisé — bug des menus
+- **Cause racine** : lors du correctif précédent (droits d'accès supplémentaires), la logique de visibilité d'un groupe de menu était passée de "le groupe entier est verrouillé par le rôle du parent" à "le groupe s'affiche dès qu'un enfant est autorisé (rôle ou permission)". Les 7 sous-entrées de Paramétrage n'avaient jamais eu leur propre champ `roles` (seul le groupe parent le portait) : `allowed()` traite l'absence de `roles` comme "aucune restriction" (`!roles → true`), donc chacune passait pour n'importe quel utilisateur authentifié dès que le verrou du parent a été retiré. Corrigé en réajoutant `roles: PARAMETRAGE_ROLES` sur les 7 entrées, en plus de leur `permission` déjà présente.
+- **Sidebar en groupes déroulables** (demande explicite) : `Paramétrage`/`Finance`/`Pédagogie` sont désormais des boutons à bascule (chevron animé) plutôt que des en-têtes toujours dépliés ; le groupe contenant la route actuellement active s'ouvre automatiquement à la navigation.
+
+### Réalisé — notifications par e-mail
+- SMTP Gmail réel configuré (`.env`, jamais commité) ; le mot de passe oublié (déjà basé sur les notifications Laravel standard) en bénéficie automatiquement, sans changement de code.
+- 6 nouveaux `Mailable` (`app/Mail/`), gabarit HTML partagé (`resources/views/components/emails/layout.blade.php`) :
+  - `CompteCreeMail` — à la création d'un utilisateur (`UserController::store`) ; ne transmet jamais le mot de passe en clair, uniquement le lien de connexion.
+  - `DroitsAccesModifiesMail` — dès qu'un admin modifie les droits supplémentaires d'un acteur (`UserController::updatePermissions`), liste les droits désormais actifs.
+  - `InscriptionValideeMail` — dès que les frais d'inscription sont couverts (transition réelle `en_cours` → `validee` dans `PaiementService`, jamais renvoyé sur les paiements suivants).
+  - `PaiementRecuMail` — à chaque encaissement (`RecuService::genererPour`), reçu PDF joint.
+  - `BulletinPretMail` / `ReleveDisponibleMail` — à la clôture d'une séquence (`BulletinService`) / génération d'un relevé annuel (`ReleveService`), un e-mail par apprenant disposant d'une adresse.
+  - `DemandeDemoRecueMail` — à la soumission du formulaire public de démo, à tous les `super_admin`.
+  - Toutes ces notifications sont **conditionnées à la présence d'une adresse e-mail** sur l'`Apprenant` (champ optionnel) — aucun envoi sinon, aucune erreur non plus.
+- Tests Feature : nouveau `MailNotificationsTest` (`Mail::fake()` + `assertSent`/`assertNotSent`) couvrant les 6 déclencheurs, dont un cas explicite "apprenant sans e-mail → aucun envoi" — 174/174 tests OK au total (suite complète).
+- Vérification directe : envoi réel d'un e-mail de test via `php artisan tinker` avec la configuration SMTP effective (succès confirmé, pas seulement `Mail::fake()`).
+
+### Hypothèses / écarts documentés
+- **Envoi synchrone (pas de `ShouldQueue`)** : le projet n'a pas de worker de file d'attente garanti actif en permanence dans cet environnement (`QUEUE_CONNECTION=database`) ; envoyer directement évite qu'un e-mail reste bloqué indéfiniment dans la table `jobs` faute de `php artisan queue:work` en cours d'exécution. À reconsidérer si le volume d'e-mails devient important (bulletins/relevés en masse pourraient ralentir la requête HTTP qui les déclenche).
+- **`CompteCreeMail` ne contient jamais le mot de passe en clair** — écart assumé par rapport à une lecture littérale d'"informer à chaque moment crucial" : le mot de passe est déjà communiqué par l'admin qui crée le compte (hors bande), l'e-mail ne sert qu'à confirmer la création et donner le lien de connexion.
+- **Aucun outil de navigateur disponible dans cet environnement** (déjà constaté aux correctifs précédents) : vérification par tests automatisés (`Mail::fake()`) + un envoi réel isolé via `tinker`, pas de parcours complet en navigateur pour ce tour.
+
 ## Phases suivantes
 Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 10 à 11. Prochaine étape : **Phase 10**.
