@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import { navigationForRoles } from '../../config/navigation'
 import useAuth from '../../hooks/useAuth'
 
@@ -7,7 +8,30 @@ const linkClasses = ({ isActive }) =>
 
 export default function Sidebar({ open = false, onClose }) {
   const { user } = useAuth()
+  const location = useLocation()
   const items = navigationForRoles(user?.roles ?? [], user?.etablissement?.type_etablissement ?? null, user?.permissions ?? [])
+
+  const [openGroups, setOpenGroups] = useState(() => new Set())
+
+  useEffect(() => {
+    const groupeActif = items.find((item) => item.children?.some((child) => location.pathname.startsWith(child.to)))
+    if (groupeActif) {
+      setOpenGroups((prev) => (prev.has(groupeActif.label) ? prev : new Set(prev).add(groupeActif.label)))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
+
+  const toggleGroup = (label) => {
+    setOpenGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(label)) {
+        next.delete(label)
+      } else {
+        next.add(label)
+      }
+      return next
+    })
+  }
 
   return (
     <>
@@ -41,14 +65,30 @@ export default function Sidebar({ open = false, onClose }) {
           {items.map((item) =>
             item.children ? (
               <div key={item.label} className="flex flex-col gap-1">
-                <span className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(item.label)}
+                  className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+                  aria-expanded={openGroups.has(item.label)}
+                >
                   {item.label}
-                </span>
-                {item.children.map((child) => (
-                  <NavLink key={child.to} to={child.to} className={linkClasses} onClick={onClose}>
-                    {child.label}
-                  </NavLink>
-                ))}
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className={`h-3.5 w-3.5 transition-transform duration-150 ${openGroups.has(item.label) ? 'rotate-180' : ''}`}
+                  >
+                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                {openGroups.has(item.label) && (
+                  <div className="flex flex-col gap-1">
+                    {item.children.map((child) => (
+                      <NavLink key={child.to} to={child.to} className={linkClasses} onClick={onClose}>
+                        {child.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <NavLink key={item.to} to={item.to} className={linkClasses} onClick={onClose}>
