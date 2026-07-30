@@ -19,6 +19,7 @@ class EtablissementResource extends JsonResource
             'adresse' => $this->adresse,
             'logo_url' => $this->logo ? Storage::disk('public')->url($this->logo) : null,
             'signature_url' => $this->signature ? Storage::disk('public')->url($this->signature) : null,
+            'signature_titre' => $this->signature_titre,
             'entete_url' => $this->entete ? Storage::disk('public')->url($this->entete) : null,
         ];
     }

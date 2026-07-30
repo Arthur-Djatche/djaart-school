@@ -7,11 +7,50 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class ProfilController extends Controller
 {
     use ApiResponse;
+
+    private const CIVILITES = ['M.', 'Mme', 'Mlle'];
+
+    /**
+     * Informations de profil modifiables par tout utilisateur pour lui-meme
+     * (nom complet, civilite) — jamais le role ni l'etablissement.
+     */
+    public function mettreAJourProfil(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'civilite' => ['nullable', Rule::in(self::CIVILITES)],
+        ]);
+
+        $user = $request->user();
+        $user->update($data);
+
+        return $this->success(new UserResource($user->load(['etablissement', 'etablissementsGeres'])), 'Profil mis à jour.');
+    }
+
+    public function mettreAJourPhoto(Request $request)
+    {
+        $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        $user = $request->user();
+
+        if ($user->photo) {
+            Storage::disk('public')->delete($user->photo);
+        }
+
+        $chemin = $request->file('photo')->store('profils', 'public');
+        $user->update(['photo' => $chemin]);
+
+        return $this->success(new UserResource($user->load(['etablissement', 'etablissementsGeres'])), 'Photo de profil mise à jour.');
+    }
 
     /**
      * Change son propre mot de passe — seul moyen de lever must_change_password

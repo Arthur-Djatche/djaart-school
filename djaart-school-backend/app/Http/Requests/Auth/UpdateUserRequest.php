@@ -24,8 +24,18 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'email', Rule::unique('users', 'email')->ignore($targetUser->id)],
-            'password' => ['sometimes', 'nullable', 'string', 'min:8'],
-            'role' => ['sometimes', 'required', Rule::in($assignableRoles)],
+            // Comme a la creation, un admin ne choisit jamais un mot de passe
+            // pour un tiers : ce booleen declenche une reinitialisation
+            // (nouveau mot de passe genere, envoye par e-mail).
+            'reinitialiser_mot_de_passe' => ['sometimes', 'boolean'],
+            'role' => [
+                'sometimes',
+                'required',
+                Rule::in($assignableRoles),
+                // Un acteur ne doit jamais pouvoir changer son propre role
+                // (auto-elevation/auto-retrogradation), meme un super_admin.
+                Rule::prohibitedIf($this->user()->is($targetUser)),
+            ],
         ];
     }
 }

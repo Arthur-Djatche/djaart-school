@@ -51,7 +51,7 @@
     <div class="titre">{{ $typeLabel }}</div>
 
     <div class="corps">
-        Le Directeur de <strong>{{ $etablissement->nom }}</strong> atteste par la présente que :
+        {{ $etablissement->signature_titre ?? 'Le Directeur' }} de <strong>{{ $etablissement->nom }}</strong> atteste par la présente que :
         <br><br>
         <strong>{{ $apprenant->prenom }} {{ $apprenant->nom }}</strong>, matricule <strong>{{ $apprenant->matricule }}</strong>,
         né(e) le {{ $apprenant->date_naissance->format('d/m/Y') }}@if($apprenant->lieu_naissance) à <strong>{{ $apprenant->lieu_naissance }}</strong>@endif,
@@ -63,7 +63,7 @@
 
     <div class="signature">
         Fait le {{ now()->format('d/m/Y') }}<br>
-        <strong>Le Directeur / La Directrice</strong><br>
+        <strong>{{ $etablissement->signature_titre ?? 'Le Directeur / La Directrice' }}</strong><br>
         @if($signatureDataUri)
             <img src="{{ $signatureDataUri }}" alt="Signature">
         @endif

@@ -165,7 +165,7 @@
                 <img src="{{ $signatureDataUri }}" alt="Signature"><br>
             @endif
             <p>Fait le {{ now()->format('d/m/Y') }}</p>
-            <p><strong>Le Directeur / La Directrice</strong></p>
+            <p><strong>{{ $etablissement->signature_titre ?? 'Le Directeur / La Directrice' }}</strong></p>
         </div>
     </div>
 

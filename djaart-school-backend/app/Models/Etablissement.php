@@ -20,6 +20,7 @@ class Etablissement extends Model
         'adresse',
         'logo',
         'signature',
+        'signature_titre',
         'entete',
         'next_matricule_sequence',
         'next_recu_sequence',

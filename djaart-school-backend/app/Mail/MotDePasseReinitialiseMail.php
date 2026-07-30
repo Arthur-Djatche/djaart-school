@@ -7,7 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class CompteCreeMail extends Mailable
+class MotDePasseReinitialiseMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -17,12 +17,10 @@ class CompteCreeMail extends Mailable
 
     public function build(): self
     {
-        return $this->subject("Votre compte DJAART SCHOOL a été créé")
-            ->view('emails.compte-cree', [
+        return $this->subject('Votre mot de passe DJAART SCHOOL a été réinitialisé')
+            ->view('emails.mot-de-passe-reinitialise', [
                 'user' => $this->user,
                 'motDePasse' => $this->motDePasse,
-                'roleLabel' => $this->user->getRoleNames()->first() ?? 'utilisateur',
-                'etablissementNom' => $this->user->etablissement?->nom,
                 'loginUrl' => rtrim(config('app.frontend_url'), '/').'/login',
             ]);
     }

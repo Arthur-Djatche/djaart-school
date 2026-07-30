@@ -70,7 +70,7 @@
         @if($signatureDataUri)
             <div class="signature">
                 <img src="{{ $signatureDataUri }}" alt="Signature"><br>
-                <p>Le Directeur</p>
+                <p>{{ $etablissement->signature_titre ?? 'Le Directeur / La Directrice' }}</p>
             </div>
         @endif
         <div class="qr">

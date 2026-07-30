@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Mail\CompteCreeMail;
+use App\Mail\MotDePasseReinitialiseMail;
 use App\Models\Etablissement;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class UserManagementTest extends TestCase
@@ -82,6 +86,73 @@ class UserManagementTest extends TestCase
         $response->assertOk();
         $emails = collect($response->json('data'))->pluck('email');
         $this->assertNotContains($userB->email, $emails);
+    }
+
+    public function test_creation_dun_utilisateur_genere_un_mot_de_passe_et_force_le_changement(): void
+    {
+        Mail::fake();
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('super_admin');
+        $etablissement = Etablissement::factory()->create();
+
+        $response = $this->actingAs($superAdmin)->postJson('/api/users', [
+            'name' => 'Nouvelle Secrétaire',
+            'email' => 'nouvelle.secretaire@djaart.school',
+            'role' => 'secretaire',
+            'etablissement_id' => $etablissement->id,
+        ]);
+
+        $response->assertCreated();
+
+        $user = User::where('email', 'nouvelle.secretaire@djaart.school')->first();
+        $this->assertTrue($user->must_change_password);
+
+        Mail::assertSent(CompteCreeMail::class, function ($mail) use ($user) {
+            return $mail->hasTo($user->email)
+                && Hash::check($mail->motDePasse, $user->password);
+        });
+    }
+
+    public function test_admin_ne_peut_pas_changer_son_propre_role(): void
+    {
+        $etablissement = Etablissement::factory()->create();
+        $admin = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $admin->assignRole('admin_etablissement');
+
+        $response = $this->actingAs($admin)->putJson("/api/users/{$admin->id}", [
+            'role' => 'secretaire',
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertTrue($admin->fresh()->hasRole('admin_etablissement'));
+    }
+
+    public function test_reinitialisation_du_mot_de_passe_par_ladmin_genere_un_nouveau_mot_de_passe(): void
+    {
+        Mail::fake();
+
+        $etablissement = Etablissement::factory()->create();
+        $admin = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $admin->assignRole('admin_etablissement');
+
+        $secretaire = User::factory()->create(['etablissement_id' => $etablissement->id, 'password' => 'ancien-mot-de-passe']);
+        $secretaire->assignRole('secretaire');
+        $ancienHash = $secretaire->password;
+
+        $response = $this->actingAs($admin)->putJson("/api/users/{$secretaire->id}", [
+            'reinitialiser_mot_de_passe' => true,
+        ]);
+
+        $response->assertOk();
+
+        $secretaire->refresh();
+        $this->assertTrue($secretaire->must_change_password);
+        $this->assertNotSame($ancienHash, $secretaire->password);
+
+        Mail::assertSent(MotDePasseReinitialiseMail::class, function ($mail) use ($secretaire) {
+            return $mail->hasTo($secretaire->email) && Hash::check($mail->motDePasse, $secretaire->password);
+        });
     }
 
     public function test_admin_etablissement_can_delete_user_in_own_etablissement(): void

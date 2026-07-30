@@ -63,9 +63,32 @@ class EtablissementController extends Controller
         return $this->updateImage($request, $etablissement, 'logo', 'Logo mis à jour.');
     }
 
+    /**
+     * Le grade/titre du signataire (Le Directeur, La Directrice, Le
+     * Fondateur...) est saisi en meme temps que l'image de signature : les
+     * documents PDF l'affichent a la place du texte fige "Le Directeur /
+     * La Directrice" utilise jusque-la.
+     */
     public function updateSignature(Request $request, Etablissement $etablissement)
     {
-        return $this->updateImage($request, $etablissement, 'signature', 'Signature mise à jour.');
+        $this->authorize('update', $etablissement);
+
+        $data = $request->validate([
+            'signature' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'signature_titre' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        if ($etablissement->signature) {
+            Storage::disk('public')->delete($etablissement->signature);
+        }
+
+        $chemin = $request->file('signature')->store("etablissements/{$etablissement->id}", 'public');
+        $etablissement->update([
+            'signature' => $chemin,
+            'signature_titre' => $data['signature_titre'] ?? null,
+        ]);
+
+        return $this->success(new EtablissementResource($etablissement), 'Signature mise à jour.');
     }
 
     /**

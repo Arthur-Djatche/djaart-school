@@ -9,10 +9,12 @@ use App\Http\Requests\Auth\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Mail\CompteCreeMail;
 use App\Mail\DroitsAccesModifiesMail;
+use App\Mail\MotDePasseReinitialiseMail;
 use App\Models\User;
 use App\Support\GrantablePermissions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -51,11 +53,13 @@ class UserController extends Controller
     public function store(StoreUserRequest $request)
     {
         $data = $request->validated();
+        $motDePasse = Str::password(14);
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => $data['password'],
+            'password' => $motDePasse,
+            'must_change_password' => true,
             'etablissement_id' => $request->user()->hasRole('super_admin')
                 ? ($data['etablissement_id'] ?? null)
                 : $request->user()->etablissement_id,
@@ -63,7 +67,7 @@ class UserController extends Controller
 
         $user->assignRole($data['role']);
 
-        Mail::to($user->email)->send(new CompteCreeMail($user));
+        Mail::to($user->email)->send(new CompteCreeMail($user, $motDePasse));
 
         return $this->success(new UserResource($user->load('etablissement')), 'Utilisateur créé.', 201);
     }
@@ -77,14 +81,20 @@ class UserController extends Controller
             'email' => $data['email'] ?? $user->email,
         ]);
 
-        if (! empty($data['password'])) {
-            $user->password = $data['password'];
+        if (! empty($data['reinitialiser_mot_de_passe'])) {
+            $motDePasse = Str::password(14);
+            $user->password = $motDePasse;
+            $user->must_change_password = true;
         }
 
         $user->save();
 
         if (! empty($data['role'])) {
             $user->syncRoles([$data['role']]);
+        }
+
+        if (isset($motDePasse)) {
+            Mail::to($user->email)->send(new MotDePasseReinitialiseMail($user, $motDePasse));
         }
 
         return $this->success(new UserResource($user->load('etablissement')), 'Utilisateur mis à jour.');

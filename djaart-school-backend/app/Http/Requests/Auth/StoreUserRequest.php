@@ -23,7 +23,10 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
+            // Le mot de passe n'est jamais choisi par l'admin qui cree le
+            // compte : genere automatiquement et envoye par e-mail (cf.
+            // UserController::store), meme mecanisme que la validation
+            // d'une commande.
             'role' => ['required', Rule::in($assignableRoles)],
             'etablissement_id' => $this->user()->hasRole('super_admin')
                 ? [Rule::requiredIf(fn () => $this->input('role') !== 'super_admin'), 'nullable', 'exists:etablissements,id']

@@ -54,6 +54,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('compte.actif')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
+    // Profil personnel : accessible a tout role authentifie, chacun ne peut
+    // agir que sur son propre compte (aucun parametre {user}).
+    Route::put('/moi/profil', [ProfilController::class, 'mettreAJourProfil']);
+    Route::post('/moi/photo', [ProfilController::class, 'mettreAJourPhoto']);
+
     // Lectures structurelles/de reference (classes, filieres, niveaux, annees,
     // matieres, departements, UE, sequences, semestres) : donnees non
     // sensibles (aucune info financiere ni personnelle), scopees par
