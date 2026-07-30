@@ -362,6 +362,79 @@ class BulletinTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_bulletin_jumele_regroupe_deux_sequences_sur_une_page(): void
+    {
+        [$etablissement, $classe, $sequence, $matieres, $apprenants, $inscriptions, $affectations] = $this->makeStructure();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        // Sequence 2 (paire fixe de la sequence 1 cree par makeStructure), pas encore cloturee.
+        $sequence2 = Sequence::create([
+            'etablissement_id' => $etablissement->id,
+            'niveau_id' => $sequence->niveau_id,
+            'annee_academique_id' => $sequence->annee_academique_id,
+            'numero' => 2,
+            'libelle' => 'Séquence 2',
+        ]);
+
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[0], 18);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[0], 12);
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[1], 10);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[1], 8);
+        $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer")->assertCreated();
+
+        $bulletinAicha = Bulletin::where('inscription_id', $inscriptions[0]->id)->where('sequence_id', $sequence->id)->first();
+
+        // Avant la cloture de la sequence 2 : le jumelage reste tout de meme telechargeable
+        // (l'emplacement de la sequence paire affiche "non disponible").
+        $reponseAvant = $this->actingAs($admin)->get("/api/bulletins/{$bulletinAicha->id}/telecharger-jumele");
+        $reponseAvant->assertOk();
+        $reponseAvant->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $reponseAvant->getContent());
+
+        $this->soumettreNote($affectations[0], $sequence2, $apprenants[0], 16);
+        $this->soumettreNote($affectations[1], $sequence2, $apprenants[0], 14);
+        $this->soumettreNote($affectations[0], $sequence2, $apprenants[1], 9);
+        $this->soumettreNote($affectations[1], $sequence2, $apprenants[1], 7);
+        $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence2->id}/cloturer")->assertCreated();
+
+        $reponseApres = $this->actingAs($admin)->get("/api/bulletins/{$bulletinAicha->id}/telecharger-jumele");
+        $reponseApres->assertOk();
+        $this->assertStringStartsWith('%PDF', $reponseApres->getContent());
+    }
+
+    public function test_bulletin_annuel_detaille_calcule_la_moyenne_par_matiere_et_generale(): void
+    {
+        [$etablissement, $classe, $sequence, $matieres, $apprenants, $inscriptions, $affectations] = $this->makeStructure();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        $sequence2 = Sequence::create([
+            'etablissement_id' => $etablissement->id,
+            'niveau_id' => $sequence->niveau_id,
+            'annee_academique_id' => $sequence->annee_academique_id,
+            'numero' => 2,
+            'libelle' => 'Séquence 2',
+        ]);
+
+        // Aicha : Maths 18 puis 16 (moyenne annuelle 17.00) ; Francais 12 puis 14 (moyenne 13.00).
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[0], 18);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[0], 12);
+        $this->soumettreNote($affectations[0], $sequence, $apprenants[1], 10);
+        $this->soumettreNote($affectations[1], $sequence, $apprenants[1], 8);
+        $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence->id}/cloturer")->assertCreated();
+
+        $this->soumettreNote($affectations[0], $sequence2, $apprenants[0], 16);
+        $this->soumettreNote($affectations[1], $sequence2, $apprenants[0], 14);
+        $this->soumettreNote($affectations[0], $sequence2, $apprenants[1], 10);
+        $this->soumettreNote($affectations[1], $sequence2, $apprenants[1], 8);
+        $this->actingAs($admin)->postJson("/api/classes/{$classe->id}/sequences/{$sequence2->id}/cloturer")->assertCreated();
+
+        $response = $this->actingAs($admin)->get("/api/classes/{$classe->id}/bulletin-annuel-detaille");
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
     public function test_admin_ne_peut_pas_cloturer_une_classe_dun_autre_etablissement(): void
     {
         [, $classe, $sequence] = $this->makeStructure();

@@ -63,4 +63,40 @@ class BulletinController extends Controller
 
         return Storage::disk('local')->download($bulletin->fichier_pdf, "bulletin-{$bulletin->id}.pdf");
     }
+
+    /**
+     * Bulletin jumele (ce bulletin + celui de sa sequence paire fixe,
+     * 1<->2/3<->4...) sur une seule page — genere a la volee, non persiste.
+     */
+    public function telechargerJumele(Bulletin $bulletin)
+    {
+        $this->authorize('view', $bulletin);
+
+        $pdf = $this->bulletinService->genererBulletinJumele($bulletin);
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"bulletin-jumele-{$bulletin->id}.pdf\"",
+        ]);
+    }
+
+    /**
+     * Bulletin annuel detaille de toute la classe (une page par apprenant,
+     * matiere x sequence) — genere a la volee, non persiste.
+     */
+    public function telechargerAnnuelDetaille(Request $request, Classe $classe)
+    {
+        $this->authorize('viewAny', Bulletin::class);
+        abort_unless(
+            $request->user()->hasRole('super_admin') || $classe->etablissement_id === $request->user()->etablissement_id,
+            403,
+        );
+
+        $pdf = $this->bulletinService->genererBulletinAnnuelDetaille($classe);
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"bulletin-annuel-detaille-{$classe->id}.pdf\"",
+        ]);
+    }
 }

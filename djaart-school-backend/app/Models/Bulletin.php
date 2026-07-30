@@ -18,6 +18,7 @@ class Bulletin extends Model
         'moyenne_generale',
         'rang',
         'details_groupes',
+        'details_lignes',
         'moyenne_classe',
         'taux_reussite',
         'moyenne_max',
@@ -36,6 +37,7 @@ class Bulletin extends Model
     {
         return [
             'details_groupes' => 'array',
+            'details_lignes' => 'array',
             'tableau_honneur' => 'boolean',
         ];
     }

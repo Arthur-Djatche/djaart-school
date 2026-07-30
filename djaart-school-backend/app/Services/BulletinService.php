@@ -139,6 +139,7 @@ class BulletinService
                     'moyenne_generale' => $moyennes[$inscription->id],
                     'rang' => $classement[$inscription->id],
                     'details_groupes' => $detailsGroupes,
+                    'details_lignes' => $lignes,
                     'moyenne_classe' => $statistiquesClasse['moyenne_classe'],
                     'taux_reussite' => $statistiquesClasse['taux_reussite'],
                     'moyenne_max' => $statistiquesClasse['moyenne_max'],
@@ -183,6 +184,139 @@ class BulletinService
 
             return $bulletins;
         });
+    }
+
+    /**
+     * Bulletin jumele : le bulletin donne + celui de sa sequence "paire"
+     * fixe (1<->2, 3<->4...) pour le meme apprenant, sur une seule page en
+     * deux tableaux distincts (pas fusionnes). Genere a la volee, jamais
+     * persiste (meme logique que PvService) ; si la sequence paire n'a pas
+     * encore ete cloturee, son emplacement affiche un message explicite
+     * plutot que d'echouer.
+     */
+    public function genererBulletinJumele(Bulletin $bulletin): string
+    {
+        $bulletin->loadMissing(['inscription.apprenant', 'inscription.classe.etablissement', 'inscription.anneeAcademique', 'sequence']);
+
+        $numeroPaire = $bulletin->sequence->numero % 2 === 1 ? $bulletin->sequence->numero + 1 : $bulletin->sequence->numero - 1;
+
+        $sequencePaire = Sequence::where('niveau_id', $bulletin->sequence->niveau_id)
+            ->where('annee_academique_id', $bulletin->sequence->annee_academique_id)
+            ->where('numero', $numeroPaire)
+            ->first();
+
+        $bulletinPaire = $sequencePaire
+            ? Bulletin::where('inscription_id', $bulletin->inscription_id)->where('sequence_id', $sequencePaire->id)->first()
+            : null;
+
+        $classe = $bulletin->inscription->classe;
+        $effectif = $classe->inscriptions()->where('statut', '!=', 'annulee')->count();
+
+        $pdf = Pdf::loadView('pdf.bulletin-jumele', [
+            'etablissement' => $classe->etablissement,
+            'apprenant' => $bulletin->inscription->apprenant,
+            'classe' => $classe,
+            'anneeAcademique' => $bulletin->inscription->anneeAcademique,
+            'effectif' => $effectif,
+            'blocs' => [
+                ['sequence' => $bulletin->sequence, 'bulletin' => $bulletin],
+                ['sequence' => $sequencePaire, 'bulletin' => $bulletinPaire],
+            ],
+            'logoDataUri' => $this->logoDataUri($classe->etablissement),
+            'signatureDataUri' => $this->signatureDataUri($classe->etablissement),
+            'enteteDataUri' => $this->enteteDataUri($classe->etablissement),
+        ]);
+
+        return $pdf->output();
+    }
+
+    /**
+     * Bulletin annuel detaille : pour chaque apprenant actif de la classe,
+     * une page recapitulant chaque matiere sequence par sequence (a partir
+     * des details_lignes persistes a chaque cloture, sans recalcul) plus la
+     * moyenne annuelle par matiere et generale. Genere a la volee, jamais
+     * persiste — distinct du relevé annuel existant (ReleveService), qui ne
+     * montre que la moyenne globale de chaque sequence, pas le detail.
+     */
+    public function genererBulletinAnnuelDetaille(Classe $classe): string
+    {
+        $sequences = Sequence::where('niveau_id', $classe->niveau_id)
+            ->where('annee_academique_id', $classe->annee_academique_id)
+            ->orderBy('numero')
+            ->get();
+
+        if ($sequences->isEmpty()) {
+            throw ValidationException::withMessages([
+                'classe_id' => "Aucune séquence paramétrée pour ce niveau et cette année académique.",
+            ]);
+        }
+
+        $inscriptions = $classe->inscriptions()->where('statut', '!=', 'annulee')->with('apprenant')->get();
+
+        if ($inscriptions->isEmpty()) {
+            throw ValidationException::withMessages([
+                'classe_id' => 'Aucun apprenant actif dans cette classe.',
+            ]);
+        }
+
+        $bulletinsParInscription = Bulletin::whereIn('inscription_id', $inscriptions->pluck('id'))
+            ->whereIn('sequence_id', $sequences->pluck('id'))
+            ->get()
+            ->groupBy('inscription_id');
+
+        $pages = $inscriptions->map(function ($inscription) use ($sequences, $bulletinsParInscription) {
+            $bulletinsApprenant = $bulletinsParInscription->get($inscription->id, collect())->keyBy('sequence_id');
+            $premierBulletin = $bulletinsApprenant->first();
+            $ordreMatieres = $premierBulletin ? collect($premierBulletin->details_lignes)->pluck('matiere')->all() : [];
+
+            $matrice = collect($ordreMatieres)->map(function ($matiereNom) use ($sequences, $bulletinsApprenant) {
+                $noteParSequence = fn ($sequence) => optional(
+                    collect(optional($bulletinsApprenant->get($sequence->id))->details_lignes)->firstWhere('matiere', $matiereNom)
+                );
+
+                $notesParSequence = $sequences->mapWithKeys(function ($sequence) use ($noteParSequence) {
+                    $ligne = $noteParSequence($sequence);
+
+                    return [$sequence->id => $ligne->isNotEmpty()
+                        ? ($ligne['absent'] ? 'Ab' : number_format((float) $ligne['valeur'], 2, ',', ' '))
+                        : '—'];
+                });
+
+                $valeursNumeriques = $sequences->map(function ($sequence) use ($noteParSequence) {
+                    $ligne = $noteParSequence($sequence);
+
+                    return $ligne->isNotEmpty() && ! $ligne['absent'] ? (float) $ligne['valeur'] : null;
+                })->filter(fn ($v) => $v !== null);
+
+                return [
+                    'matiere' => $matiereNom,
+                    'notes_par_sequence' => $notesParSequence,
+                    'moyenne_annuelle' => $valeursNumeriques->isNotEmpty() ? round($valeursNumeriques->avg(), 2) : null,
+                ];
+            });
+
+            $moyennesSequences = $bulletinsApprenant->pluck('moyenne_generale');
+
+            return [
+                'apprenant' => $inscription->apprenant,
+                'matrice' => $matrice,
+                'moyenne_annuelle' => $moyennesSequences->isNotEmpty() ? round($moyennesSequences->avg(), 2) : null,
+                'sequences_manquantes' => $sequences->count() - $bulletinsApprenant->count(),
+            ];
+        });
+
+        $pdf = Pdf::loadView('pdf.bulletin-annuel-detaille', [
+            'etablissement' => $classe->etablissement,
+            'classe' => $classe,
+            'anneeAcademique' => $classe->anneeAcademique,
+            'sequences' => $sequences,
+            'pages' => $pages,
+            'logoDataUri' => $this->logoDataUri($classe->etablissement),
+            'signatureDataUri' => $this->signatureDataUri($classe->etablissement),
+            'enteteDataUri' => $this->enteteDataUri($classe->etablissement),
+        ]);
+
+        return $pdf->output();
     }
 
     /**
