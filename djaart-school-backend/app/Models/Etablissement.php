@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Etablissement extends Model
@@ -13,6 +14,7 @@ class Etablissement extends Model
     protected $fillable = [
         'nom',
         'type_etablissement',
+        'abonnement_expire_le',
         'sigle',
         'adresse',
         'logo',
@@ -24,9 +26,25 @@ class Etablissement extends Model
         'next_carte_sequence',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'abonnement_expire_le' => 'date',
+        ];
+    }
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Admins geant cet etablissement (au sens large : accede/peut y basculer),
+     * cf. User::etablissementsGeres().
+     */
+    public function adminsGerants(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
     }
 
     public function anneesAcademiques(): HasMany

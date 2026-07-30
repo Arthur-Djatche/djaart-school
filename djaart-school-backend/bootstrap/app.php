@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountUsable;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -30,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'compte.actif' => EnsureAccountUsable::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

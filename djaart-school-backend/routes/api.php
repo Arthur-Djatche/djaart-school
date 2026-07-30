@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
+use App\Http\Controllers\Api\Auth\ProfilController;
 use App\Http\Controllers\Api\Auth\UserController;
 use App\Http\Controllers\Api\Dashboard\DashboardController;
 use App\Http\Controllers\Api\Dashboard\RapportController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\Inscription\ApprenantController;
 use App\Http\Controllers\Api\Inscription\InscriptionController;
 use App\Http\Controllers\Api\Inscription\PhotoMasseController;
 use App\Http\Controllers\Api\Inscription\PhotoSeanceController;
+use App\Http\Controllers\Api\Landing\CommandeController;
 use App\Http\Controllers\Api\Landing\DemandeDemoController;
 use App\Http\Controllers\Api\Parametrage\AnneeAcademiqueController;
 use App\Http\Controllers\Api\Parametrage\ClasseController;
@@ -37,10 +39,19 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,
 Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:5,1');
 Route::post('/demandes-demo', [DemandeDemoController::class, 'store'])->middleware('throttle:5,1');
+Route::post('/commandes', [CommandeController::class, 'store'])->middleware('throttle:5,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+
+    // Ces deux routes doivent rester joignables meme quand EnsureAccountUsable
+    // bloquerait tout le reste (mot de passe provisoire non change, abonnement
+    // expire) — sinon impossible de se debloquer soi-meme.
+    Route::put('/moi/mot-de-passe', [ProfilController::class, 'changerMotDePasse']);
+    Route::put('/moi/etablissement-actif', [ProfilController::class, 'basculerEtablissement']);
+
+    Route::middleware('compte.actif')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     // Lectures structurelles/de reference (classes, filieres, niveaux, annees,
@@ -64,6 +75,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:super_admin')->group(function () {
         Route::get('/demandes-demo', [DemandeDemoController::class, 'index']);
+        Route::get('/commandes', [CommandeController::class, 'index']);
+        Route::post('/commandes/{commande}/valider', [CommandeController::class, 'valider']);
     });
 
     // Gestion des comptes/roles : jamais delegable via une permission (risque
@@ -179,6 +192,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/bulletins', [BulletinController::class, 'index']);
         Route::post('/classes/{classe}/sequences/{sequence}/cloturer', [BulletinController::class, 'store']);
         Route::get('/bulletins/{bulletin}/telecharger', [BulletinController::class, 'telecharger']);
+        Route::get('/bulletins/{bulletin}/telecharger-jumele', [BulletinController::class, 'telechargerJumele']);
+        Route::get('/classes/{classe}/bulletin-annuel-detaille', [BulletinController::class, 'telechargerAnnuelDetaille']);
     });
 
     Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|acces.releves')->group(function () {
@@ -211,5 +226,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role_or_permission:super_admin|admin_etablissement|secretaire|acces.seance_photo')->group(function () {
         Route::get('/classes/{classe}/photos/liste', [PhotoSeanceController::class, 'liste']);
         Route::post('/classes/{classe}/apprenants/photos-masse', [PhotoMasseController::class, 'store']);
+    });
     });
 });

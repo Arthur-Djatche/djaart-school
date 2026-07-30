@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -29,6 +30,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Etablissements que cet admin_etablissement peut gerer et entre
+     * lesquels il peut permuter (etablissement_id ci-dessus est celui
+     * actuellement actif, pas necessairement le seul).
+     */
+    public function etablissementsGeres(): BelongsToMany
+    {
+        return $this->belongsToMany(Etablissement::class);
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -38,6 +49,7 @@ class User extends Authenticatable
         'email',
         'password',
         'etablissement_id',
+        'must_change_password',
     ];
 
     /**
@@ -60,6 +72,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
         ];
     }
 }

@@ -23,7 +23,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        $user = Auth::user()->load('etablissement');
+        $user = Auth::user()->load(['etablissement', 'etablissementsGeres']);
 
         return $this->success(new UserResource($user), 'Connexion réussie.');
     }
@@ -39,6 +39,6 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return $this->success(new UserResource($request->user()->load('etablissement')));
+        return $this->success(new UserResource($request->user()->load(['etablissement', 'etablissementsGeres'])));
     }
 }
