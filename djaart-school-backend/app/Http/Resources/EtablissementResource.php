@@ -14,6 +14,7 @@ class EtablissementResource extends JsonResource
             'id' => $this->id,
             'nom' => $this->nom,
             'type_etablissement' => $this->type_etablissement,
+            'type_etablissement_secondaire' => $this->type_etablissement_secondaire,
             'sigle' => $this->sigle,
             'adresse' => $this->adresse,
             'logo_url' => $this->logo ? Storage::disk('public')->url($this->logo) : null,

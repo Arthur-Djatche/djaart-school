@@ -25,6 +25,13 @@ class UpdateEtablissementRequest extends FormRequest
                 // admin_etablissement ne doit jamais pouvoir se le reattribuer.
                 Rule::prohibitedIf(! $this->user()->hasRole('super_admin')),
             ],
+            'type_etablissement_secondaire' => [
+                'sometimes',
+                'nullable',
+                Rule::in(['primaire', 'secondaire', 'universitaire', 'centre_formation']),
+                Rule::notIn([$this->input('type_etablissement', $this->route('etablissement')->type_etablissement)]),
+                Rule::prohibitedIf(! $this->user()->hasRole('super_admin')),
+            ],
             'sigle' => ['nullable', 'string', 'max:20'],
             'adresse' => ['nullable', 'string', 'max:255'],
         ];

@@ -101,6 +101,46 @@ class CommandeEtMultiEtablissementTest extends TestCase
         Mail::assertSent(CommandeValideeMail::class, fn ($mail) => $mail->user->is($admin));
     }
 
+    public function test_validation_avec_un_2e_type_cumule_les_deux_types(): void
+    {
+        Mail::fake();
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('super_admin');
+        $commande = Commande::create($this->commandePayload());
+
+        $response = $this->actingAs($superAdmin)->postJson("/api/commandes/{$commande->id}/valider", [
+            'type_etablissement' => 'secondaire',
+            'type_etablissement_secondaire' => 'centre_formation',
+            'duree_mois' => 12,
+            'permissions' => [],
+        ]);
+
+        $response->assertOk();
+
+        $etablissement = Etablissement::find($commande->fresh()->etablissement_id);
+        $this->assertSame('secondaire', $etablissement->type_etablissement);
+        $this->assertSame('centre_formation', $etablissement->type_etablissement_secondaire);
+        $this->assertEqualsCanonicalizing(['secondaire', 'centre_formation'], $etablissement->typesEtablissement());
+    }
+
+    public function test_le_2e_type_doit_differer_du_type_principal(): void
+    {
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('super_admin');
+        $commande = Commande::create($this->commandePayload());
+
+        $response = $this->actingAs($superAdmin)->postJson("/api/commandes/{$commande->id}/valider", [
+            'type_etablissement' => 'secondaire',
+            'type_etablissement_secondaire' => 'secondaire',
+            'duree_mois' => 12,
+            'permissions' => [],
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertSame('en_attente', $commande->fresh()->statut);
+    }
+
     public function test_validation_pour_un_admin_existant_ajoute_un_2e_etablissement_sans_toucher_au_mot_de_passe(): void
     {
         Mail::fake();
@@ -231,6 +271,22 @@ class CommandeEtMultiEtablissementTest extends TestCase
         ]);
 
         $response->assertStatus(422);
+        $this->assertSame('secondaire', $etablissement->fresh()->type_etablissement);
+    }
+
+    public function test_admin_etablissement_peut_modifier_son_etablissement_sans_toucher_au_type(): void
+    {
+        $etablissement = Etablissement::factory()->create(['type_etablissement' => 'secondaire']);
+        $admin = User::factory()->create(['etablissement_id' => $etablissement->id]);
+        $admin->assignRole('admin_etablissement');
+
+        $response = $this->actingAs($admin)->putJson("/api/etablissements/{$etablissement->id}", [
+            'nom' => 'Nouveau nom',
+            'sigle' => 'NN',
+        ]);
+
+        $response->assertOk();
+        $this->assertSame('Nouveau nom', $etablissement->fresh()->nom);
         $this->assertSame('secondaire', $etablissement->fresh()->type_etablissement);
     }
 

@@ -229,4 +229,17 @@ class UserPermissionsTest extends TestCase
         $response->assertStatus(422);
         $this->assertEmpty($secretaireB->fresh()->getDirectPermissions());
     }
+
+    public function test_un_acteur_ne_peut_pas_modifier_ses_propres_droits(): void
+    {
+        $etablissement = Etablissement::factory()->create();
+        $admin = $this->makeUser($etablissement, 'admin_etablissement');
+
+        $response = $this->actingAs($admin)->putJson("/api/users/{$admin->id}/permissions", [
+            'permissions' => ['acces.caisse'],
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertEmpty($admin->fresh()->getDirectPermissions());
+    }
 }

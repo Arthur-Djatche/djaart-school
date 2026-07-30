@@ -100,6 +100,12 @@ class UserController extends Controller
     {
         $acteur = $request->user();
 
+        if ($acteur->is($user)) {
+            throw ValidationException::withMessages([
+                'permissions' => "Vous ne pouvez pas modifier vos propres droits d'accès.",
+            ]);
+        }
+
         if (! $acteur->hasRole('super_admin') && $acteur->etablissement_id !== $user->etablissement_id) {
             throw ValidationException::withMessages([
                 'permissions' => "Vous ne pouvez modifier les droits que des acteurs de votre établissement.",

@@ -20,6 +20,7 @@ class UserResource extends JsonResource
                 'id' => $this->etablissement->id,
                 'nom' => $this->etablissement->nom,
                 'type_etablissement' => $this->etablissement->type_etablissement,
+                'type_etablissement_secondaire' => $this->etablissement->type_etablissement_secondaire,
             ] : null),
             'etablissements_geres' => $this->when(
                 $this->relationLoaded('etablissementsGeres') && $this->etablissementsGeres->count() > 1,

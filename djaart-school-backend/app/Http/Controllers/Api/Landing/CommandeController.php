@@ -68,6 +68,7 @@ class CommandeController extends Controller
             $etablissement = Etablissement::create([
                 'nom' => $commande->nom_etablissement,
                 'type_etablissement' => $data['type_etablissement'],
+                'type_etablissement_secondaire' => $data['type_etablissement_secondaire'] ?? null,
                 'abonnement_expire_le' => now()->addMonths($data['duree_mois'])->toDateString(),
             ]);
 
