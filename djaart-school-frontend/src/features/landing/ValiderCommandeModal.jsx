@@ -14,6 +14,7 @@ const TYPES_ETABLISSEMENT = [
 
 export default function ValiderCommandeModal({ commande, onClose, onSubmit }) {
   const [typeEtablissement, setTypeEtablissement] = useState('secondaire')
+  const [typeEtablissementSecondaire, setTypeEtablissementSecondaire] = useState('')
   const [dureeMois, setDureeMois] = useState('12')
   const [selected, setSelected] = useState(new Set())
   const [error, setError] = useState('')
@@ -38,6 +39,7 @@ export default function ValiderCommandeModal({ commande, onClose, onSubmit }) {
     try {
       await onSubmit({
         type_etablissement: typeEtablissement,
+        type_etablissement_secondaire: typeEtablissementSecondaire || null,
         duree_mois: Number(dureeMois),
         permissions: Array.from(selected),
       })
@@ -59,9 +61,20 @@ export default function ValiderCommandeModal({ commande, onClose, onSubmit }) {
           id="type_etablissement"
           label="Type d'établissement"
           value={typeEtablissement}
-          onChange={(e) => setTypeEtablissement(e.target.value)}
+          onChange={(e) => {
+            setTypeEtablissement(e.target.value)
+            if (e.target.value === typeEtablissementSecondaire) setTypeEtablissementSecondaire('')
+          }}
           options={TYPES_ETABLISSEMENT}
           required
+        />
+        <Select
+          id="type_etablissement_secondaire"
+          label="2e type (optionnel — max 2 types)"
+          value={typeEtablissementSecondaire}
+          onChange={(e) => setTypeEtablissementSecondaire(e.target.value)}
+          placeholder="Aucun"
+          options={TYPES_ETABLISSEMENT.filter((t) => t.value !== typeEtablissement)}
         />
         <Input
           id="duree_mois"

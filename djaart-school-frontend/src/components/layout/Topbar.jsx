@@ -39,7 +39,10 @@ export default function Topbar({ onMenuClick }) {
             <line x1="4" y1="17" x2="20" y2="17" />
           </svg>
         </button>
-        <img src={logo} alt="DJAART SCHOOL" className="h-8 w-auto sm:h-9" />
+        <img src={logo} alt="" className="h-8 w-auto sm:h-9" />
+        <span className="text-base font-extrabold tracking-tight text-brand-navy sm:text-lg">
+          DJAART <span className="text-brand-orange">SCHOOL</span>
+        </span>
       </div>
       <div className="flex items-center gap-2 sm:gap-4">
         {user?.etablissements_geres?.length > 1 && (

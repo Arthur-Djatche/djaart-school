@@ -64,20 +64,25 @@ function allowed(roles, permission, userRoles, userPermissions) {
   return parRole || parPermission
 }
 
-function allowedForType(etablissementTypes, etablissementType) {
-  return !etablissementTypes || !etablissementType || etablissementTypes.includes(etablissementType)
+// userEtablissementTypes : jusqu'a 2 types cumules par le meme etablissement
+// (ex. secondaire + centre_formation) — un menu s'affiche des qu'un seul de
+// ces types correspond a ceux qu'il autorise.
+function allowedForType(itemTypes, userEtablissementTypes) {
+  if (!itemTypes) return true
+  if (!userEtablissementTypes || userEtablissementTypes.length === 0) return false
+  return itemTypes.some((type) => userEtablissementTypes.includes(type))
 }
 
-export function navigationForRoles(userRoles = [], etablissementType = null, userPermissions = []) {
+export function navigationForRoles(userRoles = [], userEtablissementTypes = [], userPermissions = []) {
   return NAVIGATION.map((item) => {
     if (!item.children) {
-      return allowed(item.roles, item.permission, userRoles, userPermissions) && allowedForType(item.etablissementTypes, etablissementType)
+      return allowed(item.roles, item.permission, userRoles, userPermissions) && allowedForType(item.etablissementTypes, userEtablissementTypes)
         ? item
         : null
     }
 
     const children = item.children.filter(
-      (child) => allowed(child.roles, child.permission, userRoles, userPermissions) && allowedForType(child.etablissementTypes, etablissementType),
+      (child) => allowed(child.roles, child.permission, userRoles, userPermissions) && allowedForType(child.etablissementTypes, userEtablissementTypes),
     )
 
     return children.length > 0 ? { ...item, children } : null

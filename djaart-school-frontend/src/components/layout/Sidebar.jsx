@@ -9,7 +9,8 @@ const linkClasses = ({ isActive }) =>
 export default function Sidebar({ open = false, onClose }) {
   const { user } = useAuth()
   const location = useLocation()
-  const items = navigationForRoles(user?.roles ?? [], user?.etablissement?.type_etablissement ?? null, user?.permissions ?? [])
+  const etablissementTypes = [user?.etablissement?.type_etablissement, user?.etablissement?.type_etablissement_secondaire].filter(Boolean)
+  const items = navigationForRoles(user?.roles ?? [], etablissementTypes, user?.permissions ?? [])
 
   const [openGroups, setOpenGroups] = useState(() => new Set())
 

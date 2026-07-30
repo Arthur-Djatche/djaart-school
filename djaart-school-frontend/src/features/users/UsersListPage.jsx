@@ -3,11 +3,13 @@ import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import Table from '../../components/ui/Table'
 import * as usersApi from '../../api/usersApi'
+import useAuth from '../../hooks/useAuth'
 import useToast from '../../hooks/useToast'
 import UserFormModal from './UserFormModal'
 import UserPermissionsModal from './UserPermissionsModal'
 
 export default function UsersListPage() {
+  const { user: acteur } = useAuth()
   const { showToast } = useToast()
   const [users, setUsers] = useState([])
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1 })
@@ -85,9 +87,11 @@ export default function UsersListPage() {
           <Button variant="ghost" onClick={() => handleEdit(row)}>
             Modifier
           </Button>
-          <Button variant="ghost" onClick={() => setPermissionsUser(row)}>
-            Droits d'accès
-          </Button>
+          {row.id !== acteur?.id && (
+            <Button variant="ghost" onClick={() => setPermissionsUser(row)}>
+              Droits d'accès
+            </Button>
+          )}
           <Button variant="ghost" onClick={() => handleDelete(row)}>
             Supprimer
           </Button>

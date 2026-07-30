@@ -83,7 +83,12 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white text-brand-navy">
       <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <img src={logo} alt="DJAART SCHOOL" className="h-9 w-auto" />
+          <div className="flex items-center gap-2">
+            <img src={logo} alt="" className="h-9 w-auto" />
+            <span className="text-lg font-extrabold tracking-tight text-brand-navy sm:text-xl">
+              DJAART <span className="text-brand-orange">SCHOOL</span>
+            </span>
+          </div>
           <nav className="hidden items-center gap-6 md:flex">
             <NavLinkAnchor href="#fonctionnalites">Fonctionnalités</NavLinkAnchor>
             <NavLinkAnchor href="#tarifs">Tarifs</NavLinkAnchor>
@@ -254,19 +259,55 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="contact" className="bg-brand-navy px-4 py-16 text-center text-white sm:px-6">
-        <div className="mx-auto max-w-2xl">
-          <h2 className="text-3xl font-bold tracking-tight">Prêt à moderniser la gestion de votre établissement ?</h2>
-          <p className="mt-3 text-white/70">Demandez une démo gratuite, sans engagement — notre équipe vous recontacte rapidement.</p>
-          <Button size="lg" variant="accent" className="mt-8" onClick={() => setShowDemoModal(true)}>
-            Demander une démo gratuite
-          </Button>
+      <section id="contact" className="bg-brand-navy px-4 py-16 text-white sm:px-6">
+        <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-2 md:items-center">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Prêt à moderniser la gestion de votre établissement ?</h2>
+            <p className="mt-3 text-white/70">
+              Demandez une démo gratuite ou commandez directement une formule, sans engagement — notre équipe vous répond rapidement.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button size="lg" variant="accent" onClick={() => setShowDemoModal(true)}>
+                Demander une démo gratuite
+              </Button>
+              <a href="#tarifs">
+                <Button size="lg" variant="outlineOnDark" className="w-full sm:w-auto">
+                  Voir les formules
+                </Button>
+              </a>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-white/10 p-6 backdrop-blur">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-brand-orange-light">Contactez-nous</h3>
+            <ul className="mt-4 flex flex-col gap-4 text-sm">
+              <li className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-base">✉️</span>
+                <a href="mailto:contact@djaart.school" className="hover:underline">
+                  contact@djaart.school
+                </a>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-base">⏱️</span>
+                <span className="text-white/80">Réponse sous 24h ouvrées</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-base">🌍</span>
+                <span className="text-white/80">Déploiement possible partout en Afrique francophone</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </section>
 
       <footer className="border-t border-slate-100 px-4 py-10 sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm text-slate-500 sm:flex-row">
-          <img src={logo} alt="DJAART SCHOOL" className="h-7 w-auto" />
+          <div className="flex items-center gap-2">
+            <img src={logo} alt="" className="h-7 w-auto" />
+            <span className="text-sm font-extrabold tracking-tight text-brand-navy">
+              DJAART <span className="text-brand-orange">SCHOOL</span>
+            </span>
+          </div>
           <p>© {new Date().getFullYear()} DJAART SCHOOL — Tous droits réservés.</p>
           <a href="mailto:contact@djaart.school" className="text-brand-blue hover:underline">
             contact@djaart.school

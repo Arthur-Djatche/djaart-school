@@ -21,8 +21,11 @@ export default function AuthLayout({ title, subtitle, children }) {
         </video>
         <div className="absolute inset-0 bg-brand-navy/70" aria-hidden="true" />
 
-        <div className="relative inline-flex w-fit items-center rounded-2xl bg-white p-3 shadow-2xl">
-          <img src={logo} alt="DJAART SCHOOL" className="h-10 w-auto" />
+        <div className="relative inline-flex w-fit items-center gap-3 rounded-2xl bg-white p-3 shadow-2xl">
+          <img src={logo} alt="" className="h-10 w-auto" />
+          <span className="pr-1 text-lg font-extrabold tracking-tight text-brand-navy">
+            DJAART <span className="text-brand-orange">SCHOOL</span>
+          </span>
         </div>
 
         <div className="relative">
@@ -46,8 +49,11 @@ export default function AuthLayout({ title, subtitle, children }) {
 
       <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-12">
         <div className="w-full max-w-sm">
-          <div className="mb-8 flex justify-center md:hidden">
-            <img src={logo} alt="DJAART SCHOOL" className="h-16 w-auto" />
+          <div className="mb-8 flex items-center justify-center gap-2 md:hidden">
+            <img src={logo} alt="" className="h-12 w-auto" />
+            <span className="text-xl font-extrabold tracking-tight text-brand-navy">
+              DJAART <span className="text-brand-orange">SCHOOL</span>
+            </span>
           </div>
 
           <div className="rounded-2xl bg-white p-8 shadow-soft">
