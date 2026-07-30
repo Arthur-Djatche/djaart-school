@@ -112,6 +112,11 @@ export default function BulletinsPage() {
                 Clôturer la séquence
               </Button>
             )}
+            {classeId && (
+              <a href={bulletinsApi.bulletinAnnuelDetailleUrl(classeId)} target="_blank" rel="noopener">
+                <Button variant="outline">Bulletin annuel détaillé (classe)</Button>
+              </a>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -143,6 +148,15 @@ export default function BulletinsPage() {
                           className="text-brand-blue hover:underline"
                         >
                           Télécharger
+                        </a>
+                        <span className="mx-1 text-slate-300">·</span>
+                        <a
+                          href={bulletinsApi.bulletinJumeleUrl(b.id)}
+                          target="_blank"
+                          rel="noopener"
+                          className="text-brand-blue hover:underline"
+                        >
+                          Jumelé
                         </a>
                       </td>
                     </tr>

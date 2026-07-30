@@ -54,6 +54,7 @@ export const NAVIGATION = [
   },
   { label: 'Comptes utilisateurs', to: '/users', roles: ['super_admin', 'admin_etablissement'] },
   { label: 'Demandes de démo', to: '/demandes-demo', roles: ['super_admin'] },
+  { label: 'Commandes', to: '/commandes', roles: ['super_admin'] },
 ]
 
 function allowed(roles, permission, userRoles, userPermissions) {

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import logo from '../../assets/logo.png'
 import Button from '../../components/ui/Button'
 import useAuth from '../../hooks/useAuth'
+import CommandeModal from './CommandeModal'
 import DemandeDemoModal from './DemandeDemoModal'
 
 const ETAPES = [
@@ -76,6 +77,7 @@ function NavLinkAnchor({ href, children }) {
 export default function LandingPage() {
   const { user } = useAuth()
   const [showDemoModal, setShowDemoModal] = useState(false)
+  const [formuleCommandee, setFormuleCommandee] = useState(null)
 
   return (
     <div className="min-h-screen bg-white text-brand-navy">
@@ -106,8 +108,13 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="brand-mesh relative overflow-hidden px-4 py-20 text-white sm:px-6">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
+      <section className="relative overflow-hidden bg-brand-navy px-4 py-20 text-white sm:px-6">
+        <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover">
+          <source src="/videos/hero-bg-public.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-brand-navy/75" aria-hidden="true" />
+
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
           <div>
             <span className="inline-block rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-brand-orange-light">
               Gestion scolaire tout-en-un
@@ -237,9 +244,9 @@ export default function LandingPage() {
                 <Button
                   variant={formule.populaire ? 'accent' : 'outline'}
                   className="mt-8 justify-center"
-                  onClick={() => setShowDemoModal(true)}
+                  onClick={() => setFormuleCommandee(formule.nom)}
                 >
-                  Demander une démo
+                  Commander maintenant
                 </Button>
               </div>
             ))}
@@ -268,6 +275,7 @@ export default function LandingPage() {
       </footer>
 
       {showDemoModal && <DemandeDemoModal onClose={() => setShowDemoModal(false)} />}
+      {formuleCommandee && <CommandeModal formule={formuleCommandee} onClose={() => setFormuleCommandee(null)} />}
     </div>
   )
 }

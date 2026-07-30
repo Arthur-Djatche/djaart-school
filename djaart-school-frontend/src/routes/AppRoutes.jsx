@@ -2,8 +2,10 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
 import LoginPage from '../features/auth/LoginPage'
 import ResetPasswordPage from '../features/auth/ResetPasswordPage'
+import CommandesPage from '../features/landing/CommandesPage'
 import DemandesDemoPage from '../features/landing/DemandesDemoPage'
 import LandingPage from '../features/landing/LandingPage'
+import ChangerMotDePassePage from '../features/auth/ChangerMotDePassePage'
 import ApprenantFichePage from '../features/apprenants/ApprenantFichePage'
 import ApprenantsListPage from '../features/apprenants/ApprenantsListPage'
 import SeancePhotoPage from '../features/apprenants/seance-photo/SeancePhotoPage'
@@ -45,9 +47,17 @@ export default function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+      <Route element={<ProtectedRoute allowWhileMustChangePassword />}>
+        <Route path="/changer-mot-de-passe" element={<ChangerMotDePassePage />} />
+      </Route>
+
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/imprimer-recu/:recuId" element={<PrintRecuPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={['super_admin']} />}>
+        <Route path="/commandes" element={<CommandesPage />} />
       </Route>
 
       <Route element={<ProtectedRoute roles={INSCRIPTION_ROLES} permission="acces.inscriptions" />}>

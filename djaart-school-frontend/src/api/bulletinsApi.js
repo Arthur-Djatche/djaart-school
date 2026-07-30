@@ -4,6 +4,8 @@ export const fetchBulletins = (params) => axiosClient.get('/api/bulletins', { pa
 export const cloturerSequence = (classeId, sequenceId) =>
   axiosClient.post(`/api/classes/${classeId}/sequences/${sequenceId}/cloturer`)
 export const bulletinDownloadUrl = (bulletinId) => `${import.meta.env.VITE_API_URL}/api/bulletins/${bulletinId}/telecharger`
+export const bulletinJumeleUrl = (bulletinId) => `${import.meta.env.VITE_API_URL}/api/bulletins/${bulletinId}/telecharger-jumele`
+export const bulletinAnnuelDetailleUrl = (classeId) => `${import.meta.env.VITE_API_URL}/api/classes/${classeId}/bulletin-annuel-detaille`
 
 export const fetchReleves = (params) => axiosClient.get('/api/releves', { params })
 export const genererRelevesAnnuels = (classeId) => axiosClient.post(`/api/classes/${classeId}/releves/annuel`)

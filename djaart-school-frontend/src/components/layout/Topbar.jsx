@@ -1,9 +1,28 @@
+import { useState } from 'react'
 import logo from '../../assets/logo.png'
+import * as profilApi from '../../api/profilApi'
 import useAuth from '../../hooks/useAuth'
 import Button from '../ui/Button'
 
 export default function Topbar({ onMenuClick }) {
   const { user, logout } = useAuth()
+  const [basculant, setBasculant] = useState(false)
+
+  const handleBasculer = async (event) => {
+    const etablissementId = Number(event.target.value)
+    if (!etablissementId || etablissementId === user.etablissement?.id) return
+
+    setBasculant(true)
+    try {
+      await profilApi.basculerEtablissement(etablissementId)
+      // Rechargement complet : toutes les pages du dashboard dependent de
+      // l'etablissement actif, plus simple et plus sur que d'auditer chaque
+      // ecran pour le rendre reactif a ce changement.
+      window.location.href = '/dashboard'
+    } finally {
+      setBasculant(false)
+    }
+  }
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-soft sm:px-6">
@@ -23,6 +42,21 @@ export default function Topbar({ onMenuClick }) {
         <img src={logo} alt="DJAART SCHOOL" className="h-8 w-auto sm:h-9" />
       </div>
       <div className="flex items-center gap-2 sm:gap-4">
+        {user?.etablissements_geres?.length > 1 && (
+          <select
+            value={user.etablissement?.id ?? ''}
+            onChange={handleBasculer}
+            disabled={basculant}
+            className="hidden rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-brand-navy outline-none transition focus:border-brand-blue sm:block"
+            aria-label="Établissement actif"
+          >
+            {user.etablissements_geres.map((etablissement) => (
+              <option key={etablissement.id} value={etablissement.id}>
+                {etablissement.nom}
+              </option>
+            ))}
+          </select>
+        )}
         {user && <span className="hidden text-sm text-brand-navy sm:inline">{user.name}</span>}
         <Button variant="ghost" size="sm" onClick={logout}>
           Déconnexion

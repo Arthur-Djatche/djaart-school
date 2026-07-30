@@ -9,12 +9,23 @@ const HIGHLIGHTS = [
 export default function AuthLayout({ title, subtitle, children }) {
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <div className="brand-mesh relative hidden flex-col justify-between p-10 text-white md:flex md:w-1/2 lg:w-2/5">
-        <div className="inline-flex w-fit items-center rounded-2xl bg-white p-3 shadow-2xl">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-brand-navy p-10 text-white md:flex md:w-1/2 lg:w-2/5">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src="/videos/bg-login.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-brand-navy/70" aria-hidden="true" />
+
+        <div className="relative inline-flex w-fit items-center rounded-2xl bg-white p-3 shadow-2xl">
           <img src={logo} alt="DJAART SCHOOL" className="h-10 w-auto" />
         </div>
 
-        <div>
+        <div className="relative">
           <h1 className="text-3xl font-bold leading-tight tracking-tight">
             La gestion scolaire, simplifiée du bout des doigts.
           </h1>
@@ -30,7 +41,7 @@ export default function AuthLayout({ title, subtitle, children }) {
           </ul>
         </div>
 
-        <p className="text-xs text-white/50">© {new Date().getFullYear()} DJAART SCHOOL</p>
+        <p className="relative text-xs text-white/50">© {new Date().getFullYear()} DJAART SCHOOL</p>
       </div>
 
       <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-12">

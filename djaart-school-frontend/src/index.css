@@ -24,17 +24,6 @@ body {
   @apply bg-slate-50 text-brand-navy antialiased;
 }
 
-/* Fond des sections de marque (hero, bandeau d'auth) : degrade de marque +
-   motif de points discret, combines en un seul `background-image` (une
-   utilite Tailwind `bg-gradient-to-br` posee sur le meme element ecraserait
-   entierement ce motif, les deux ciblant la meme propriete CSS). */
-.brand-mesh {
-  background-image:
-    radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom right, var(--color-brand-navy), var(--color-brand-navy-soft), var(--color-brand-blue));
-  background-size: 22px 22px, cover;
-}
-
 @keyframes toast-in {
   from {
     opacity: 0;
