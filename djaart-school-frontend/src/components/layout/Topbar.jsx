@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import logo from '../../assets/logo.png'
 import * as profilApi from '../../api/profilApi'
 import useAuth from '../../hooks/useAuth'
@@ -60,7 +61,18 @@ export default function Topbar({ onMenuClick }) {
             ))}
           </select>
         )}
-        {user && <span className="hidden text-sm text-brand-navy sm:inline">{user.name}</span>}
+        {user && (
+          <Link to="/mon-profil" className="hidden items-center gap-2 text-sm text-brand-navy hover:underline sm:flex">
+            {user.photo_url ? (
+              <img src={user.photo_url} alt="" className="h-7 w-7 rounded-full object-cover" />
+            ) : (
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-blue-tint text-xs font-semibold text-brand-blue">
+                {user.name?.[0]?.toUpperCase()}
+              </span>
+            )}
+            {user.civilite ? `${user.civilite} ${user.name}` : user.name}
+          </Link>
+        )}
         <Button variant="ghost" size="sm" onClick={logout}>
           Déconnexion
         </Button>

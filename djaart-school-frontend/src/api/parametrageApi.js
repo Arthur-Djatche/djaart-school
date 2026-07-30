@@ -11,9 +11,10 @@ export const uploadEtablissementLogo = (id, file) => {
   return axiosClient.post(`/api/etablissements/${id}/logo`, formData)
 }
 
-export const uploadEtablissementSignature = (id, file) => {
+export const uploadEtablissementSignature = (id, file, titre) => {
   const formData = new FormData()
   formData.append('signature', file)
+  if (titre) formData.append('signature_titre', titre)
   return axiosClient.post(`/api/etablissements/${id}/signature`, formData)
 }
 

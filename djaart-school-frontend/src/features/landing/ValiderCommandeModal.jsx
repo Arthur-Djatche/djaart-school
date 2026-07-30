@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Modal from '../../components/ui/Modal'
 import Select from '../../components/ui/Select'
-import { PERMISSIONS_CATALOG } from '../../config/permissionsCatalog'
+import { filtrerCataloguePourTypes, PERMISSIONS_CATALOG } from '../../config/permissionsCatalog'
 
 const TYPES_ETABLISSEMENT = [
   { value: 'primaire', label: 'Primaire' },
@@ -30,6 +30,15 @@ export default function ValiderCommandeModal({ commande, onClose, onSubmit }) {
       }
       return next
     })
+  }
+
+  const catalogueVisible = useMemo(
+    () => filtrerCataloguePourTypes(PERMISSIONS_CATALOG, [typeEtablissement, typeEtablissementSecondaire].filter(Boolean)),
+    [typeEtablissement, typeEtablissementSecondaire],
+  )
+
+  const donnerTousLesDroits = () => {
+    setSelected(new Set(catalogueVisible.flatMap((groupe) => groupe.droits.map((droit) => droit.cle))))
   }
 
   const handleSubmit = async (event) => {
@@ -88,9 +97,14 @@ export default function ValiderCommandeModal({ commande, onClose, onSubmit }) {
         />
 
         <div>
-          <p className="mb-2 text-sm font-medium text-brand-navy">Fonctionnalités incluses</p>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-medium text-brand-navy">Fonctionnalités incluses</p>
+            <Button type="button" variant="ghost" size="sm" onClick={donnerTousLesDroits}>
+              Donner tous les droits
+            </Button>
+          </div>
           <div className="flex max-h-[40vh] flex-col gap-4 overflow-y-auto">
-            {PERMISSIONS_CATALOG.map((groupe) => (
+            {catalogueVisible.map((groupe) => (
               <div key={groupe.domaine}>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{groupe.domaine}</p>
                 <div className="flex flex-col gap-2">

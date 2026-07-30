@@ -2,6 +2,9 @@
 // clés, regroupées par domaine pour l'affichage dans UserPermissionsModal.
 // "Comptes utilisateurs" et "Demandes de démo" restent hors catalogue :
 // jamais délégables.
+const CLASSIQUE = ['primaire', 'secondaire', 'centre_formation']
+const UNIVERSITAIRE = ['universitaire']
+
 export const PERMISSIONS_CATALOG = [
   {
     domaine: 'Inscriptions & apprenants',
@@ -23,11 +26,11 @@ export const PERMISSIONS_CATALOG = [
     domaine: 'Pédagogie',
     droits: [
       { cle: 'acces.affectations', label: 'Affectations' },
-      { cle: 'acces.sequences', label: 'Séquences' },
-      { cle: 'acces.semestres', label: 'Semestres' },
+      { cle: 'acces.sequences', label: 'Séquences', etablissementTypes: CLASSIQUE },
+      { cle: 'acces.semestres', label: 'Semestres', etablissementTypes: UNIVERSITAIRE },
       { cle: 'acces.notes', label: 'Saisie des notes' },
-      { cle: 'acces.conduite', label: 'Saisie de la conduite' },
-      { cle: 'acces.bulletins', label: 'Bulletins' },
+      { cle: 'acces.conduite', label: 'Saisie de la conduite', etablissementTypes: CLASSIQUE },
+      { cle: 'acces.bulletins', label: 'Bulletins', etablissementTypes: CLASSIQUE },
       { cle: 'acces.releves', label: 'Relevés de notes' },
     ],
   },
@@ -39,3 +42,16 @@ export const PERMISSIONS_CATALOG = [
     ],
   },
 ]
+
+// Ne garde que les droits pertinents pour le(s) type(s) d'etablissement
+// donnes (un droit sans etablissementTypes est toujours pertinent).
+export function filtrerCataloguePourTypes(catalogue, etablissementTypes = []) {
+  return catalogue
+    .map((groupe) => ({
+      ...groupe,
+      droits: groupe.droits.filter(
+        (droit) => !droit.etablissementTypes || droit.etablissementTypes.some((type) => etablissementTypes.includes(type)),
+      ),
+    }))
+    .filter((groupe) => groupe.droits.length > 0)
+}

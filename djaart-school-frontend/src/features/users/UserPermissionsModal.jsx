@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
-import { PERMISSIONS_CATALOG } from '../../config/permissionsCatalog'
+import { filtrerCataloguePourTypes, PERMISSIONS_CATALOG } from '../../config/permissionsCatalog'
 
 export default function UserPermissionsModal({ user, onClose, onSubmit }) {
   const [selected, setSelected] = useState(new Set(user.permissions ?? []))
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const etablissementTypes = [user.etablissement?.type_etablissement, user.etablissement?.type_etablissement_secondaire].filter(Boolean)
+  const catalogueVisible = useMemo(() => filtrerCataloguePourTypes(PERMISSIONS_CATALOG, etablissementTypes), [etablissementTypes])
 
   const toggle = (cle) => {
     setSelected((prev) => {
@@ -18,6 +21,10 @@ export default function UserPermissionsModal({ user, onClose, onSubmit }) {
       }
       return next
     })
+  }
+
+  const donnerTousLesDroits = () => {
+    setSelected(new Set(catalogueVisible.flatMap((groupe) => groupe.droits.map((droit) => droit.cle))))
   }
 
   const handleSubmit = async (event) => {
@@ -40,8 +47,14 @@ export default function UserPermissionsModal({ user, onClose, onSubmit }) {
           Droits supplémentaires accordés en complément du rôle « {user.roles?.join(', ')} ».
         </p>
 
+        <div className="flex items-center justify-end">
+          <Button type="button" variant="ghost" size="sm" onClick={donnerTousLesDroits}>
+            Donner tous les droits
+          </Button>
+        </div>
+
         <div className="flex max-h-[50vh] flex-col gap-4 overflow-y-auto">
-          {PERMISSIONS_CATALOG.map((groupe) => (
+          {catalogueVisible.map((groupe) => (
             <div key={groupe.domaine}>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{groupe.domaine}</p>
               <div className="flex flex-col gap-2">

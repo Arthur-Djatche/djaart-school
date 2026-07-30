@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Input from '../../../components/ui/Input'
 import Modal from '../../../components/ui/Modal'
 import * as parametrageApi from '../../../api/parametrageApi'
 import useToast from '../../../hooks/useToast'
@@ -8,7 +9,7 @@ const CHAMPS = [
     key: 'entete',
     label: "En-tête complet (logo + nom + adresse déjà composés)",
     urlKey: 'entete_url',
-    upload: parametrageApi.uploadEtablissementEntete,
+    upload: (id, file) => parametrageApi.uploadEtablissementEntete(id, file),
     messageOk: 'En-tête mis à jour.',
     vide: 'Aucun en-tête',
     wide: true,
@@ -17,7 +18,7 @@ const CHAMPS = [
     key: 'logo',
     label: 'Logo (utilisé en filigrane sur les documents)',
     urlKey: 'logo_url',
-    upload: parametrageApi.uploadEtablissementLogo,
+    upload: (id, file) => parametrageApi.uploadEtablissementLogo(id, file),
     messageOk: 'Logo mis à jour.',
     vide: 'Aucun logo',
   },
@@ -25,15 +26,18 @@ const CHAMPS = [
     key: 'signature',
     label: 'Signature (image, pour les documents officiels)',
     urlKey: 'signature_url',
-    upload: parametrageApi.uploadEtablissementSignature,
+    upload: (id, file, titre) => parametrageApi.uploadEtablissementSignature(id, file, titre),
     messageOk: 'Signature mise à jour.',
     vide: 'Aucune signature',
   },
 ]
 
+const SUGGESTIONS_TITRE = ['Le Directeur', 'La Directrice', 'Le Fondateur', 'La Fondatrice', 'Le Proviseur', 'La Proviseure']
+
 export default function EtablissementBrandingModal({ etablissement, onClose, onUpdated }) {
   const { showToast } = useToast()
   const [current, setCurrent] = useState(etablissement)
+  const [signatureTitre, setSignatureTitre] = useState(etablissement.signature_titre ?? '')
   const [uploadingKey, setUploadingKey] = useState(null)
   const [error, setError] = useState('')
 
@@ -42,7 +46,7 @@ export default function EtablissementBrandingModal({ etablissement, onClose, onU
     setError('')
     setUploadingKey(champ.key)
     try {
-      const { data } = await champ.upload(current.id, file)
+      const { data } = await champ.upload(current.id, file, champ.key === 'signature' ? signatureTitre : undefined)
       setCurrent(data.data)
       onUpdated?.(data.data)
       showToast(champ.messageOk, 'success')
@@ -72,6 +76,17 @@ export default function EtablissementBrandingModal({ etablissement, onClose, onU
                 {champ.vide}
               </div>
             )}
+            {champ.key === 'signature' && (
+              <Input
+                id="signature_titre"
+                label="Grade / titre du signataire"
+                placeholder="Le Directeur, La Directrice, Le Fondateur…"
+                list="suggestions-titre-signature"
+                value={signatureTitre}
+                onChange={(e) => setSignatureTitre(e.target.value)}
+                className="mb-3"
+              />
+            )}
             <label className="inline-block cursor-pointer rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy">
               {uploadingKey === champ.key ? 'Téléversement…' : 'Téléverser'}
               <input
@@ -86,11 +101,18 @@ export default function EtablissementBrandingModal({ etablissement, onClose, onU
         ))}
       </div>
 
+      <datalist id="suggestions-titre-signature">
+        {SUGGESTIONS_TITRE.map((titre) => (
+          <option key={titre} value={titre} />
+        ))}
+      </datalist>
+
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
       <p className="mt-4 text-xs text-slate-500">
         Si un en-tête complet est importé, il remplace le bloc logo + nom généré automatiquement en haut des documents.
         Le logo apparaît en filigrane en fond de tous les documents (bulletins, relevés, reçus, attestations, cartes scolaires).
+        Le grade/titre du signataire est saisi une fois puis réutilisé à chaque nouveau téléversement de la signature.
       </p>
     </Modal>
   )

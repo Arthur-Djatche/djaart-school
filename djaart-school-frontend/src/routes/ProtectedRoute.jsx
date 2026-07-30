@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 
-export default function ProtectedRoute({ roles, permission, allowWhileMustChangePassword = false }) {
+export default function ProtectedRoute({ roles, permission, etablissementTypes, allowWhileMustChangePassword = false }) {
   const { user, loading } = useAuth()
 
   if (loading) {
@@ -19,7 +19,14 @@ export default function ProtectedRoute({ roles, permission, allowWhileMustChange
   const parRole = !roles || roles.some((role) => user.roles.includes(role))
   const parPermission = Boolean(permission) && (user.permissions ?? []).includes(permission)
 
-  if (!parRole && !parPermission) {
+  // Un ecran reserve a un type d'etablissement (ex. Sequences = classique
+  // uniquement) reste inaccessible par URL directe meme si le role/droit
+  // correspond — pas seulement masque dans le menu. super_admin exempte
+  // (support/depannage, ne depend d'aucun etablissement precis).
+  const typesUtilisateur = [user.etablissement?.type_etablissement, user.etablissement?.type_etablissement_secondaire].filter(Boolean)
+  const parType = !etablissementTypes || user.roles.includes('super_admin') || etablissementTypes.some((type) => typesUtilisateur.includes(type))
+
+  if ((!parRole && !parPermission) || !parType) {
     return <Navigate to="/dashboard" replace />
   }
 

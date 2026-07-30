@@ -23,6 +23,7 @@ import FilieresPage from '../features/parametrage/filieres/FilieresPage'
 import MatieresPage from '../features/parametrage/matieres/MatieresPage'
 import NiveauxPage from '../features/parametrage/niveaux/NiveauxPage'
 import UnitesEnseignementPage from '../features/parametrage/unites-enseignement/UnitesEnseignementPage'
+import MonProfilPage from '../features/profil/MonProfilPage'
 import AffectationsPage from '../features/pedagogie/affectations/AffectationsPage'
 import BulletinsPage from '../features/pedagogie/bulletins/BulletinsPage'
 import SaisieConduitePage from '../features/pedagogie/conduite/SaisieConduitePage'
@@ -39,6 +40,9 @@ const FINANCE_ROLES = ['super_admin', 'admin_etablissement', 'comptable']
 const PEDAGOGIE_ROLES = ['super_admin', 'admin_etablissement', 'enseignant']
 const BULLETINS_ROLES = ['super_admin', 'admin_etablissement', 'secretaire']
 
+const CLASSIQUE = ['primaire', 'secondaire', 'centre_formation']
+const UNIVERSITAIRE = ['universitaire']
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -54,6 +58,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/imprimer-recu/:recuId" element={<PrintRecuPage />} />
+        <Route path="/mon-profil" element={<MonProfilPage />} />
       </Route>
 
       <Route element={<ProtectedRoute roles={['super_admin']} />}>
@@ -78,11 +83,14 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.parametrage_academique" />}>
         <Route path="/parametrage/annees-academiques" element={<AnneesAcademiquesPage />} />
-        <Route path="/parametrage/departements" element={<DepartementsPage />} />
         <Route path="/parametrage/filieres" element={<FilieresPage />} />
         <Route path="/parametrage/filieres/:filiereId/niveaux" element={<NiveauxPage />} />
         <Route path="/parametrage/classes" element={<ClassesPage />} />
         <Route path="/parametrage/matieres" element={<MatieresPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.parametrage_academique" etablissementTypes={UNIVERSITAIRE} />}>
+        <Route path="/parametrage/departements" element={<DepartementsPage />} />
         <Route path="/parametrage/unites-enseignement" element={<UnitesEnseignementPage />} />
       </Route>
 
@@ -94,11 +102,11 @@ export default function AppRoutes() {
         <Route path="/pedagogie/affectations" element={<AffectationsPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.sequences" />}>
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.sequences" etablissementTypes={CLASSIQUE} />}>
         <Route path="/pedagogie/sequences" element={<SequencesPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.semestres" />}>
+      <Route element={<ProtectedRoute roles={ADMIN_ROLES} permission="acces.semestres" etablissementTypes={UNIVERSITAIRE} />}>
         <Route path="/pedagogie/semestres" element={<SemestresPage />} />
       </Route>
 
@@ -110,11 +118,11 @@ export default function AppRoutes() {
         <Route path="/pedagogie/notes" element={<SaisieNotesPage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={[...PEDAGOGIE_ROLES, 'secretaire']} permission="acces.conduite" />}>
+      <Route element={<ProtectedRoute roles={[...PEDAGOGIE_ROLES, 'secretaire']} permission="acces.conduite" etablissementTypes={CLASSIQUE} />}>
         <Route path="/pedagogie/conduite" element={<SaisieConduitePage />} />
       </Route>
 
-      <Route element={<ProtectedRoute roles={BULLETINS_ROLES} permission="acces.bulletins" />}>
+      <Route element={<ProtectedRoute roles={BULLETINS_ROLES} permission="acces.bulletins" etablissementTypes={CLASSIQUE} />}>
         <Route path="/pedagogie/bulletins" element={<BulletinsPage />} />
       </Route>
 
