@@ -136,6 +136,20 @@ class ParametrageSeeder extends Seeder
             ['name' => 'Admin Université', 'password' => 'password', 'etablissement_id' => $etablissement->id],
         );
         $admin->syncRoles(['admin_etablissement']);
+        $admin->etablissementsGeres()->syncWithoutDetaching([
+            $etablissement->id => ['role' => 'admin_etablissement', 'permissions' => []],
+        ]);
+
+        // Demontre la bascule multi-etablissement (cf. Topbar) : le meme
+        // admin gere aussi un centre de formation distinct, plutot que de
+        // cumuler ce 2e type sur l'universite elle-meme.
+        $etablissementCentreFormation = Etablissement::firstOrCreate(
+            ['nom' => 'Université Démo DJAART — Centre de formation'],
+            ['type_etablissement' => 'centre_formation', 'sigle' => 'UDD-CF'],
+        );
+        $admin->etablissementsGeres()->syncWithoutDetaching([
+            $etablissementCentreFormation->id => ['role' => 'admin_etablissement', 'permissions' => []],
+        ]);
 
         $enseignant = User::updateOrCreate(
             ['email' => 'enseignant.universite@djaart.school'],
@@ -274,6 +288,9 @@ class ParametrageSeeder extends Seeder
             ['name' => $adminName, 'password' => 'password', 'etablissement_id' => $etablissement->id],
         );
         $admin->syncRoles(['admin_etablissement']);
+        $admin->etablissementsGeres()->syncWithoutDetaching([
+            $etablissement->id => ['role' => 'admin_etablissement', 'permissions' => []],
+        ]);
 
         $enseignant = User::updateOrCreate(
             ['email' => $enseignantEmail],

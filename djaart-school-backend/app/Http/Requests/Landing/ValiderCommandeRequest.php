@@ -17,8 +17,9 @@ class ValiderCommandeRequest extends FormRequest
     {
         return [
             'type_etablissement' => ['required', Rule::in(['primaire', 'secondaire', 'universitaire', 'centre_formation'])],
-            // Un etablissement peut cumuler jusqu'a 2 types (ex. secondaire +
-            // centre de formation) ; le second est optionnel et doit differer du premier.
+            // Optionnel : si renseigne, un 2e etablissement distinct de ce type est
+            // cree en plus du premier, avec le meme admin (cf. CommandeController::valider) —
+            // pas un cumul de types sur un seul et meme etablissement.
             'type_etablissement_secondaire' => [
                 'nullable',
                 Rule::in(['primaire', 'secondaire', 'universitaire', 'centre_formation']),

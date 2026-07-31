@@ -22,6 +22,17 @@ class CommandeController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Libelles utilises pour distinguer le nom du 2e etablissement cree
+     * quand type_etablissement_secondaire est choisi (cf. valider()).
+     */
+    private const LIBELLES_TYPE = [
+        'primaire' => 'Primaire',
+        'secondaire' => 'Secondaire',
+        'universitaire' => 'Universitaire',
+        'centre_formation' => 'Centre de formation',
+    ];
+
     public function index()
     {
         $commandes = Commande::query()
@@ -52,7 +63,10 @@ class CommandeController extends Controller
      * existant si l'e-mail de la commande correspond deja a un compte de ce
      * role) : durree d'acces (abonnement_expire_le), fonctionnalites
      * (droits acces.xxx accordes), type d'etablissement — tout choisi ici
-     * par le super_admin, jamais par l'etablissement lui-meme.
+     * par le super_admin, jamais par l'etablissement lui-meme. Si un 2e type
+     * est choisi, un 2e etablissement distinct est cree (pas un cumul sur le
+     * meme etablissement) et le meme admin y est rattache — il pourra
+     * basculer de l'un a l'autre depuis son tableau de bord.
      */
     public function valider(ValiderCommandeRequest $request, Commande $commande)
     {
@@ -68,17 +82,29 @@ class CommandeController extends Controller
             $etablissement = Etablissement::create([
                 'nom' => $commande->nom_etablissement,
                 'type_etablissement' => $data['type_etablissement'],
-                'type_etablissement_secondaire' => $data['type_etablissement_secondaire'] ?? null,
                 'abonnement_expire_le' => now()->addMonths($data['duree_mois'])->toDateString(),
             ]);
+
+            $etablissementSecondaire = null;
+            if (! empty($data['type_etablissement_secondaire'])) {
+                $etablissementSecondaire = Etablissement::create([
+                    'nom' => $commande->nom_etablissement.' — '.self::LIBELLES_TYPE[$data['type_etablissement_secondaire']],
+                    'type_etablissement' => $data['type_etablissement_secondaire'],
+                    'abonnement_expire_le' => $etablissement->abonnement_expire_le,
+                ]);
+            }
+
+            $etablissementsAAttacher = array_filter([$etablissement->id, $etablissementSecondaire?->id]);
 
             $adminExistant = User::where('email', $commande->email)->role('admin_etablissement')->first();
 
             if ($adminExistant) {
                 $adminExistant->givePermissionTo($data['permissions']);
-                $adminExistant->etablissementsGeres()->syncWithoutDetaching([
-                    $etablissement->id => ['role' => 'admin_etablissement', 'permissions' => $data['permissions']],
-                ]);
+                foreach ($etablissementsAAttacher as $etablissementId) {
+                    $adminExistant->etablissementsGeres()->syncWithoutDetaching([
+                        $etablissementId => ['role' => 'admin_etablissement', 'permissions' => $data['permissions']],
+                    ]);
+                }
                 $adminExistant->update(['etablissement_id' => $etablissement->id]);
 
                 Mail::to($adminExistant->email)->send(new NouvelEtablissementAjouteMail($adminExistant, $etablissement, 'admin_etablissement'));
@@ -94,9 +120,11 @@ class CommandeController extends Controller
                 ]);
                 $admin->assignRole('admin_etablissement');
                 $admin->syncPermissions($data['permissions']);
-                $admin->etablissementsGeres()->syncWithoutDetaching([
-                    $etablissement->id => ['role' => 'admin_etablissement', 'permissions' => $data['permissions']],
-                ]);
+                foreach ($etablissementsAAttacher as $etablissementId) {
+                    $admin->etablissementsGeres()->syncWithoutDetaching([
+                        $etablissementId => ['role' => 'admin_etablissement', 'permissions' => $data['permissions']],
+                    ]);
+                }
 
                 Mail::to($admin->email)->send(new CommandeValideeMail($admin, $motDePasse));
             }

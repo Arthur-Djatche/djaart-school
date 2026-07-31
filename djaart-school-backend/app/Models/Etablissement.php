@@ -14,7 +14,6 @@ class Etablissement extends Model
     protected $fillable = [
         'nom',
         'type_etablissement',
-        'type_etablissement_secondaire',
         'abonnement_expire_le',
         'sigle',
         'adresse',
@@ -38,15 +37,6 @@ class Etablissement extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
-    }
-
-    /**
-     * Type(s) cumules de l'etablissement (1 ou 2), pour toute logique devant
-     * traiter les deux uniformement (ex. visibilite des menus par type).
-     */
-    public function typesEtablissement(): array
-    {
-        return array_values(array_filter([$this->type_etablissement, $this->type_etablissement_secondaire]));
     }
 
     /**

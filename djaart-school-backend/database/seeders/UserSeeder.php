@@ -35,6 +35,12 @@ class UserSeeder extends Seeder
                 ['name' => $name, 'password' => 'password', 'etablissement_id' => $etablissement->id],
             );
             $user->syncRoles([$role]);
+
+            if ($role === 'admin_etablissement') {
+                $user->etablissementsGeres()->syncWithoutDetaching([
+                    $etablissement->id => ['role' => $role, 'permissions' => []],
+                ]);
+            }
         }
     }
 }

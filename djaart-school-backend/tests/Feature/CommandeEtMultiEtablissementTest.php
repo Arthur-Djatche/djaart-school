@@ -101,7 +101,7 @@ class CommandeEtMultiEtablissementTest extends TestCase
         Mail::assertSent(CommandeValideeMail::class, fn ($mail) => $mail->user->is($admin));
     }
 
-    public function test_validation_avec_un_2e_type_cumule_les_deux_types(): void
+    public function test_validation_avec_un_2e_type_cree_un_etablissement_distinct_avec_le_meme_admin(): void
     {
         Mail::fake();
 
@@ -113,15 +113,29 @@ class CommandeEtMultiEtablissementTest extends TestCase
             'type_etablissement' => 'secondaire',
             'type_etablissement_secondaire' => 'centre_formation',
             'duree_mois' => 12,
-            'permissions' => [],
+            'permissions' => ['acces.caisse'],
         ]);
 
         $response->assertOk();
 
-        $etablissement = Etablissement::find($commande->fresh()->etablissement_id);
-        $this->assertSame('secondaire', $etablissement->type_etablissement);
-        $this->assertSame('centre_formation', $etablissement->type_etablissement_secondaire);
-        $this->assertEqualsCanonicalizing(['secondaire', 'centre_formation'], $etablissement->typesEtablissement());
+        $etablissementPrincipal = Etablissement::find($commande->fresh()->etablissement_id);
+        $this->assertSame('secondaire', $etablissementPrincipal->type_etablissement);
+
+        $etablissementSecondaire = Etablissement::where('type_etablissement', 'centre_formation')
+            ->where('id', '!=', $etablissementPrincipal->id)
+            ->first();
+        $this->assertNotNull($etablissementSecondaire);
+
+        $admin = User::where('email', 'jean.dupont@example.com')->first();
+        $this->assertSame(2, $admin->etablissementsGeres()->count());
+        $this->assertTrue($admin->etablissementsGeres()->where('etablissements.id', $etablissementSecondaire->id)->exists());
+
+        // Le meme admin bascule entre les deux, sans se reconnecter.
+        $response = $this->actingAs($admin)->putJson('/api/moi/etablissement-actif', [
+            'etablissement_id' => $etablissementSecondaire->id,
+        ]);
+        $response->assertOk();
+        $this->assertSame($etablissementSecondaire->id, $admin->fresh()->etablissement_id);
     }
 
     public function test_le_2e_type_doit_differer_du_type_principal(): void
