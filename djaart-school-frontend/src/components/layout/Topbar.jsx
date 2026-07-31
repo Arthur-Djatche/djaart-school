@@ -57,6 +57,7 @@ export default function Topbar({ onMenuClick }) {
             {user.etablissements_geres.map((etablissement) => (
               <option key={etablissement.id} value={etablissement.id}>
                 {etablissement.nom}
+                {etablissement.role ? ` (${etablissement.role})` : ''}
               </option>
             ))}
           </select>

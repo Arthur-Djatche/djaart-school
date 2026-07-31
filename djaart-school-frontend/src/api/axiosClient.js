@@ -1,6 +1,10 @@
 import axios from 'axios'
 
-const apiUrl = import.meta.env.VITE_API_URL
+// A defaut de VITE_API_URL (dev), on deduit l'URL du backend a partir de
+// l'hote utilise pour charger le frontend : le meme build fonctionne donc
+// depuis localhost, 127.0.0.1 ou l'IP LAN d'un autre appareil, sans que le
+// navigateur ne tente de resoudre "localhost" vers lui-meme.
+const apiUrl = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8000`
 
 const axiosClient = axios.create({
   baseURL: apiUrl,
