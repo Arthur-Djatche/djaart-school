@@ -714,5 +714,30 @@ Trois demandes combinées : (1) mettre les vraies coordonnées sur la page publi
 - **Premier compte `super_admin` en production** : non créé par cet environnement (pas d'accès à la base LWS) — si la base importée manuellement n'en contient pas déjà un, il faudra le créer via `php artisan tinker` (accès SSH) ou directement via une requête SQL dans phpMyAdmin.
 - **Aucun outil de navigateur ni accès réseau au serveur LWS depuis cet environnement** (déjà constaté aux correctifs précédents) : la vérification s'est limitée à un boot local de l'archive backend (confirmant la structure/le routage, pas la connexion réelle à la base distante) et à l'inspection du contenu des archives — aucun test end-to-end réel sur `school.djaart.site`/`api-school.djaart.site` n'a pu être effectué.
 
+## Correctif — Déploiement LWS : archive illisible (permissions) + photos non affichées (storage:link)
+- Statut : **terminé**
+
+### Contexte
+Après le premier déploiement réel sur LWS, deux problèmes distincts découverts en production (diagnostic mené conjointement avec l'utilisateur, qui n'avait accès qu'à son panneau LWS) : (1) `https://api-school.djaart.site/` renvoyait une erreur 500 brute, sans page d'erreur Laravel même avec `APP_DEBUG=true` ; (2) les photos de profil (et plus généralement tout fichier du disque "public" — logos, signatures) ne s'affichaient pas, l'utilisateur soupçonnant à raison le lien symbolique `storage:link` jamais exécuté (pas d'accès SSH confirmé).
+
+### Diagnostic (1) — archive illisible
+Démarche : test isolant (`phpinfo()` dans un fichier PHP nu à la racine d'`api-school`, fonctionnait) pour confirmer que PHP/Apache eux-mêmes marchaient, donc que le problème était dans le démarrage de Laravel — puis lecture du vrai journal d'erreurs PHP (distinct du journal d'accès Apache/Varnish, consulté en premier sans résultat exploitable), qui a révélé la cause exacte : `Failed opening required '.../vendor/symfony/deprecation-contracts/function.php': Permission denied`.
+
+**Cause racine** : les archives de production avaient été générées avec `Compress-Archive` (PowerShell), qui n'écrit pas de bits de permission Unix valides dans les entrées du zip — un serveur Linux qui extrait une telle archive peut se retrouver avec des fichiers illisibles par le processus web. Un bug plus subtil est apparu en corrigeant ceci avec `ZipArchive` de PHP : `addEmptyDir()` stocke en interne le nom de l'entrée avec un slash final, et `setExternalAttributesName()` échoue silencieusement (retourne `false` sans erreur) si on ne lui passe pas ce même nom avec le slash — sans ce détail, les dossiers gardaient l'attribut par défaut de l'extension (`0777`) au lieu du `0755` voulu.
+
+### Diagnostic (2) — storage:link
+Plutôt que de simplement guider la création manuelle du lien symbolique (fragile en mutualisé, à refaire à chaque redéploiement, pas toujours possible sans SSH), recherche d'une solution ne dépendant plus d'aucune opération serveur : Laravel 12 embarque un mécanisme intégré méconnu (`FilesystemServiceProvider::serveFiles()`) qui enregistre automatiquement une route `GET /storage/{path}` pour tout disque local marqué `'serve' => true` — remplaçant complètement le besoin du lien symbolique. Le disque `local` du squelette Laravel 12 par défaut a cette option activée nativement, mais sert `storage/app/private` (reçus PDF, volontairement privés, déjà servis via une route authentifiée dédiée) ; les deux disques (`local` et `public`) auraient sinon revendiqué la même URI `/storage/{path}`, le premier enregistré (`local`) l'emportant toujours.
+
+### Réalisé
+- **`config/filesystems.php`** : `'serve' => true` déplacé du disque `local` (retiré) vers le disque `public` — les logos, signatures et photos de profil sont désormais servis nativement par Laravel à `/storage/{path}`, sans lien symbolique, que l'hébergement propose SSH ou non. Vérifié par un test réel (fichier déposé dans `storage/app/public/`, servi avec succès via une simulation fidèle du comportement Apache/`.htaccess`, sans aucun lien symbolique présent).
+- **Génération des archives de production revue** : nouveau script (`build-zip-unix-perms.php`, hors dépôt git — outil de déploiement ponctuel) utilisant `ZipArchive` de PHP au lieu de `Compress-Archive`, avec permissions Unix explicites (fichiers `0644`, dossiers `0755`) correctement appliquées grâce au correctif du nom d'entrée avec slash final — vérifié entrée par entrée sur l'archive régénérée, y compris le fichier précédemment en échec.
+- Les deux archives de production (`api-school.zip`, `school.zip`) régénérées avec ces deux correctifs et remises à l'utilisateur pour un nouveau déploiement.
+- Vérification : suite de tests backend complète 209/209 OK (changement de configuration sans impact fonctionnel) ; boot réel de l'archive backend reconditionnée (comme au correctif précédent) ; route `/storage/{path}` testée et confirmée fonctionnelle localement sans lien symbolique.
+
+### Hypothèses / écarts documentés
+- **Fonctionnalité Laravel 12 non documentée dans les sources consultées jusqu'ici** (`FilesystemServiceProvider::serveFiles()`) — découverte en lisant directement le code du framework fourni (`vendor/laravel/framework`), pas dans la documentation officielle consultée en amont ; comportement confirmé par lecture du code source (`ServeFile`) et test réel, pas seulement supposé.
+- **`build-zip-unix-perms.php` n'est pas commité au dépôt** (outil de déploiement ponctuel, dépendant de chemins locaux à l'environnement de préparation) — à formaliser en script réutilisable dans le dépôt si des déploiements réguliers sont prévus à l'avenir.
+- **Aucun accès au serveur LWS depuis cet environnement** (déjà constaté aux correctifs précédents) : le diagnostic s'est fait entièrement via les journaux et tests que l'utilisateur a bien voulu copier depuis son panneau — reconfirmation du bon fonctionnement en production dépend de son prochain retour.
+
 ## Phases suivantes
 Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 10 à 11. Prochaine étape : **Phase 10**.
