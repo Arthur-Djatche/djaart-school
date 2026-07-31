@@ -33,16 +33,24 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
             'throw' => false,
             'report' => false,
         ],
 
+        // 'serve' active la route integree de Laravel 12 qui sert ce disque a
+        // GET {url}/{path} (ici /storage/{path}) sans dependre du lien
+        // symbolique public/storage — fragile en hebergement mutualise (pas
+        // toujours creable sans SSH, a refaire a chaque redeploiement).
+        // Volontairement PAS sur le disque "local" ci-dessus (recus PDF,
+        // prives, deja servis via une route authentifiee dediee) : les deux
+        // disques partageraient sinon la meme URI /storage/{path}, et celui
+        // enregistre en premier (local) l'emporterait toujours.
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
+            'serve' => true,
             'throw' => false,
             'report' => false,
         ],
