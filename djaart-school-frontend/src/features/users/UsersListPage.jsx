@@ -45,9 +45,11 @@ export default function UsersListPage() {
   }
 
   const handleDelete = async (user) => {
-    if (!window.confirm(`Supprimer ${user.name} ?`)) return
-    await usersApi.deleteUser(user.id)
-    showToast('Utilisateur supprimé.', 'success')
+    if (!window.confirm(`Retirer ${user.name} de cet établissement ?`)) return
+    const { data } = await usersApi.deleteUser(user.id)
+    // Un acteur partage avec d'autres etablissements n'est que retire du mien,
+    // pas supprime entierement — le message renvoye par l'API precise lequel.
+    showToast(data.message || 'Utilisateur supprimé.', 'success')
     loadUsers(meta.current_page)
   }
 
@@ -70,14 +72,21 @@ export default function UsersListPage() {
     loadUsers(meta.current_page)
   }
 
+  // etablissements_geres n'est renvoye (scope a MON etablissement) que pour
+  // un admin_etablissement — un super_admin voit la liste globale sans ce
+  // champ, avec le role/etablissement "actif" du moment de chacun a la place.
   const columns = [
     { key: 'name', label: 'Nom' },
     { key: 'email', label: 'E-mail' },
-    { key: 'roles', label: 'Rôle', render: (row) => row.roles.join(', ') },
+    {
+      key: 'roles',
+      label: 'Rôle',
+      render: (row) => row.etablissements_geres?.[0]?.role ?? row.roles.join(', '),
+    },
     {
       key: 'etablissement',
       label: 'Établissement',
-      render: (row) => row.etablissement?.nom ?? '—',
+      render: (row) => row.etablissements_geres?.[0]?.nom ?? row.etablissement?.nom ?? '—',
     },
     {
       key: 'actions',
