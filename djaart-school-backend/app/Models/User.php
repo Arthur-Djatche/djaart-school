@@ -49,6 +49,60 @@ class User extends Authenticatable
     }
 
     /**
+     * "Cet utilisateur appartient-il a cet etablissement" — le pivot fait
+     * foi des qu'il en porte au moins une ligne (un acteur multi-etablissement
+     * peut avoir bascule ailleurs, son etablissement_id actif n'est alors plus
+     * fiable pour repondre a cette question). Repli sur etablissement_id
+     * uniquement pour un utilisateur SANS aucune ligne de pivot (compte cree
+     * en dehors des points d'entree applicatifs habituels, ex. tinker/import) :
+     * evite qu'une donnee incomplete ne verrouille injustement un admin hors
+     * de son propre etablissement.
+     */
+    public function appartientA(?int $etablissementId): bool
+    {
+        if (! $etablissementId) {
+            return false;
+        }
+
+        if ($this->etablissementsGeres()->exists()) {
+            return $this->etablissementsGeres()->where('etablissements.id', $etablissementId)->exists();
+        }
+
+        return $this->etablissement_id === $etablissementId;
+    }
+
+    /**
+     * Meme repli pivot-avec-secours-sur-etablissement_id que appartientA(),
+     * au niveau requete — utilise par UserController::index() pour lister
+     * les acteurs de MON etablissement sans exclure ceux qui ont bascule
+     * ailleurs, ni ceux dont le pivot n'a jamais ete peuple.
+     */
+    public function scopeAppartenantA($query, int $etablissementId)
+    {
+        return $query->where(function ($q) use ($etablissementId) {
+            $q->whereHas('etablissementsGeres', fn ($q2) => $q2->where('etablissements.id', $etablissementId))
+                ->orWhere(function ($q2) use ($etablissementId) {
+                    $q2->doesntHave('etablissementsGeres')->where('etablissement_id', $etablissementId);
+                });
+        });
+    }
+
+    /**
+     * Meme principe que scopeAppartenantA(), pour filtrer par role TENU DANS
+     * cet etablissement precis (pas le role Spatie "en direct", qui reflete
+     * l'etablissement actif du moment et peut donc etre tout autre chose).
+     */
+    public function scopeAvecRoleDans($query, int $etablissementId, string $role)
+    {
+        return $query->where(function ($q) use ($etablissementId, $role) {
+            $q->whereHas('etablissementsGeres', fn ($q2) => $q2->where('etablissements.id', $etablissementId)->where('etablissement_user.role', $role))
+                ->orWhere(function ($q2) use ($role) {
+                    $q2->doesntHave('etablissementsGeres')->role($role);
+                });
+        });
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

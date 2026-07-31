@@ -24,14 +24,28 @@ class UserController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Liste les acteurs de MON etablissement — au sens du pivot
+     * etablissement_user (appartenance), pas de users.etablissement_id (qui
+     * ne reflete que l'etablissement ACTIF du moment de chacun, potentiellement
+     * un tout autre etablissement pour un acteur partage). Filtrer sur cette
+     * colonne exclurait a tort les acteurs qui geres plusieurs etablissements
+     * mais ont actuellement bascule ailleurs.
+     */
     public function index(Request $request)
     {
         $this->authorize('viewAny', User::class);
 
+        $acteur = $request->user();
+        $etablissementId = $acteur->hasRole('super_admin') ? null : $acteur->etablissement_id;
+
         $users = User::query()
             ->with(['etablissement', 'roles'])
-            ->when(! $request->user()->hasRole('super_admin'), function ($query) use ($request) {
-                $query->where('etablissement_id', $request->user()->etablissement_id);
+            ->when($etablissementId, function ($query) use ($etablissementId) {
+                $query->appartenantA($etablissementId)
+                    ->with(['etablissementsGeres' => function ($q) use ($etablissementId) {
+                        $q->where('etablissements.id', $etablissementId);
+                    }]);
             })
             ->when($request->string('search')->trim()->isNotEmpty(), function ($query) use ($request) {
                 $search = $request->string('search')->trim();
@@ -40,8 +54,15 @@ class UserController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
-            ->when($request->string('role')->trim()->isNotEmpty(), function ($query) use ($request) {
-                $query->role($request->string('role')->trim());
+            ->when($request->string('role')->trim()->isNotEmpty(), function ($query) use ($request, $etablissementId) {
+                $role = $request->string('role')->trim();
+                // Le role recherche doit etre celui tenu DANS cet etablissement,
+                // pas le role global "actif" du moment (meme raison que ci-dessus).
+                if ($etablissementId) {
+                    $query->avecRoleDans($etablissementId, $role);
+                } else {
+                    $query->role($role);
+                }
             })
             ->orderBy('name')
             ->paginate(15);
@@ -111,6 +132,7 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user)
     {
         $data = $request->validated();
+        $acteur = $request->user();
 
         $user->fill([
             'name' => $data['name'] ?? $user->name,
@@ -126,16 +148,27 @@ class UserController extends Controller
         $user->save();
 
         if (! empty($data['role'])) {
-            $user->syncRoles([$data['role']]);
+            // Le role modifie ici s'applique a l'etablissement DE L'ACTEUR (celui
+            // dans lequel il gere cette cible), pas necessairement l'etablissement
+            // actif de la cible qui peut differer si elle est partagee avec
+            // d'autres etablissements — sinon on ecraserait par erreur son role
+            // dans un etablissement totalement etranger a cette action. Pour un
+            // super_admin (non scope a un etablissement), on garde l'etablissement
+            // actif de la cible comme avant.
+            $etablissementId = $acteur->hasRole('super_admin') ? $user->etablissement_id : $acteur->etablissement_id;
 
-            // Le role modifie ici est celui de l'etablissement actif de
-            // l'utilisateur cible : on garde le pivot en phase, sinon son
-            // ancien role y reapparaitrait a la prochaine bascule (cf.
-            // ProfilController::basculerEtablissement).
-            if ($user->etablissement_id) {
+            if ($etablissementId) {
                 $user->etablissementsGeres()->syncWithoutDetaching([
-                    $user->etablissement_id => ['role' => $data['role']],
+                    $etablissementId => ['role' => $data['role']],
                 ]);
+            }
+
+            // Le role "en direct" (Spatie, global) ne doit refleter ce
+            // changement que si c'est bien l'etablissement actif de la cible
+            // en ce moment — sinon elle le verra a sa prochaine bascule vers
+            // cet etablissement (cf. ProfilController::basculerEtablissement).
+            if ($etablissementId && $user->etablissement_id === $etablissementId) {
+                $user->syncRoles([$data['role']]);
             }
         }
 
@@ -162,7 +195,8 @@ class UserController extends Controller
             ]);
         }
 
-        if (! $acteur->hasRole('super_admin') && $acteur->etablissement_id !== $user->etablissement_id) {
+        // Meme logique que UserPolicy::sameTenantOrSuperAdmin (cf. User::appartientA).
+        if (! $acteur->hasRole('super_admin') && ! $user->appartientA($acteur->etablissement_id)) {
             throw ValidationException::withMessages([
                 'permissions' => "Vous ne pouvez modifier les droits que des acteurs de votre établissement.",
             ]);
@@ -173,15 +207,20 @@ class UserController extends Controller
             'permissions.*' => [Rule::in(GrantablePermissions::cles())],
         ]);
 
-        $user->syncPermissions($data['permissions']);
+        // Ces droits s'appliquent a l'etablissement DE L'ACTEUR (cf. update()) ;
+        // le pivot garde la trace pour chaque etablissement, le role/droits "en
+        // direct" (Spatie) ne sont resynchronises que si c'est bien l'etablissement
+        // actif de la cible en ce moment.
+        $etablissementId = $acteur->hasRole('super_admin') ? $user->etablissement_id : $acteur->etablissement_id;
 
-        // Meme logique que le role dans update() : ces droits s'appliquent
-        // a l'etablissement actif de l'utilisateur cible, garde en phase
-        // dans le pivot pour survivre a une bascule d'etablissement.
-        if ($user->etablissement_id) {
+        if ($etablissementId) {
             $user->etablissementsGeres()->syncWithoutDetaching([
-                $user->etablissement_id => ['permissions' => $data['permissions']],
+                $etablissementId => ['permissions' => $data['permissions']],
             ]);
+        }
+
+        if ($etablissementId && $user->etablissement_id === $etablissementId) {
+            $user->syncPermissions($data['permissions']);
         }
 
         Mail::to($user->email)->send(new DroitsAccesModifiesMail($user));
@@ -189,12 +228,39 @@ class UserController extends Controller
         return $this->success(new UserResource($user->load('etablissement')), 'Droits d\'accès mis à jour.');
     }
 
+    /**
+     * "Supprimer" un acteur ne doit retirer son compte entier que s'il
+     * n'intervient plus nulle part ailleurs — un acteur partage avec
+     * d'autres etablissements ne doit pas voir son compte detruit par un
+     * seul des admins qui le gerent : on le detache seulement de MON
+     * etablissement (le sien s'il n'en gerait qu'un, ce qui revient au
+     * meme resultat qu'avant pour le cas non partage).
+     */
     public function destroy(Request $request, User $user)
     {
         $this->authorize('delete', $user);
 
-        $user->delete();
+        $acteur = $request->user();
+        $etablissementId = $acteur->hasRole('super_admin') ? $user->etablissement_id : $acteur->etablissement_id;
 
-        return $this->success(null, 'Utilisateur supprimé.');
+        if ($etablissementId) {
+            $user->etablissementsGeres()->detach($etablissementId);
+        }
+
+        $etablissementRestant = $user->etablissementsGeres()->first();
+
+        if (! $etablissementRestant) {
+            $user->delete();
+
+            return $this->success(null, 'Utilisateur supprimé.');
+        }
+
+        if ($user->etablissement_id === $etablissementId) {
+            $user->update(['etablissement_id' => $etablissementRestant->id]);
+            $user->syncRoles([$etablissementRestant->pivot->role]);
+            $user->syncPermissions($etablissementRestant->pivot->permissions ?? []);
+        }
+
+        return $this->success(null, 'Utilisateur retiré de cet établissement (reste actif ailleurs).');
     }
 }

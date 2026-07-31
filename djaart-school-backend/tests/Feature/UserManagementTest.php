@@ -267,4 +267,120 @@ class UserManagementTest extends TestCase
         $response->assertOk();
         $this->assertModelMissing($secretaire);
     }
+
+    /**
+     * Un acteur partage entre plusieurs etablissements peut avoir bascule
+     * ailleurs : son etablissement_id "actif" ne reflete alors plus du tout
+     * l'etablissement B ci-dessous, seul le pivot le sait encore. La liste,
+     * la modification de role/droits et la suppression doivent toutes se
+     * baser sur le pivot, pas sur ce pointeur.
+     */
+    private function creerActeurPartage(Etablissement $etablissementActif, Etablissement $etablissementSecondaire, string $roleActif, string $roleSecondaire): User
+    {
+        $acteur = User::factory()->create(['etablissement_id' => $etablissementActif->id]);
+        $acteur->assignRole($roleActif);
+        $acteur->etablissementsGeres()->attach($etablissementActif->id, ['role' => $roleActif, 'permissions' => []]);
+        $acteur->etablissementsGeres()->attach($etablissementSecondaire->id, ['role' => $roleSecondaire, 'permissions' => []]);
+
+        return $acteur;
+    }
+
+    public function test_liste_des_utilisateurs_inclut_un_acteur_partage_meme_bascule_ailleurs(): void
+    {
+        $etablissementActif = Etablissement::factory()->create();
+        $etablissementB = Etablissement::factory()->create();
+        $acteur = $this->creerActeurPartage($etablissementActif, $etablissementB, 'enseignant', 'comptable');
+
+        $adminB = User::factory()->create(['etablissement_id' => $etablissementB->id]);
+        $adminB->assignRole('admin_etablissement');
+
+        $response = $this->actingAs($adminB)->getJson('/api/users');
+
+        $response->assertOk();
+        $emails = collect($response->json('data'))->pluck('email');
+        $this->assertContains($acteur->email, $emails);
+
+        $ligne = collect($response->json('data'))->firstWhere('email', $acteur->email);
+        $this->assertSame('comptable', $ligne['etablissements_geres'][0]['role']);
+    }
+
+    public function test_filtre_par_role_reflete_le_role_dans_mon_etablissement_pas_le_role_actif(): void
+    {
+        $etablissementActif = Etablissement::factory()->create();
+        $etablissementB = Etablissement::factory()->create();
+        $acteur = $this->creerActeurPartage($etablissementActif, $etablissementB, 'enseignant', 'comptable');
+
+        $adminB = User::factory()->create(['etablissement_id' => $etablissementB->id]);
+        $adminB->assignRole('admin_etablissement');
+
+        $trouveParSonRoleIci = $this->actingAs($adminB)->getJson('/api/users?role=comptable');
+        $this->assertContains($acteur->email, collect($trouveParSonRoleIci->json('data'))->pluck('email'));
+
+        $introuvableParSonRoleAilleurs = $this->actingAs($adminB)->getJson('/api/users?role=enseignant');
+        $this->assertNotContains($acteur->email, collect($introuvableParSonRoleAilleurs->json('data'))->pluck('email'));
+    }
+
+    public function test_admin_peut_modifier_le_role_dun_acteur_partage_meme_bascule_ailleurs(): void
+    {
+        $etablissementActif = Etablissement::factory()->create();
+        $etablissementB = Etablissement::factory()->create();
+        $acteur = $this->creerActeurPartage($etablissementActif, $etablissementB, 'enseignant', 'comptable');
+
+        $adminB = User::factory()->create(['etablissement_id' => $etablissementB->id]);
+        $adminB->assignRole('admin_etablissement');
+
+        $response = $this->actingAs($adminB)->putJson("/api/users/{$acteur->id}", [
+            'role' => 'secretaire',
+        ]);
+
+        $response->assertOk();
+
+        $lienB = $acteur->etablissementsGeres()->where('etablissements.id', $etablissementB->id)->first();
+        $this->assertSame('secretaire', $lienB->pivot->role);
+
+        // L'etablissement actif de l'acteur n'est pas B : son role "en direct"
+        // (Spatie) ne doit pas changer avant qu'il ne bascule vers B lui-meme.
+        $this->assertTrue($acteur->fresh()->hasRole('enseignant'));
+        $lienActif = $acteur->etablissementsGeres()->where('etablissements.id', $etablissementActif->id)->first();
+        $this->assertSame('enseignant', $lienActif->pivot->role);
+    }
+
+    public function test_admin_peut_modifier_les_droits_dun_acteur_partage_meme_bascule_ailleurs(): void
+    {
+        Mail::fake();
+
+        $etablissementActif = Etablissement::factory()->create();
+        $etablissementB = Etablissement::factory()->create();
+        $acteur = $this->creerActeurPartage($etablissementActif, $etablissementB, 'enseignant', 'comptable');
+
+        $adminB = User::factory()->create(['etablissement_id' => $etablissementB->id]);
+        $adminB->assignRole('admin_etablissement');
+
+        $response = $this->actingAs($adminB)->putJson("/api/users/{$acteur->id}/permissions", [
+            'permissions' => ['acces.caisse'],
+        ]);
+
+        $response->assertOk();
+
+        $lienB = $acteur->etablissementsGeres()->where('etablissements.id', $etablissementB->id)->first();
+        $this->assertSame(['acces.caisse'], $lienB->pivot->permissions);
+        $this->assertEmpty($acteur->fresh()->getDirectPermissions());
+    }
+
+    public function test_suppression_dun_acteur_partage_le_detache_seulement_sans_supprimer_le_compte(): void
+    {
+        $etablissementActif = Etablissement::factory()->create();
+        $etablissementB = Etablissement::factory()->create();
+        $acteur = $this->creerActeurPartage($etablissementActif, $etablissementB, 'enseignant', 'comptable');
+
+        $adminB = User::factory()->create(['etablissement_id' => $etablissementB->id]);
+        $adminB->assignRole('admin_etablissement');
+
+        $response = $this->actingAs($adminB)->deleteJson("/api/users/{$acteur->id}");
+
+        $response->assertOk();
+        $this->assertModelExists($acteur);
+        $this->assertSame(1, $acteur->etablissementsGeres()->count());
+        $this->assertTrue($acteur->etablissementsGeres()->where('etablissements.id', $etablissementActif->id)->exists());
+    }
 }

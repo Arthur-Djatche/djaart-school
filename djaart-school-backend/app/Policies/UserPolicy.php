@@ -49,8 +49,6 @@ class UserPolicy
             return true;
         }
 
-        return $user->hasRole('admin_etablissement')
-            && $user->etablissement_id !== null
-            && $user->etablissement_id === $target->etablissement_id;
+        return $user->hasRole('admin_etablissement') && $target->appartientA($user->etablissement_id);
     }
 }
