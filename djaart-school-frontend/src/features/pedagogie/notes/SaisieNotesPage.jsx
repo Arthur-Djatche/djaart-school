@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import DashboardLayout from '../../../components/layout/DashboardLayout'
 import Button from '../../../components/ui/Button'
+import HelpBanner from '../../../components/ui/HelpBanner'
 import Input from '../../../components/ui/Input'
 import Select from '../../../components/ui/Select'
 import * as pedagogieApi from '../../../api/pedagogieApi'
@@ -112,6 +113,13 @@ export default function SaisieNotesPage() {
         <h1 className="text-2xl font-semibold text-brand-navy">Saisie des notes</h1>
         <p className="text-sm text-slate-500">Sélectionnez une affectation puis la période à noter.</p>
       </div>
+
+      <HelpBanner>
+        Une affectation (Pédagogie &gt; Affectations) doit exister avant de pouvoir saisir une note — elle relie un
+        enseignant, une classe et une matière. Une fois la grille remplie, cliquez « Soumettre » pour la verrouiller :
+        c'est cette étape qui rend la matière disponible pour clôturer une séquence ou générer un relevé, pas la
+        simple saisie. Un admin peut « déverrouiller » en cas d'erreur pour permettre une correction.
+      </HelpBanner>
 
       {loadingAffectations ? (
         <p className="text-slate-500">Chargement…</p>

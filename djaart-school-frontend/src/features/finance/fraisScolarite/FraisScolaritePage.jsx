@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import DashboardLayout from '../../../components/layout/DashboardLayout'
 import Button from '../../../components/ui/Button'
+import HelpBanner from '../../../components/ui/HelpBanner'
 import Table from '../../../components/ui/Table'
 import * as financeApi from '../../../api/financeApi'
 import useToast from '../../../hooks/useToast'
@@ -79,6 +80,13 @@ export default function FraisScolaritePage() {
         <h1 className="text-2xl font-semibold text-brand-navy">Frais de scolarité</h1>
         <Button onClick={() => { setEditing(null); setShowForm(true) }}>Nouveaux frais</Button>
       </div>
+
+      <HelpBanner>
+        À configurer pour chaque niveau de l'année en cours, avant toute inscription. « Frais d'inscription » est
+        inclus dans le montant total (pas un supplément) : c'est ce montant précis qui valide une inscription une
+        fois encaissé, même si la tranche à laquelle il appartient n'est pas soldée. Mode comptant = 1 seule
+        échéance ; mode tranches = plusieurs échéances dont la somme doit égaler le montant total.
+      </HelpBanner>
 
       {loading ? (
         <p className="text-slate-500">Chargement…</p>

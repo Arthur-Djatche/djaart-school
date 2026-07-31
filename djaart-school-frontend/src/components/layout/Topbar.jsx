@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import logo from '../../assets/logo.png'
 import useAuth from '../../hooks/useAuth'
 import Button from '../ui/Button'
 import EtablissementSwitcher from './EtablissementSwitcher'
+import GuideModal from './GuideModal'
 
 export default function Topbar({ onMenuClick }) {
   const { user, logout } = useAuth()
+  const [showGuide, setShowGuide] = useState(false)
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-soft sm:px-6">
@@ -28,6 +31,15 @@ export default function Topbar({ onMenuClick }) {
         </span>
       </div>
       <div className="flex items-center gap-2 sm:gap-4">
+        <button
+          type="button"
+          onClick={() => setShowGuide(true)}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-sm font-semibold text-brand-navy transition hover:bg-slate-100"
+          aria-label="Guide d'utilisation"
+          title="Guide d'utilisation"
+        >
+          ?
+        </button>
         {/* Sur mobile, la bascule d'etablissement est dans le tiroir du menu
             (cf. Sidebar) — pas assez de place ici a cote du logo/hamburger. */}
         <EtablissementSwitcher className="hidden sm:block" />
@@ -47,6 +59,8 @@ export default function Topbar({ onMenuClick }) {
           Déconnexion
         </Button>
       </div>
+
+      {showGuide && <GuideModal onClose={() => setShowGuide(false)} />}
     </header>
   )
 }

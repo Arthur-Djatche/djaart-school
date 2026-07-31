@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
+import HelpBanner from '../../components/ui/HelpBanner'
 import Table from '../../components/ui/Table'
 import * as inscriptionApi from '../../api/inscriptionApi'
 import useToast from '../../hooks/useToast'
@@ -76,6 +77,12 @@ export default function InscriptionsListPage() {
         <h1 className="text-2xl font-semibold text-brand-navy">Inscriptions</h1>
         <Button onClick={() => setShowForm(true)}>Nouvelle inscription</Button>
       </div>
+
+      <HelpBanner>
+        La classe choisie doit déjà avoir des frais de scolarité configurés pour l'année en cours (Finance &gt; Frais
+        de scolarité) — sinon l'inscription est refusée. L'inscription passe à « validée » dès que les frais
+        d'inscription (une partie du montant total, pas la tranche entière) sont encaissés en Caisse.
+      </HelpBanner>
 
       {loading ? (
         <p className="text-slate-500">Chargement…</p>

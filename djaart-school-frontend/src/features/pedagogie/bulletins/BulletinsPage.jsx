@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import DashboardLayout from '../../../components/layout/DashboardLayout'
 import Button from '../../../components/ui/Button'
+import HelpBanner from '../../../components/ui/HelpBanner'
 import Select from '../../../components/ui/Select'
 import * as bulletinsApi from '../../../api/bulletinsApi'
 import * as parametrageApi from '../../../api/parametrageApi'
@@ -81,6 +82,13 @@ export default function BulletinsPage() {
         <h1 className="text-2xl font-semibold text-brand-navy">Bulletins</h1>
         <p className="text-sm text-slate-500">Clôturez une séquence pour générer les bulletins de toute la classe.</p>
       </div>
+
+      <HelpBanner>
+        Avant de pouvoir clôturer une séquence, il faut : 1) des apprenants inscrits dans la classe, 2) un enseignant
+        affecté à chaque matière du niveau (Pédagogie &gt; Affectations), 3) les notes de <strong>toutes</strong> ces
+        matières saisies <strong>et</strong> soumises (verrouillées) pour cette séquence. S'il en manque une, le
+        message d'erreur la nomme précisément — impossible de clôturer partiellement.
+      </HelpBanner>
 
       {loadingOptions ? (
         <p className="text-slate-500">Chargement…</p>

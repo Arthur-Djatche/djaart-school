@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import DashboardLayout from '../../../components/layout/DashboardLayout'
 import Button from '../../../components/ui/Button'
+import HelpBanner from '../../../components/ui/HelpBanner'
 import Select from '../../../components/ui/Select'
 import * as bulletinsApi from '../../../api/bulletinsApi'
 import * as parametrageApi from '../../../api/parametrageApi'
@@ -62,6 +63,13 @@ export default function RelevesPage() {
           Générez le relevé officiel annuel de toute une classe — 3 séquences (classique) ou 2 semestres combinés (LMD).
         </p>
       </div>
+
+      <HelpBanner>
+        Établissement classique : chaque séquence de l'année doit déjà avoir un bulletin (clôturez-les toutes dans
+        Pédagogie &gt; Bulletins avant de venir ici). Établissement LMD : les notes CC <strong>et</strong> Session
+        Normale doivent être verrouillées pour chaque UE du semestre choisi — pas de bulletin intermédiaire, la
+        génération se fait directement ici, semestre par semestre.
+      </HelpBanner>
 
       {loadingOptions ? (
         <p className="text-slate-500">Chargement…</p>

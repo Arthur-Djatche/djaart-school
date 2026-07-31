@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import DashboardLayout from '../../../components/layout/DashboardLayout'
 import Button from '../../../components/ui/Button'
+import HelpBanner from '../../../components/ui/HelpBanner'
 import Table from '../../../components/ui/Table'
 import * as pedagogieApi from '../../../api/pedagogieApi'
 import useToast from '../../../hooks/useToast'
@@ -63,6 +64,12 @@ export default function AffectationsPage() {
         <h1 className="text-2xl font-semibold text-brand-navy">Affectations enseignants</h1>
         <Button onClick={() => setShowForm(true)}>Nouvelle affectation</Button>
       </div>
+
+      <HelpBanner>
+        Une affectation relie un enseignant à une classe et une matière pour l'année en cours — la classe et la
+        matière doivent déjà exister (Paramétrage). Sans affectation, l'enseignant ne peut saisir aucune note pour
+        cette matière, et elle bloquera la clôture de séquence tant qu'aucune note n'y est saisie.
+      </HelpBanner>
 
       {loading ? (
         <p className="text-slate-500">Chargement…</p>

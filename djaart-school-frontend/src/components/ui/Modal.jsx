@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 
-export default function Modal({ title, onClose, children }) {
+const TAILLES = {
+  md: 'max-w-md',
+  lg: 'max-w-2xl',
+}
+
+export default function Modal({ title, onClose, children, size = 'md' }) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -17,7 +22,7 @@ export default function Modal({ title, onClose, children }) {
       }`}
     >
       <div
-        className={`flex max-h-[90vh] w-full max-w-md flex-col rounded-t-2xl bg-white p-6 shadow-2xl transition-all duration-200 sm:rounded-2xl ${
+        className={`flex max-h-[90vh] w-full ${TAILLES[size]} flex-col rounded-t-2xl bg-white p-6 shadow-2xl transition-all duration-200 sm:rounded-2xl ${
           visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 sm:translate-y-2'
         }`}
       >
