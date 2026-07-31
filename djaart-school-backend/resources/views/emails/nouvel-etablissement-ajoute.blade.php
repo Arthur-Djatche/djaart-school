@@ -1,7 +1,8 @@
 <x-emails.layout :subject="'Un nouvel établissement a été ajouté à votre compte'">
     <p style="font-size:15px; line-height:1.6;">Bonjour {{ $user->name }},</p>
     <p style="font-size:15px; line-height:1.6;">
-        L'établissement <strong>{{ $etablissement->nom }}</strong> vient d'être ajouté à votre compte DJAART SCHOOL.
+        L'établissement <strong>{{ $etablissement->nom }}</strong> vient d'être ajouté à votre compte DJAART SCHOOL
+        @if($roleLabel) en tant que <strong>{{ $roleLabel }}</strong> @endif.
         Vous pouvez désormais y basculer depuis votre tableau de bord, avec le même identifiant et mot de passe.
     </p>
     <p style="margin:24px 0;">

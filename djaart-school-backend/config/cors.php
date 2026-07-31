@@ -19,7 +19,13 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')],
+    // CORS_ALLOWED_ORIGINS : liste separee par des virgules (ex. accès LAN
+    // en plus de localhost) — distinct de FRONTEND_URL (unique, utilisé
+    // pour les liens dans les e-mails).
+    'allowed_origins' => array_filter(array_map(
+        'trim',
+        explode(',', env('CORS_ALLOWED_ORIGINS', env('FRONTEND_URL', 'http://localhost:5173')))
+    )),
 
     'allowed_origins_patterns' => [],
 

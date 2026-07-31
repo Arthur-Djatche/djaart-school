@@ -76,10 +76,12 @@ class CommandeController extends Controller
 
             if ($adminExistant) {
                 $adminExistant->givePermissionTo($data['permissions']);
-                $adminExistant->etablissementsGeres()->syncWithoutDetaching([$etablissement->id]);
+                $adminExistant->etablissementsGeres()->syncWithoutDetaching([
+                    $etablissement->id => ['role' => 'admin_etablissement', 'permissions' => $data['permissions']],
+                ]);
                 $adminExistant->update(['etablissement_id' => $etablissement->id]);
 
-                Mail::to($adminExistant->email)->send(new NouvelEtablissementAjouteMail($adminExistant, $etablissement));
+                Mail::to($adminExistant->email)->send(new NouvelEtablissementAjouteMail($adminExistant, $etablissement, 'admin_etablissement'));
             } else {
                 $motDePasse = Str::password(14);
 
@@ -92,7 +94,9 @@ class CommandeController extends Controller
                 ]);
                 $admin->assignRole('admin_etablissement');
                 $admin->syncPermissions($data['permissions']);
-                $admin->etablissementsGeres()->syncWithoutDetaching([$etablissement->id]);
+                $admin->etablissementsGeres()->syncWithoutDetaching([
+                    $etablissement->id => ['role' => 'admin_etablissement', 'permissions' => $data['permissions']],
+                ]);
 
                 Mail::to($admin->email)->send(new CommandeValideeMail($admin, $motDePasse));
             }

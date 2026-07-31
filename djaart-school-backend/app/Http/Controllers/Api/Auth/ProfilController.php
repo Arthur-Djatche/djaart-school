@@ -80,9 +80,13 @@ class ProfilController extends Controller
     }
 
     /**
-     * Change l'etablissement "actif" (users.etablissement_id) parmi ceux que
-     * cet admin_etablissement gere (cf. User::etablissementsGeres) — permet
-     * de permuter la gestion de plusieurs etablissements sans se reconnecter.
+     * Change l'etablissement "actif" (users.etablissement_id) parmi ceux ou
+     * cet acteur intervient (cf. User::etablissementsGeres) — permet de
+     * permuter sans se reconnecter. Le role et les droits en direct de
+     * l'utilisateur (Spatie, globaux par design) sont resynchronises sur
+     * ceux stockes dans le pivot pour cet etablissement precis : un meme
+     * compte peut ainsi etre secretaire ici et comptable ailleurs, avec des
+     * droits acces.xxx distincts dans chaque etablissement.
      */
     public function basculerEtablissement(Request $request)
     {
@@ -92,15 +96,20 @@ class ProfilController extends Controller
 
         $user = $request->user();
 
-        $autorise = $user->etablissementsGeres()->where('etablissements.id', $data['etablissement_id'])->exists();
+        $lien = $user->etablissementsGeres()->where('etablissements.id', $data['etablissement_id'])->first();
 
-        if (! $autorise) {
+        if (! $lien) {
             throw ValidationException::withMessages([
-                'etablissement_id' => "Vous ne gérez pas cet établissement.",
+                'etablissement_id' => "Vous n'intervenez pas dans cet établissement.",
             ]);
         }
 
         $user->update(['etablissement_id' => $data['etablissement_id']]);
+
+        if ($lien->pivot->role) {
+            $user->syncRoles([$lien->pivot->role]);
+        }
+        $user->syncPermissions($lien->pivot->permissions ?? []);
 
         return $this->success(new UserResource($user->load(['etablissement', 'etablissementsGeres'])), 'Établissement actif changé.');
     }

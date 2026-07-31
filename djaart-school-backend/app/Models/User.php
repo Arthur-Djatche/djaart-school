@@ -30,13 +30,22 @@ class User extends Authenticatable
     }
 
     /**
-     * Etablissements que cet admin_etablissement peut gerer et entre
-     * lesquels il peut permuter (etablissement_id ci-dessus est celui
-     * actuellement actif, pas necessairement le seul).
+     * Etablissements dans lesquels cet acteur intervient (n'importe quel
+     * role, pas seulement admin_etablissement) et entre lesquels il peut
+     * permuter sans se reconnecter — etablissement_id ci-dessus est celui
+     * actuellement actif, pas necessairement le seul. role/permissions du
+     * pivot sont propres a chaque etablissement, synchronises sur le role
+     * et les droits "en direct" de l'utilisateur a chaque bascule (cf.
+     * ProfilController::basculerEtablissement) — HasRoles/HasPermissions
+     * de Spatie restent globaux par design, ce pivot est la source de
+     * verite par etablissement.
      */
     public function etablissementsGeres(): BelongsToMany
     {
-        return $this->belongsToMany(Etablissement::class);
+        return $this->belongsToMany(Etablissement::class)
+            ->using(EtablissementUser::class)
+            ->withPivot(['role', 'permissions'])
+            ->withTimestamps();
     }
 
     /**

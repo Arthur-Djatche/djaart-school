@@ -10,6 +10,8 @@ use App\Http\Resources\UserResource;
 use App\Mail\CompteCreeMail;
 use App\Mail\DroitsAccesModifiesMail;
 use App\Mail\MotDePasseReinitialiseMail;
+use App\Mail\NouvelEtablissementAjouteMail;
+use App\Models\Etablissement;
 use App\Models\User;
 use App\Support\GrantablePermissions;
 use Illuminate\Http\Request;
@@ -50,9 +52,39 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Si l'e-mail correspond deja a un compte existant (dans un autre
+     * etablissement), on le rattache au lieu de bloquer ou de dupliquer le
+     * compte : un meme acteur peut intervenir dans plusieurs etablissements,
+     * avec un role propre a chacun (cf. User::etablissementsGeres).
+     */
     public function store(StoreUserRequest $request)
     {
         $data = $request->validated();
+        $etablissementId = $request->user()->hasRole('super_admin')
+            ? ($data['etablissement_id'] ?? null)
+            : $request->user()->etablissement_id;
+
+        $existant = User::where('email', $data['email'])->first();
+
+        if ($existant) {
+            if ($etablissementId && $existant->etablissementsGeres()->where('etablissements.id', $etablissementId)->exists()) {
+                throw ValidationException::withMessages([
+                    'email' => 'Cet acteur intervient déjà dans cet établissement.',
+                ]);
+            }
+
+            if ($etablissementId) {
+                $existant->etablissementsGeres()->syncWithoutDetaching([
+                    $etablissementId => ['role' => $data['role'], 'permissions' => []],
+                ]);
+
+                Mail::to($existant->email)->send(new NouvelEtablissementAjouteMail($existant, Etablissement::findOrFail($etablissementId), $data['role']));
+            }
+
+            return $this->success(new UserResource($existant->load(['etablissement', 'etablissementsGeres'])), 'Acteur existant rattaché à cet établissement.', 201);
+        }
+
         $motDePasse = Str::password(14);
 
         $user = User::create([
@@ -60,12 +92,16 @@ class UserController extends Controller
             'email' => $data['email'],
             'password' => $motDePasse,
             'must_change_password' => true,
-            'etablissement_id' => $request->user()->hasRole('super_admin')
-                ? ($data['etablissement_id'] ?? null)
-                : $request->user()->etablissement_id,
+            'etablissement_id' => $etablissementId,
         ]);
 
         $user->assignRole($data['role']);
+
+        if ($etablissementId) {
+            $user->etablissementsGeres()->syncWithoutDetaching([
+                $etablissementId => ['role' => $data['role'], 'permissions' => []],
+            ]);
+        }
 
         Mail::to($user->email)->send(new CompteCreeMail($user, $motDePasse));
 
@@ -91,6 +127,16 @@ class UserController extends Controller
 
         if (! empty($data['role'])) {
             $user->syncRoles([$data['role']]);
+
+            // Le role modifie ici est celui de l'etablissement actif de
+            // l'utilisateur cible : on garde le pivot en phase, sinon son
+            // ancien role y reapparaitrait a la prochaine bascule (cf.
+            // ProfilController::basculerEtablissement).
+            if ($user->etablissement_id) {
+                $user->etablissementsGeres()->syncWithoutDetaching([
+                    $user->etablissement_id => ['role' => $data['role']],
+                ]);
+            }
         }
 
         if (isset($motDePasse)) {
@@ -128,6 +174,15 @@ class UserController extends Controller
         ]);
 
         $user->syncPermissions($data['permissions']);
+
+        // Meme logique que le role dans update() : ces droits s'appliquent
+        // a l'etablissement actif de l'utilisateur cible, garde en phase
+        // dans le pivot pour survivre a une bascule d'etablissement.
+        if ($user->etablissement_id) {
+            $user->etablissementsGeres()->syncWithoutDetaching([
+                $user->etablissement_id => ['permissions' => $data['permissions']],
+            ]);
+        }
 
         Mail::to($user->email)->send(new DroitsAccesModifiesMail($user));
 

@@ -26,8 +26,12 @@ class UserResource extends JsonResource
                 'type_etablissement_secondaire' => $this->etablissement->type_etablissement_secondaire,
             ] : null),
             'etablissements_geres' => $this->when(
-                $this->relationLoaded('etablissementsGeres') && $this->etablissementsGeres->count() > 1,
-                fn () => $this->etablissementsGeres->map(fn ($e) => ['id' => $e->id, 'nom' => $e->nom])->values(),
+                $this->relationLoaded('etablissementsGeres'),
+                fn () => $this->etablissementsGeres->map(fn ($e) => [
+                    'id' => $e->id,
+                    'nom' => $e->nom,
+                    'role' => $e->pivot->role,
+                ])->values(),
             ),
         ];
     }

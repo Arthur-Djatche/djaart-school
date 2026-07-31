@@ -22,7 +22,11 @@ class StoreUserRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
+            // Pas de contrainte unique : si l'e-mail correspond deja a un
+            // compte existant (dans un autre etablissement), UserController::store
+            // le rattache a celui-ci via le pivot plutot que de bloquer ou
+            // dupliquer le compte.
+            'email' => ['required', 'email'],
             // Le mot de passe n'est jamais choisi par l'admin qui cree le
             // compte : genere automatiquement et envoye par e-mail (cf.
             // UserController::store), meme mecanisme que la validation

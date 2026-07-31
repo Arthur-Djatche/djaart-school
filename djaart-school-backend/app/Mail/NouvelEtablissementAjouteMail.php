@@ -17,7 +17,7 @@ class NouvelEtablissementAjouteMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public readonly User $user, public readonly Etablissement $etablissement)
+    public function __construct(public readonly User $user, public readonly Etablissement $etablissement, public readonly ?string $role = null)
     {
     }
 
@@ -27,6 +27,7 @@ class NouvelEtablissementAjouteMail extends Mailable
             ->view('emails.nouvel-etablissement-ajoute', [
                 'user' => $this->user,
                 'etablissement' => $this->etablissement,
+                'roleLabel' => $this->role,
                 'loginUrl' => rtrim(config('app.frontend_url'), '/').'/login',
             ]);
     }

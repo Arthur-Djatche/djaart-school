@@ -260,6 +260,42 @@ class CommandeEtMultiEtablissementTest extends TestCase
         $this->assertSame($etablissementB->id, $admin->fresh()->etablissement_id);
     }
 
+    public function test_bascule_entre_etablissements_avec_des_roles_et_droits_differents(): void
+    {
+        $etablissementA = Etablissement::factory()->create();
+        $etablissementB = Etablissement::factory()->create();
+
+        $acteur = User::factory()->create(['etablissement_id' => $etablissementA->id]);
+        $acteur->assignRole('secretaire');
+        $acteur->etablissementsGeres()->attach($etablissementA->id, ['role' => 'secretaire', 'permissions' => ['acces.inscriptions']]);
+        $acteur->etablissementsGeres()->attach($etablissementB->id, ['role' => 'comptable', 'permissions' => ['acces.caisse']]);
+
+        $this->assertTrue($acteur->hasRole('secretaire'));
+
+        $response = $this->actingAs($acteur)->putJson('/api/moi/etablissement-actif', [
+            'etablissement_id' => $etablissementB->id,
+        ]);
+
+        $response->assertOk();
+
+        $acteur->refresh();
+        $this->assertSame($etablissementB->id, $acteur->etablissement_id);
+        $this->assertTrue($acteur->hasRole('comptable'));
+        $this->assertFalse($acteur->hasRole('secretaire'));
+        $this->assertEqualsCanonicalizing(['acces.caisse'], $acteur->getDirectPermissions()->pluck('name')->all());
+
+        $response = $this->actingAs($acteur)->putJson('/api/moi/etablissement-actif', [
+            'etablissement_id' => $etablissementA->id,
+        ]);
+
+        $response->assertOk();
+
+        $acteur->refresh();
+        $this->assertTrue($acteur->hasRole('secretaire'));
+        $this->assertFalse($acteur->hasRole('comptable'));
+        $this->assertEqualsCanonicalizing(['acces.inscriptions'], $acteur->getDirectPermissions()->pluck('name')->all());
+    }
+
     public function test_admin_etablissement_ne_peut_pas_changer_le_type_de_son_etablissement(): void
     {
         $etablissement = Etablissement::factory()->create(['type_etablissement' => 'secondaire']);
