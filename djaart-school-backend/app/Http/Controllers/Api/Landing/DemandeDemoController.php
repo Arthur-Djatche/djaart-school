@@ -9,6 +9,7 @@ use App\Http\Resources\DemandeDemoResource;
 use App\Mail\DemandeDemoRecueMail;
 use App\Models\DemandeDemo;
 use App\Models\User;
+use App\Support\Mailer;
 use Illuminate\Support\Facades\Mail;
 
 class DemandeDemoController extends Controller
@@ -29,9 +30,13 @@ class DemandeDemoController extends Controller
     {
         $demande = DemandeDemo::create($request->validated());
 
+        // Un incident de livraison (destinataire rejete, panne SMTP...) ne
+        // doit jamais faire echouer la soumission elle-meme, deja enregistree
+        // ci-dessus — sinon un visiteur anonyme se voit repondre une erreur
+        // serveur pour une demande pourtant bien recue.
         $emailsSuperAdmins = User::role('super_admin')->pluck('email');
         if ($emailsSuperAdmins->isNotEmpty()) {
-            Mail::to($emailsSuperAdmins)->send(new DemandeDemoRecueMail($demande));
+            Mailer::envoyer(fn () => Mail::to($emailsSuperAdmins)->send(new DemandeDemoRecueMail($demande)));
         }
 
         return $this->success(new DemandeDemoResource($demande), 'Votre demande a bien été envoyée, notre équipe vous recontactera rapidement.', 201);

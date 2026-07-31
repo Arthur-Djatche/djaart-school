@@ -11,6 +11,7 @@ use App\Models\ReleveDeNotes;
 use App\Models\Semestre;
 use App\Models\Sequence;
 use App\Services\Concerns\EmbedsEtablissementBranding;
+use App\Support\Mailer;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -115,9 +116,12 @@ class ReleveService
                 $releve->update(['fichier_pdf' => $chemin]);
 
                 if ($inscription->apprenant->email) {
-                    Mail::to($inscription->apprenant->email)->send(
+                    // Ne doit jamais faire echouer (et annuler, la generation
+                    // etant transactionnelle pour toute la classe) la
+                    // production du releve d'un autre apprenant.
+                    Mailer::envoyer(fn () => Mail::to($inscription->apprenant->email)->send(
                         new ReleveDisponibleMail($releve->setRelation('inscription', $inscription)),
-                    );
+                    ));
                 }
 
                 $releves->push($releve);
@@ -354,9 +358,12 @@ class ReleveService
                 $releve->update(['fichier_pdf' => $chemin]);
 
                 if ($inscription->apprenant->email) {
-                    Mail::to($inscription->apprenant->email)->send(
+                    // Ne doit jamais faire echouer (et annuler, la generation
+                    // etant transactionnelle pour toute la classe) la
+                    // production du releve d'un autre apprenant.
+                    Mailer::envoyer(fn () => Mail::to($inscription->apprenant->email)->send(
                         new ReleveDisponibleMail($releve->setRelation('inscription', $inscription)),
-                    );
+                    ));
                 }
 
                 $releves->push($releve);

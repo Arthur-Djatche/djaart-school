@@ -6,6 +6,7 @@ use App\Mail\InscriptionValideeMail;
 use App\Models\Inscription;
 use App\Models\Paiement;
 use App\Models\User;
+use App\Support\Mailer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -84,7 +85,9 @@ class PaiementService
             $inscription->loadMissing('apprenant', 'classe.etablissement');
 
             if ($inscription->apprenant->email) {
-                Mail::to($inscription->apprenant->email)->send(new InscriptionValideeMail($inscription));
+                // Ne doit jamais annuler l'encaissement/la validation de
+                // l'inscription (transaction) — cf. RecuService::genererPour.
+                Mailer::envoyer(fn () => Mail::to($inscription->apprenant->email)->send(new InscriptionValideeMail($inscription)));
             }
         }
     }

@@ -7,6 +7,7 @@ use App\Models\Etablissement;
 use App\Models\Paiement;
 use App\Models\Recu;
 use App\Services\Concerns\EmbedsEtablissementBranding;
+use App\Support\Mailer;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -73,7 +74,10 @@ class RecuService
             $recu->update(['fichier_pdf' => $chemin]);
 
             if ($paiement->inscription->apprenant->email) {
-                Mail::to($paiement->inscription->apprenant->email)->send(new PaiementRecuMail($recu));
+                // Un incident de livraison ne doit jamais annuler l'encaissement
+                // lui-meme (transaction) — le comptable a deja le PDF telechargeable
+                // depuis l'ecran, l'e-mail n'est qu'une copie de courtoisie.
+                Mailer::envoyer(fn () => Mail::to($paiement->inscription->apprenant->email)->send(new PaiementRecuMail($recu)));
             }
 
             return $recu;

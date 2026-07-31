@@ -13,6 +13,7 @@ use App\Mail\NouvelEtablissementAjouteMail;
 use App\Models\Commande;
 use App\Models\Etablissement;
 use App\Models\User;
+use App\Support\Mailer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -50,9 +51,11 @@ class CommandeController extends Controller
     {
         $commande = Commande::create($request->validated());
 
+        // Un incident de livraison ne doit jamais faire echouer la
+        // soumission elle-meme (cf. App\Support\Mailer).
         $emailsSuperAdmins = User::role('super_admin')->pluck('email');
         if ($emailsSuperAdmins->isNotEmpty()) {
-            Mail::to($emailsSuperAdmins)->send(new CommandeRecueMail($commande));
+            Mailer::envoyer(fn () => Mail::to($emailsSuperAdmins)->send(new CommandeRecueMail($commande)));
         }
 
         return $this->success(new CommandeResource($commande), 'Votre commande a bien été envoyée, notre équipe vous contactera pour l\'activation.', 201);
@@ -98,6 +101,13 @@ class CommandeController extends Controller
 
             $adminExistant = User::where('email', $commande->email)->role('admin_etablissement')->first();
 
+            // Un incident de livraison ne doit jamais annuler tout le travail
+            // ci-dessus (on est dans une transaction : une exception non
+            // rattrapee ferait "rollback" l'etablissement et l'admin deja
+            // crees) — cf. App\Support\Mailer. Pour l'e-mail avec mot de
+            // passe (compte cree), on prevdefinit l'admin dans le message de
+            // reponse en cas d'echec, seul canal de communication du mot de
+            // passe genere.
             if ($adminExistant) {
                 $adminExistant->givePermissionTo($data['permissions']);
                 foreach ($etablissementsAAttacher as $etablissementId) {
@@ -107,7 +117,10 @@ class CommandeController extends Controller
                 }
                 $adminExistant->update(['etablissement_id' => $etablissement->id]);
 
-                Mail::to($adminExistant->email)->send(new NouvelEtablissementAjouteMail($adminExistant, $etablissement, 'admin_etablissement'));
+                $envoye = Mailer::envoyer(fn () => Mail::to($adminExistant->email)->send(new NouvelEtablissementAjouteMail($adminExistant, $etablissement, 'admin_etablissement')));
+                $message = $envoye
+                    ? 'Commande validée.'
+                    : "Commande validée, mais l'e-mail de notification n'a pas pu être envoyé à {$adminExistant->email}.";
             } else {
                 $motDePasse = Str::password(14);
 
@@ -126,7 +139,10 @@ class CommandeController extends Controller
                     ]);
                 }
 
-                Mail::to($admin->email)->send(new CommandeValideeMail($admin, $motDePasse));
+                $envoye = Mailer::envoyer(fn () => Mail::to($admin->email)->send(new CommandeValideeMail($admin, $motDePasse)));
+                $message = $envoye
+                    ? 'Commande validée.'
+                    : "Commande validée, mais l'e-mail contenant les identifiants n'a pas pu être envoyé à {$admin->email}. Réinitialisez son mot de passe une fois le problème résolu.";
             }
 
             $commande->update([
@@ -136,7 +152,7 @@ class CommandeController extends Controller
                 'traite_le' => now(),
             ]);
 
-            return $this->success(new CommandeResource($commande->fresh(['etablissement', 'traitePar'])), 'Commande validée.');
+            return $this->success(new CommandeResource($commande->fresh(['etablissement', 'traitePar'])), $message);
         });
     }
 }

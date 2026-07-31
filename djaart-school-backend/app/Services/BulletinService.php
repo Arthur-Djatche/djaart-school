@@ -10,6 +10,7 @@ use App\Models\ConduiteReleve;
 use App\Models\Note;
 use App\Models\Sequence;
 use App\Services\Concerns\EmbedsEtablissementBranding;
+use App\Support\Mailer;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -174,9 +175,12 @@ class BulletinService
                 $bulletin->update(['fichier_pdf' => $chemin]);
 
                 if ($inscription->apprenant->email) {
-                    Mail::to($inscription->apprenant->email)->send(
+                    // Ne doit jamais faire echouer (et annuler, la cloture
+                    // etant transactionnelle pour toute la classe) le
+                    // bulletin d'un autre apprenant.
+                    Mailer::envoyer(fn () => Mail::to($inscription->apprenant->email)->send(
                         new BulletinPretMail($bulletin->setRelation('inscription', $inscription), $sequence->libelle),
-                    );
+                    ));
                 }
 
                 $bulletins->push($bulletin);

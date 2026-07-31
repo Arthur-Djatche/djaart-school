@@ -14,6 +14,7 @@ use App\Mail\NouvelEtablissementAjouteMail;
 use App\Models\Etablissement;
 use App\Models\User;
 use App\Support\GrantablePermissions;
+use App\Support\Mailer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -100,10 +101,15 @@ class UserController extends Controller
                     $etablissementId => ['role' => $data['role'], 'permissions' => []],
                 ]);
 
-                Mail::to($existant->email)->send(new NouvelEtablissementAjouteMail($existant, Etablissement::findOrFail($etablissementId), $data['role']));
+                $envoye = Mailer::envoyer(fn () => Mail::to($existant->email)->send(new NouvelEtablissementAjouteMail($existant, Etablissement::findOrFail($etablissementId), $data['role'])));
+                $message = $envoye
+                    ? 'Acteur existant rattaché à cet établissement.'
+                    : "Acteur rattaché à cet établissement, mais l'e-mail de notification n'a pas pu être envoyé à {$existant->email}.";
+            } else {
+                $message = 'Acteur existant rattaché à cet établissement.';
             }
 
-            return $this->success(new UserResource($existant->load(['etablissement', 'etablissementsGeres'])), 'Acteur existant rattaché à cet établissement.', 201);
+            return $this->success(new UserResource($existant->load(['etablissement', 'etablissementsGeres'])), $message, 201);
         }
 
         $motDePasse = Str::password(14);
@@ -124,9 +130,15 @@ class UserController extends Controller
             ]);
         }
 
-        Mail::to($user->email)->send(new CompteCreeMail($user, $motDePasse));
+        // L'e-mail est le seul canal du mot de passe genere (jamais affiche a
+        // l'admin qui cree le compte) : un echec de livraison ne doit pas
+        // empecher la creation du compte, mais doit etre signale clairement.
+        $envoye = Mailer::envoyer(fn () => Mail::to($user->email)->send(new CompteCreeMail($user, $motDePasse)));
+        $message = $envoye
+            ? 'Utilisateur créé.'
+            : "Utilisateur créé, mais l'e-mail contenant les identifiants n'a pas pu être envoyé à {$user->email}. Réinitialisez son mot de passe une fois le problème résolu.";
 
-        return $this->success(new UserResource($user->load('etablissement')), 'Utilisateur créé.', 201);
+        return $this->success(new UserResource($user->load('etablissement')), $message, 201);
     }
 
     public function update(UpdateUserRequest $request, User $user)
@@ -172,11 +184,16 @@ class UserController extends Controller
             }
         }
 
+        $message = 'Utilisateur mis à jour.';
+
         if (isset($motDePasse)) {
-            Mail::to($user->email)->send(new MotDePasseReinitialiseMail($user, $motDePasse));
+            $envoye = Mailer::envoyer(fn () => Mail::to($user->email)->send(new MotDePasseReinitialiseMail($user, $motDePasse)));
+            if (! $envoye) {
+                $message = "Utilisateur mis à jour, mais l'e-mail contenant le nouveau mot de passe n'a pas pu être envoyé à {$user->email}. Réessayez la réinitialisation une fois le problème résolu.";
+            }
         }
 
-        return $this->success(new UserResource($user->load('etablissement')), 'Utilisateur mis à jour.');
+        return $this->success(new UserResource($user->load('etablissement')), $message);
     }
 
     /**
@@ -223,7 +240,7 @@ class UserController extends Controller
             $user->syncPermissions($data['permissions']);
         }
 
-        Mail::to($user->email)->send(new DroitsAccesModifiesMail($user));
+        Mailer::envoyer(fn () => Mail::to($user->email)->send(new DroitsAccesModifiesMail($user)));
 
         return $this->success(new UserResource($user->load('etablissement')), 'Droits d\'accès mis à jour.');
     }
