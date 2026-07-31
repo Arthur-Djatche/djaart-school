@@ -23,8 +23,15 @@ export default function LoginPage() {
       await login(email, password)
       showToast('Connexion réussie', 'success')
       navigate('/dashboard')
-    } catch {
-      setError('Identifiants incorrects.')
+    } catch (err) {
+      // Sans reponse HTTP du tout (serveur injoignable, ex. backend non lie
+      // sur 0.0.0.0 pour un acces LAN) : ce n'est pas un identifiant errone,
+      // le distinguer evite d'induire l'utilisateur en erreur sur la cause.
+      setError(
+        err.response
+          ? 'Identifiants incorrects.'
+          : "Impossible de joindre le serveur. Vérifiez votre connexion réseau.",
+      )
     } finally {
       setLoading(false)
     }
