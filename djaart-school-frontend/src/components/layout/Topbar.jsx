@@ -1,29 +1,11 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import logo from '../../assets/logo.png'
-import * as profilApi from '../../api/profilApi'
 import useAuth from '../../hooks/useAuth'
 import Button from '../ui/Button'
+import EtablissementSwitcher from './EtablissementSwitcher'
 
 export default function Topbar({ onMenuClick }) {
   const { user, logout } = useAuth()
-  const [basculant, setBasculant] = useState(false)
-
-  const handleBasculer = async (event) => {
-    const etablissementId = Number(event.target.value)
-    if (!etablissementId || etablissementId === user.etablissement?.id) return
-
-    setBasculant(true)
-    try {
-      await profilApi.basculerEtablissement(etablissementId)
-      // Rechargement complet : toutes les pages du dashboard dependent de
-      // l'etablissement actif, plus simple et plus sur que d'auditer chaque
-      // ecran pour le rendre reactif a ce changement.
-      window.location.href = '/dashboard'
-    } finally {
-      setBasculant(false)
-    }
-  }
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-soft sm:px-6">
@@ -46,22 +28,9 @@ export default function Topbar({ onMenuClick }) {
         </span>
       </div>
       <div className="flex items-center gap-2 sm:gap-4">
-        {user?.etablissements_geres?.length > 1 && (
-          <select
-            value={user.etablissement?.id ?? ''}
-            onChange={handleBasculer}
-            disabled={basculant}
-            className="hidden rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-brand-navy outline-none transition focus:border-brand-blue sm:block"
-            aria-label="Établissement actif"
-          >
-            {user.etablissements_geres.map((etablissement) => (
-              <option key={etablissement.id} value={etablissement.id}>
-                {etablissement.nom}
-                {etablissement.role ? ` (${etablissement.role})` : ''}
-              </option>
-            ))}
-          </select>
-        )}
+        {/* Sur mobile, la bascule d'etablissement est dans le tiroir du menu
+            (cf. Sidebar) — pas assez de place ici a cote du logo/hamburger. */}
+        <EtablissementSwitcher className="hidden sm:block" />
         {user && (
           <Link to="/mon-profil" className="hidden items-center gap-2 text-sm text-brand-navy hover:underline sm:flex">
             {user.photo_url ? (

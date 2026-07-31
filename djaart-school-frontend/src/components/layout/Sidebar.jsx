@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { navigationForRoles } from '../../config/navigation'
 import useAuth from '../../hooks/useAuth'
+import EtablissementSwitcher from './EtablissementSwitcher'
 
 const linkClasses = ({ isActive }) =>
   `rounded-lg px-3 py-2 transition-colors ${isActive ? 'bg-brand-blue text-white shadow-soft' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`
@@ -61,6 +62,15 @@ export default function Sidebar({ open = false, onClose }) {
             ✕
           </button>
         </div>
+
+        {/* Repris ici pour mobile : pas assez de place dans la Topbar a cote
+            du logo/hamburger (cf. Topbar, qui la montre a partir de sm). */}
+        {user?.etablissements_geres?.length > 1 && (
+          <div className="border-b border-white/10 px-4 py-4 sm:hidden">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Établissement actif</p>
+            <EtablissementSwitcher className="w-full bg-white" />
+          </div>
+        )}
 
         <nav className="flex flex-col gap-1 p-4 text-sm">
           {items.map((item) =>
