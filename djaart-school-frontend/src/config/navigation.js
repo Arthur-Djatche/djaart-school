@@ -64,9 +64,8 @@ function allowed(roles, permission, userRoles, userPermissions) {
   return parRole || parPermission
 }
 
-// userEtablissementTypes : jusqu'a 2 types cumules par le meme etablissement
-// (ex. secondaire + centre_formation) — un menu s'affiche des qu'un seul de
-// ces types correspond a ceux qu'il autorise.
+// userEtablissementTypes : le type de l'etablissement actif (tableau pour
+// rester generique) — un menu s'affiche des qu'il correspond a ceux qu'il autorise.
 function allowedForType(itemTypes, userEtablissementTypes) {
   if (!itemTypes) return true
   if (!userEtablissementTypes || userEtablissementTypes.length === 0) return false

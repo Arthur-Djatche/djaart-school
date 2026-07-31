@@ -8,7 +8,7 @@ export default function UserPermissionsModal({ user, onClose, onSubmit }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const etablissementTypes = [user.etablissement?.type_etablissement, user.etablissement?.type_etablissement_secondaire].filter(Boolean)
+  const etablissementTypes = [user.etablissement?.type_etablissement].filter(Boolean)
   const catalogueVisible = useMemo(() => filtrerCataloguePourTypes(PERMISSIONS_CATALOG, etablissementTypes), [etablissementTypes])
 
   const toggle = (cle) => {

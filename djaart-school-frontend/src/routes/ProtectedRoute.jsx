@@ -23,7 +23,7 @@ export default function ProtectedRoute({ roles, permission, etablissementTypes, 
   // uniquement) reste inaccessible par URL directe meme si le role/droit
   // correspond — pas seulement masque dans le menu. super_admin exempte
   // (support/depannage, ne depend d'aucun etablissement precis).
-  const typesUtilisateur = [user.etablissement?.type_etablissement, user.etablissement?.type_etablissement_secondaire].filter(Boolean)
+  const typesUtilisateur = [user.etablissement?.type_etablissement].filter(Boolean)
   const parType = !etablissementTypes || user.roles.includes('super_admin') || etablissementTypes.some((type) => typesUtilisateur.includes(type))
 
   if ((!parRole && !parPermission) || !parType) {

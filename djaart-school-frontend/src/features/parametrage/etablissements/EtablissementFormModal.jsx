@@ -18,7 +18,6 @@ export default function EtablissementFormModal({ etablissement, onClose, onSubmi
 
   const [nom, setNom] = useState(etablissement?.nom ?? '')
   const [typeEtablissement, setTypeEtablissement] = useState(etablissement?.type_etablissement ?? TYPES[0].value)
-  const [typeEtablissementSecondaire, setTypeEtablissementSecondaire] = useState(etablissement?.type_etablissement_secondaire ?? '')
   const [sigle, setSigle] = useState(etablissement?.sigle ?? '')
   const [adresse, setAdresse] = useState(etablissement?.adresse ?? '')
   const [error, setError] = useState('')
@@ -30,12 +29,11 @@ export default function EtablissementFormModal({ etablissement, onClose, onSubmi
     setLoading(true)
     try {
       const payload = { nom, sigle, adresse }
-      // Le type (principal et secondaire) est reserve au super_admin (choisi a
-      // la validation de la commande) : un admin_etablissement ne l'envoie
-      // jamais, meme inchange, sinon le backend rejette toute la requete.
+      // Le type est reserve au super_admin (choisi a la validation de la
+      // commande) : un admin_etablissement ne l'envoie jamais, meme
+      // inchange, sinon le backend rejette toute la requete.
       if (estSuperAdmin) {
         payload.type_etablissement = typeEtablissement
-        payload.type_etablissement_secondaire = typeEtablissementSecondaire || null
       }
       await onSubmit(payload)
     } catch (err) {
@@ -53,28 +51,19 @@ export default function EtablissementFormModal({ etablissement, onClose, onSubmi
           <>
             <Select
               id="type_etablissement"
-              label="Type principal"
+              label="Type"
               value={typeEtablissement}
-              onChange={(e) => {
-                setTypeEtablissement(e.target.value)
-                if (e.target.value === typeEtablissementSecondaire) setTypeEtablissementSecondaire('')
-              }}
+              onChange={(e) => setTypeEtablissement(e.target.value)}
               options={TYPES}
             />
-            <Select
-              id="type_etablissement_secondaire"
-              label="2e type (optionnel — max 2 types)"
-              value={typeEtablissementSecondaire}
-              onChange={(e) => setTypeEtablissementSecondaire(e.target.value)}
-              placeholder="Aucun"
-              options={TYPES.filter((t) => t.value !== typeEtablissement)}
-            />
+            <p className="text-xs text-slate-400">
+              Pour un 2e type, créez un nouvel établissement dédié puis rattachez-y le même administrateur
+              depuis Comptes utilisateurs (même e-mail, nouveau rôle) — il pourra basculer entre les deux.
+            </p>
           </>
         ) : (
           <p className="text-sm text-slate-500">
-            Type : {TYPES.find((t) => t.value === typeEtablissement)?.label}
-            {typeEtablissementSecondaire && ` + ${TYPES.find((t) => t.value === typeEtablissementSecondaire)?.label}`}
-            {' '}(modifiable uniquement par DJAART SCHOOL)
+            Type : {TYPES.find((t) => t.value === typeEtablissement)?.label} (modifiable uniquement par DJAART SCHOOL)
           </p>
         )}
         <Input id="sigle" label="Sigle" value={sigle} onChange={(e) => setSigle(e.target.value)} />

@@ -64,13 +64,7 @@ export default function EtablissementsPage() {
 
   const columns = [
     { key: 'nom', label: 'Nom' },
-    {
-      key: 'type_etablissement',
-      label: 'Type',
-      render: (row) => [TYPE_LABELS[row.type_etablissement], row.type_etablissement_secondaire && TYPE_LABELS[row.type_etablissement_secondaire]]
-        .filter(Boolean)
-        .join(' + '),
-    },
+    { key: 'type_etablissement', label: 'Type', render: (row) => TYPE_LABELS[row.type_etablissement] },
     { key: 'sigle', label: 'Sigle' },
     { key: 'adresse', label: 'Adresse' },
     {

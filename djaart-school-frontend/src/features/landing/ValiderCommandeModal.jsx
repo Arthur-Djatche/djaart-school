@@ -79,7 +79,7 @@ export default function ValiderCommandeModal({ commande, onClose, onSubmit }) {
         />
         <Select
           id="type_etablissement_secondaire"
-          label="2e type (optionnel — max 2 types)"
+          label="2e établissement (optionnel) — même admin, à basculer depuis le dashboard"
           value={typeEtablissementSecondaire}
           onChange={(e) => setTypeEtablissementSecondaire(e.target.value)}
           placeholder="Aucun"
