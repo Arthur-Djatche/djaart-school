@@ -739,5 +739,22 @@ Plutôt que de simplement guider la création manuelle du lien symbolique (fragi
 - **`build-zip-unix-perms.php` n'est pas commité au dépôt** (outil de déploiement ponctuel, dépendant de chemins locaux à l'environnement de préparation) — à formaliser en script réutilisable dans le dépôt si des déploiements réguliers sont prévus à l'avenir.
 - **Aucun accès au serveur LWS depuis cet environnement** (déjà constaté aux correctifs précédents) : le diagnostic s'est fait entièrement via les journaux et tests que l'utilisateur a bien voulu copier depuis son panneau — reconfirmation du bon fonctionnement en production dépend de son prochain retour.
 
+## Correctif — Connexion impossible sur mobile en production (CORS, variante www)
+- Statut : **terminé**
+
+### Contexte
+Après déploiement, connexion impossible depuis un navigateur mobile (message "Impossible de joindre le serveur"), alors que le PC fonctionnait normalement. Diagnostic mené à distance (aucun accès à l'appareil de l'utilisateur) par élimination : certificat SSL valide, CORS/CSRF corrects testés depuis cet environnement, bundle JS déployé pointant vers la bonne URL d'API — écartant tour à tour l'hypothèse IPv6 (réseaux mobiles africains souvent IPv6 en priorité) et un résidu de cache/service worker (reproductible en navigation privée). Le test décisif : navigation directe vers `https://api-school.djaart.site/` depuis le téléphone fonctionnait, mais pas les appels JavaScript de l'app — isolant le problème aux requêtes cross-origin (CSRF + connexion), pas à la connectivité réseau elle-même.
+
+**Cause trouvée** : `https://www.school.djaart.site` répond avec le même contenu que `https://school.djaart.site`, sans redirection entre les deux (configuration DNS/panneau LWS, pas un choix applicatif). Un visiteur arrivé sur la variante `www.` (favori, saisie manuelle, comportement d'un navigateur/opérateur) envoie un en-tête `Origin: https://www.school.djaart.site` à l'API, qui n'autorisait que `https://school.djaart.site` (sans www) en CORS — le navigateur bloque alors silencieusement la réponse, ce qu'`axios` remonte comme une erreur réseau générique plutôt qu'un blocage CORS explicite (d'où le message "Impossible de joindre le serveur", techniquement correct du point de vue du code mais trompeur sur la vraie cause).
+
+### Réalisé
+- **`.env` de production** (`CORS_ALLOWED_ORIGINS`, `SANCTUM_STATEFUL_DOMAINS`) élargi pour accepter les deux variantes (`school.djaart.site` et `www.school.djaart.site`) — corrige la connexion quelle que soit celle utilisée par le visiteur. `SESSION_DOMAIN=.djaart.site` (déjà en place) couvrait déjà les deux, seul CORS/Sanctum bloquait.
+- Archive de production (`api-school.zip`) régénérée avec ce correctif, remise à l'utilisateur.
+
+### Hypothèses / écarts documentés
+- **`www.school.djaart.site` et `school.djaart.site` restent deux origines distinctes sans redirection canonique** — corrige le blocage immédiat mais laisse un doublon (impact SEO potentiel, cohérence des liens partagés) ; non traité ici faute de portée explicitement demandée. Ajouter une redirection 301 permanente vers une seule forme canonique (au niveau du `.htaccess` du frontend ou du panneau LWS) réglerait cela proprement si souhaité dans un prochain tour.
+- **HTTP (non chiffré) répond aussi sans redirection forcée vers HTTPS** — remarqué en creusant ce problème, non corrigé (hors périmètre de la demande initiale) ; à traiter de la même manière qu'une éventuelle redirection www.
+- **Diagnostic mené entièrement par élimination à distance** (déjà constaté aux correctifs de déploiement précédents) : chaque hypothèse a été vérifiée soit depuis cet environnement (certificat, CORS, CSRF, contenu déployé), soit via des tests précis demandés à l'utilisateur sur son propre appareil — la confirmation définitive que la connexion fonctionne désormais sur mobile dépend de son prochain retour.
+
 ## Phases suivantes
 Voir `DJAART_SCHOOL_CLAUDE_CODE_BUILD_PLAN.md` section 6 pour le détail des phases 10 à 11. Prochaine étape : **Phase 10**.
