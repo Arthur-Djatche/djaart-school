@@ -283,8 +283,14 @@ export default function LandingPage() {
             <ul className="mt-4 flex flex-col gap-4 text-sm">
               <li className="flex items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-base">✉️</span>
-                <a href="mailto:contact@djaart.school" className="hover:underline">
-                  contact@djaart.school
+                <a href="mailto:contact@djaart.site" className="hover:underline">
+                  contact@djaart.site
+                </a>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-base">📞</span>
+                <a href="tel:+237686865807" className="hover:underline">
+                  +237 686 865 807
                 </a>
               </li>
               <li className="flex items-center gap-3">
@@ -309,8 +315,8 @@ export default function LandingPage() {
             </span>
           </div>
           <p>© {new Date().getFullYear()} DJAART SCHOOL — Tous droits réservés.</p>
-          <a href="mailto:contact@djaart.school" className="text-brand-blue hover:underline">
-            contact@djaart.school
+          <a href="mailto:contact@djaart.site" className="text-brand-blue hover:underline">
+            contact@djaart.site
           </a>
         </div>
       </footer>
