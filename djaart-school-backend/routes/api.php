@@ -80,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:super_admin')->group(function () {
         Route::get('/demandes-demo', [DemandeDemoController::class, 'index']);
+        Route::post('/demandes-demo/{demandeDemo}/valider', [DemandeDemoController::class, 'valider']);
         Route::get('/commandes', [CommandeController::class, 'index']);
         Route::post('/commandes/{commande}/valider', [CommandeController::class, 'valider']);
     });

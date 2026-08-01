@@ -30,7 +30,7 @@ class Etablissement extends Model
     protected function casts(): array
     {
         return [
-            'abonnement_expire_le' => 'date',
+            'abonnement_expire_le' => 'datetime',
         ];
     }
 
