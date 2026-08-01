@@ -64,6 +64,14 @@ export default function LoginPage() {
           Mot de passe oublié ?
         </Link>
       </form>
+
+      <p className="mt-6 text-center text-sm text-slate-500">
+        Vous n'avez pas de compte ?{' '}
+        <Link to="/#tarifs" className="font-medium text-brand-blue hover:underline">
+          Faites une demande de démo ou une commande
+        </Link>{' '}
+        — vos accès seront créés après validation par notre équipe.
+      </p>
     </AuthLayout>
   )
 }
